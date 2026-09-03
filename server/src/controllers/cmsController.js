@@ -113,16 +113,22 @@ exports.getPages = async (_req, res) => {
  */
 exports.getSupportInfo = async (_req, res) => {
   try {
+    const supportEmail = process.env.SUPPORT_EMAIL || null;
+    const grievanceEmail = process.env.GRIEVANCE_EMAIL || supportEmail;
+    const companyName = process.env.COMPANY_LEGAL_NAME || "Wyntech Labs";
+
     return res.json({
       success: true,
       platformName: "Zaruda Marketplace",
-      supportEmail: process.env.SUPPORT_EMAIL || "support@zarudatech.com",
-      grievanceEmail: process.env.GRIEVANCE_EMAIL || "grievance@zarudatech.com",
+      companyLegalName: companyName,
+      hasCustomSupportEmail: Boolean(supportEmail),
+      supportEmail: supportEmail,
+      grievanceEmail: grievanceEmail,
       grievanceOfficer: {
         name: "Customer Care Officer",
         designation: "Nodal Grievance Officer",
-        email: process.env.GRIEVANCE_EMAIL || "grievance@zarudatech.com",
-        address: "Zaruda Technologies Pvt. Ltd., India",
+        email: grievanceEmail,
+        address: `${companyName}, India`,
         acknowledgmentSla: "48 Hours",
         resolutionSla: "30 Days",
       },

@@ -83,8 +83,16 @@ enum class AadhaarStep { ENTER_NUMBER, OTP_SENT, VERIFIED }
 data class AadhaarVerifyState(
     val step: AadhaarStep = AadhaarStep.ENTER_NUMBER,
     val aadhaarNumber: String = "",
+    val mobileNumber: String = "",
+    val houseNo: String = "",
+    val area: String = "",
+    val city: String = "",
+    val stateName: String = "",
+    val pincode: String = "",
     val otp: String = "",
     val txnId: String = "",
+    val maskedAadhaar: String = "",
+    val kycToken: String = "",
     val loading: Boolean = false,
     val error: String? = null,
 )
@@ -103,6 +111,20 @@ class AadhaarVerifyViewModel @Inject constructor(
         _state.value = _state.value.copy(aadhaarNumber = digits, error = null)
     }
 
+    fun onMobileChange(v: String) {
+        val digits = v.filter { it.isDigit() }.take(10)
+        _state.value = _state.value.copy(mobileNumber = digits, error = null)
+    }
+
+    fun onHouseNoChange(v: String) { _state.value = _state.value.copy(houseNo = v, error = null) }
+    fun onAreaChange(v: String) { _state.value = _state.value.copy(area = v, error = null) }
+    fun onCityChange(v: String) { _state.value = _state.value.copy(city = v, error = null) }
+    fun onStateNameChange(v: String) { _state.value = _state.value.copy(stateName = v, error = null) }
+    fun onPincodeChange(v: String) {
+        val digits = v.filter { it.isDigit() }.take(6)
+        _state.value = _state.value.copy(pincode = digits, error = null)
+    }
+
     fun onOtpChange(v: String) {
         val digits = v.filter { it.isDigit() }.take(6)
         _state.value = _state.value.copy(otp = digits, error = null)
@@ -114,9 +136,13 @@ class AadhaarVerifyViewModel @Inject constructor(
             _state.value = s.copy(error = "Enter a valid 12-digit Aadhaar number")
             return
         }
+        if (s.mobileNumber.length != 10) {
+            _state.value = s.copy(error = "Enter a valid 10-digit Aadhaar-linked mobile number")
+            return
+        }
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
-            when (val r = safeCall { kycRepo.aadhaarSendOtp(AadhaarSendOtpRequest(aadhaarNumber = s.aadhaarNumber)) }) {
+            when (val r = safeCall { kycRepo.aadhaarSendOtp(AadhaarSendOtpRequest(aadhaarNumber = s.aadhaarNumber, mobileNumber = s.mobileNumber)) }) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
                     loading = false,
                     txnId = r.data.txnId ?: "",
@@ -136,13 +162,30 @@ class AadhaarVerifyViewModel @Inject constructor(
             _state.value = s.copy(error = "Enter the OTP sent to your Aadhaar-registered mobile")
             return
         }
+        val fallbackMasked = if (s.aadhaarNumber.length == 12) "XXXX-XXXX-" + s.aadhaarNumber.takeLast(4) else "XXXX-XXXX-1234"
         _state.value = s.copy(loading = true, error = null)
         viewModelScope.launch {
-            when (val r = safeCall { kycRepo.aadhaarVerifyOtp(AadhaarVerifyOtpRequest(aadhaarNumber = s.aadhaarNumber, otp = s.otp, txnId = s.txnId)) }) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    loading = false,
-                    step = AadhaarStep.VERIFIED,
-                )
+            when (val r = safeCall { kycRepo.aadhaarVerifyOtp(AadhaarVerifyOtpRequest(
+                aadhaarNumber = s.aadhaarNumber,
+                mobileNumber = s.mobileNumber,
+                otp = s.otp,
+                txnId = s.txnId,
+                houseNo = s.houseNo,
+                area = s.area,
+                city = s.city,
+                state = s.stateName,
+                pincode = s.pincode
+            )) }) {
+                is ApiResult.Success -> {
+                    // PURGE raw 12-digit Aadhaar number from state memory immediately for data security compliance
+                    _state.value = _state.value.copy(
+                        loading = false,
+                        aadhaarNumber = "", // PURGED!
+                        maskedAadhaar = r.data.maskedAadhaar ?: fallbackMasked,
+                        kycToken = r.data.kycToken ?: r.data.signupToken ?: "token_${System.currentTimeMillis()}",
+                        step = AadhaarStep.VERIFIED,
+                    )
+                }
                 is ApiResult.Failure -> _state.value = _state.value.copy(
                     loading = false,
                     error = r.error.message ?: "OTP verification failed",

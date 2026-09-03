@@ -1037,6 +1037,9 @@ fun ExploreScreen(
     forYouMode: Boolean = false,
     viewModel: ExploreViewModel = hiltViewModel(),
 ) {
+    // Location ViewModel — shares LocationSetupManager singleton with MainShell
+    val locationVm: com.zaruda.app.ui.location.AppLocationViewModel = hiltViewModel()
+    val isLocationDetecting by locationVm.isDetecting.collectAsState()
     val state by viewModel.state.collectAsState()
     val wishlistedSet by viewModel.wishlisted.collectAsState()
     var showFilterSheet by remember { mutableStateOf(false) }
@@ -1092,6 +1095,8 @@ fun ExploreScreen(
                 onCart = onOpenCart,
                 onFilter = { showFilterSheet = true },
                 activeFilterCount = if (state.hasActiveFilters) 1 else 0,
+                onLocationRefresh = { locationVm.detectLocation(force = true) },
+                isLocationDetecting = isLocationDetecting,
                 currentThemeMode = currentThemeMode,
             )
         },

@@ -171,6 +171,10 @@ app.use((req, res, next) => {
 
 app.use(requestLogger);
 
+// ── Monitoring Middleware (tracks response times, errors, request counts) ──
+const { monitoringMiddleware } = require("./middleware/monitoring");
+app.use(monitoringMiddleware);
+
 app.set("query parser", "extended");
 
 // ── Environment Helpers ──────────────────────────────────
@@ -566,6 +570,12 @@ app.get("/health", (req, res) => {
     uptime: process.uptime(),
   });
 });
+
+/* ─────────────────────────────────────────────────────────
+   Monitoring Routes
+   ───────────────────────────────────────────────────────── */
+const monitoringRoutes = require("./routes/monitoring");
+app.use("/api/monitoring", monitoringRoutes);
 
 /* ─────────────────────────────────────────────────────────
    Route Mounts — Individually Mounted
@@ -1004,6 +1014,17 @@ const listenOnPort = (port) =>
     server.once("error", onError);
     server.once("listening", onListening);
     server.listen(port);
+
+    // ── Periodic DB Health Check (every 60 seconds) ──────
+    const { checkHealth: dbHealthCheck } = require("./services/dbHealthMonitor");
+    setInterval(async () => {
+      try {
+        await dbHealthCheck();
+      } catch (err) {
+        console.error("[Monitor] Periodic DB health check failed:", err.message);
+      }
+    }, 60_000);
+    logger.info("[Monitor] Periodic DB health check started (60s interval)");
   });
 
 /** Starts delayed background services (subscription checks, etc.) */

@@ -64,6 +64,7 @@
 -keep class com.zaruda.app.data.remote.dto.** { *; }
 
 # Keep application class
+-keep class com.zaruda.app.ZarudaApplication { *; }
 -keep class com.zaruda.app.MhubApplication { *; }
 
 # Razorpay SDK Proguard Rules

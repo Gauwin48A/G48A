@@ -62,16 +62,34 @@ echo "Write down this password! You will need it for your server's .env file."
 echo "===================================================="
 
 # Set up Nginx configuration block
-echo "--> Configuring Nginx reverse proxy for api.wyntechlabs.com..."
-NGINX_CONF="/etc/nginx/sites-available/api.wyntechlabs.com"
+echo "--> Configuring Nginx reverse proxy for Zaruda Platform..."
+NGINX_CONF="/etc/nginx/sites-available/api.zaruda.com"
 
 sudo bash -c "cat > $NGINX_CONF" <<EOF
 server {
     listen 80;
-    server_name api.wyntechlabs.com;
+    server_name api.zaruda.com;
+
+    # Cloudflare Real IP Ingestion
+    set_real_ip_from 173.245.48.0/20;
+    set_real_ip_from 103.21.244.0/22;
+    set_real_ip_from 103.22.200.0/22;
+    set_real_ip_from 103.31.4.0/22;
+    set_real_ip_from 141.101.64.0/18;
+    set_real_ip_from 108.162.192.0/18;
+    set_real_ip_from 190.93.240.0/20;
+    set_real_ip_from 188.114.96.0/20;
+    set_real_ip_from 197.234.240.0/22;
+    set_real_ip_from 198.41.128.0/17;
+    set_real_ip_from 162.158.0.0/15;
+    set_real_ip_from 104.16.0.0/13;
+    set_real_ip_from 104.24.0.0/14;
+    set_real_ip_from 172.64.0.0/13;
+    set_real_ip_from 131.0.72.0/22;
+    real_ip_header CF-Connecting-IP;
 
     location / {
-        proxy_pass http://localhost:5001;
+        proxy_pass http://localhost:8081;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -96,8 +114,15 @@ sudo ufw allow OpenSSH
 sudo ufw allow 'Nginx Full'
 sudo ufw --force enable
 
+echo "--> Running 36-Table Master Database Migration..."
+node scripts/apply_production_schema.js || echo "Notice: Set up .env and run node scripts/apply_production_schema.js manually if database password needs configuration."
+
 echo "===================================================="
-echo "VPS Environment Setup is COMPLETE!"
+echo "Zaruda VPS Environment Setup is COMPLETE!"
+echo "1. Configure your server/.env with your DB credentials & Cloudflare/Firebase keys"
+echo "2. Run: node scripts/apply_production_schema.js"
+echo "3. Start API: pm2 start src/index.js -i max --name zaruda-api"
+echo "===================================================="
 echo "===================================================="
 echo "Next Steps:"
 echo "1. Point the DNS A Record in Cloudflare: api.wyntechlabs.com -> VPS IP."

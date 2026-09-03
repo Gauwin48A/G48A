@@ -83,6 +83,8 @@ class CreatePostViewModel @Inject constructor(
     private val authRepo: AuthRepository,
     private val draftRepo: DraftRepository,
     private val brandsRepo: BrandsRepository,
+    private val analytics: com.zaruda.app.core.AnalyticsHelper,
+    private val crashlytics: com.zaruda.app.core.CrashlyticsHelper,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CreatePostState())
     val state: StateFlow<CreatePostState> = _state.asStateFlow()
@@ -320,8 +322,21 @@ class CreatePostViewModel @Inject constructor(
                 isNegotiable = snapshot.isNegotiable.takeIf { it },
             )
             when (val r = postsRepo.create(req)) {
-                is ApiResult.Success -> _state.value = _state.value.copy(submitting = false, success = true)
-                is ApiResult.Failure -> _state.value = _state.value.copy(submitting = false, error = r.error.userFacingMessage("publish this listing"))
+                is ApiResult.Success -> {
+                    val bundle = android.os.Bundle().apply {
+                        putString("title", req.title)
+                        putString("category_id", req.categoryId)
+                        putDouble("price", req.price ?: 0.0)
+                    }
+                    analytics.logEvent("post_created", bundle)
+                    crashlytics.logBreadcrumb("POST_CREATE", "Post created successfully: ${req.title}")
+                    _state.value = _state.value.copy(submitting = false, success = true)
+                }
+                is ApiResult.Failure -> {
+                    crashlytics.logApiError(r.error, "POST_CREATE", "Failed to publish listing: ${req.title}")
+                    analytics.logError("POST_CREATE_ERROR", r.error.message)
+                    _state.value = _state.value.copy(submitting = false, error = r.error.userFacingMessage("publish this listing"))
+                }
             }
         }
     }

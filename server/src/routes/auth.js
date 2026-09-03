@@ -270,6 +270,12 @@ router.post(
 );
 router.post("/logout", logoutAbuseCheck, authCsrfProtection, revokeCurrentAccessToken, authController.logout);
 router.post(
+  "/google",
+  maybeBypassAuthRateLimit(loginLimiter),
+  authController.googleSignIn,
+);
+
+router.post(
   "/forgot-password",
   maybeBypassAuthRateLimit(recoveryLimiter),
   maybeBypassAuthRateLimit(authAnomalyThrottle("forgot_password")),

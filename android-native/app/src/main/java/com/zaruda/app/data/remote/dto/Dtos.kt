@@ -66,6 +66,13 @@ data class AuthResponse(
     val code: String? = null,
 )
 
+@Serializable
+data class GoogleSignInRequest(
+    val idToken: String,
+    val fullName: String? = null,
+    val email: String? = null,
+)
+
 // -------- Auth extended (OTP/Aadhaar/2FA) --------
 @Serializable
 data class SendOtpRequest(
@@ -101,10 +108,15 @@ data class AadhaarGenerateRequest(
 
 @Serializable
 data class AadhaarVerifyOtpRequest(
-    val aadhaarNumber: String,
+    val aadhaarNumber: String? = null,
     val mobileNumber: String? = null,
     val otp: String,
     val txnId: String? = null,
+    val houseNo: String? = null,
+    val area: String? = null,
+    val city: String? = null,
+    val state: String? = null,
+    val pincode: String? = null,
 )
 
 @Serializable
@@ -113,6 +125,8 @@ data class AadhaarVerifyResponse(
     val signupToken: String? = null,
     val message: String? = null,
     val name: String? = null,
+    val maskedAadhaar: String? = null,
+    val kycToken: String? = null,
 )
 
 @Serializable

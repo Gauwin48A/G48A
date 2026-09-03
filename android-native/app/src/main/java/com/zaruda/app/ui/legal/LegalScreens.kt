@@ -301,16 +301,6 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                         Spacer(Modifier.height(4.dp))
                         Text("Guides, answers and direct support for everything in Zaruda.", fontSize = 13.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
                         Spacer(Modifier.height(12.dp))
-                        HelpContactRow(Icons.Filled.Email, "Support — support@zarudatech.com") {
-                            runCatching {
-                                context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:support@zarudatech.com")))
-                            }
-                        }
-                        HelpContactRow(Icons.Filled.Report, "Grievance Officer — grievance@zarudatech.com") {
-                            runCatching {
-                                context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:grievance@zarudatech.com")))
-                            }
-                        }
                         HelpContactRow(Icons.Filled.Comment, "In-app Feedback — More → Feedback", onClick = null)
                         HelpContactRow(Icons.Filled.Report, "Complaints & disputes — More → Complaints", onClick = null)
                     }
@@ -359,7 +349,7 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                             Spacer(Modifier.height(8.dp))
                             Text("No articles match your search.", fontSize = 14.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
                             Spacer(Modifier.height(4.dp))
-                            Text("Try a different keyword, or email support@zarudatech.com.", fontSize = 12.sp, color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8))
+                            Text("Try a different keyword, or submit a request via More → Feedback.", fontSize = 12.sp, color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8))
                         }
                     }
                 } else {
@@ -370,10 +360,10 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                 Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = if (isDark) 0.dp else 2.dp, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Our support promise", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
-                        HelpBullet("We respond to every inquiry within 24–48 hours on business days.", isDark)
+                        HelpBullet("We respond to every in-app inquiry within 24–48 hours on business days.", isDark)
                         HelpBullet("We help with accounts, listings, orders, payments, KYC and disputes.", isDark)
                         HelpBullet("Safety and fraud issues are prioritised and handled by a senior team member.", isDark)
-                        HelpBullet("Grievances acknowledged within 48h and resolved within 30 days per Consumer Protection Rules 2020.", isDark)
+                        HelpBullet("Grievances acknowledged within 48h and resolved within 30 days by Wyntech Labs per Consumer Protection Rules 2020.", isDark)
                     }
                 }
 
@@ -381,7 +371,7 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                 Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E3A5F) else Color(0xFFEFF6FF), modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Still need help?", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
-                        Text("Reach us any time at support@zarudatech.com or grievance@zarudatech.com, or use the Feedback and Complaints forms inside the app. For urgent safety concerns, mention “Urgent” in your message so we can prioritise it.", fontSize = 13.sp, lineHeight = 20.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF374151))
+                        Text("Reach us any time using the Feedback and Complaints forms inside the app. For urgent safety concerns, mention “Urgent” in your message so we can prioritise it.", fontSize = 13.sp, lineHeight = 20.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF374151))
                     }
                 }
                 Spacer(Modifier.height(8.dp))

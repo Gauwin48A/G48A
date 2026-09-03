@@ -84,8 +84,13 @@ class LocationViewModel @Inject constructor(
 
     private suspend fun searchOsmNominatim(query: String): List<CitySuggestion> = withContext(Dispatchers.IO) {
         try {
-            // Omit featureType to return all matching feature types (cities, towns, suburbs, areas)
-            val url = "https://nominatim.openstreetmap.org/search?format=jsonv2&q=${java.net.URLEncoder.encode(query, "UTF-8")}&limit=10&addressdetails=1"
+            val qTrim = query.trim()
+            val isPincode = qTrim.matches("^\\d{6}$".toRegex())
+            val url = if (isPincode) {
+                "https://nominatim.openstreetmap.org/search?format=jsonv2&postalcode=$qTrim&country=India&limit=10&addressdetails=1"
+            } else {
+                "https://nominatim.openstreetmap.org/search?format=jsonv2&q=${java.net.URLEncoder.encode(qTrim, "UTF-8")}&limit=10&addressdetails=1"
+            }
             val request = Request.Builder()
                 .url(url)
                 .header("User-Agent", "ZarudaApp/1.0 (marketplace)")
@@ -99,24 +104,30 @@ class LocationViewModel @Inject constructor(
                 val obj = arr.getJSONObject(i)
                 val lat = obj.optDouble("lat", 0.0)
                 val lng = obj.optDouble("lon", 0.0)
-                // Use structured address object for reliable field extraction (web parity)
                 val addr = obj.optJSONObject("address")
-                val cityName = addr?.optString("city", "")
-                    ?.takeIf { it.isNotBlank() }
-                    ?: addr?.optString("town", "")
-                    ?.takeIf { it.isNotBlank() }
-                    ?: addr?.optString("village", "")
-                    ?.takeIf { it.isNotBlank() }
-                    ?: addr?.optString("suburb", "")
-                    ?.takeIf { it.isNotBlank() }
-                    ?: addr?.optString("municipality", "")
-                    ?.takeIf { it.isNotBlank() }
-                    ?: query
+                val suburb = addr?.optString("suburb", "")?.takeIf { it.isNotBlank() }
+                    ?: addr?.optString("neighbourhood", "")?.takeIf { it.isNotBlank() }
+                    ?: ""
+                val city = addr?.optString("city", "")?.takeIf { it.isNotBlank() }
+                    ?: addr?.optString("town", "")?.takeIf { it.isNotBlank() }
+                    ?: addr?.optString("village", "")?.takeIf { it.isNotBlank() }
+                    ?: addr?.optString("municipality", "")?.takeIf { it.isNotBlank() }
+                    ?: ""
+                val pcode = addr?.optString("postcode", "")?.takeIf { it.isNotBlank() } ?: if (isPincode) qTrim else ""
                 val state = addr?.optString("state", "") ?: ""
-                val country = addr?.optString("country", "") ?: ""
-                if (lat != 0.0 && lng != 0.0 && cityName.isNotBlank()) {
+
+                val displayName = when {
+                    suburb.isNotBlank() && pcode.isNotBlank() -> "$suburb $pcode"
+                    city.isNotBlank() && pcode.isNotBlank() -> "$city $pcode"
+                    pcode.isNotBlank() -> pcode
+                    suburb.isNotBlank() && city.isNotBlank() -> "$suburb, $city"
+                    city.isNotBlank() -> city
+                    else -> query
+                }
+
+                if (lat != 0.0 && lng != 0.0 && displayName.isNotBlank()) {
                     results.add(CitySuggestion(
-                        name = cityName,
+                        name = displayName,
                         state = state,
                         lat = lat,
                         lng = lng,
@@ -148,7 +159,7 @@ class LocationViewModel @Inject constructor(
     fun autoDetectAndSetup() {
         _state.value = _state.value.copy(detecting = true)
         viewModelScope.launch {
-            locationManager.autoDetectAndSetup()
+            locationManager.autoDetectAndSetup(highAccuracy = true)
             val cityName = locationManager.currentLocationName.value
             _state.value = _state.value.copy(detecting = false, currentCity = cityName)
             if (cityName.isNotBlank() && !cityName.contains("fail") && !cityName.contains("Permission")) {

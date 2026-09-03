@@ -42,48 +42,44 @@ class ZarudaApplication : Application(), ImageLoaderFactory {
         // Create notification channels
         NotificationChannelHelper.createNotificationChannels(this)
 
-        // Initialize Firebase in background
-        Thread {
-            initFirebaseSafely()
-        }.apply {
-            isDaemon = true
-            start()
-        }
+        // Initialize Firebase core & Crashlytics synchronously so early crashes are captured
+        initFirebaseCore()
+
+        // Fetch & register FCM token asynchronously
+        fetchFcmTokenAsync()
     }
 
-    private fun initFirebaseSafely() {
+    private fun initFirebaseCore() {
         try {
             FirebaseApp.initializeApp(this)
 
-            FirebaseCrashlytics
-                .getInstance()
-                .setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
+            val crashlytics = FirebaseCrashlytics.getInstance()
+            crashlytics.setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
+            crashlytics.setCustomKey("app_version", BuildConfig.VERSION_NAME)
+            crashlytics.setCustomKey("build_type", BuildConfig.BUILD_TYPE)
+            crashlytics.setCustomKey("device_model", Build.MODEL)
+            crashlytics.setCustomKey("os_sdk", Build.VERSION.SDK_INT)
 
-            Log.d(TAG, "✅ Firebase initialized successfully")
+            Log.d(TAG, "✅ Firebase core and Crashlytics initialized synchronously")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Firebase core initialization failed", e)
+        }
+    }
 
-            FirebaseMessaging.getInstance()
-                .token
-                .addOnCompleteListener { task ->
-
+    private fun fetchFcmTokenAsync() {
+        appScope.launch {
+            try {
+                FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                     if (!task.isSuccessful) {
-                        Log.e(
-                            TAG,
-                            "❌ Failed to obtain FCM Token",
-                            task.exception
-                        )
+                        Log.e(TAG, "❌ Failed to obtain FCM Token", task.exception)
                         return@addOnCompleteListener
                     }
 
-                    val token = task.result
-
-                    Log.d(TAG, "==============================")
-                    Log.d(TAG, "FCM TOKEN:")
-                    Log.d(TAG, token)
-                    Log.d(TAG, "==============================")
+                    val token = task.result ?: return@addOnCompleteListener
+                    Log.d(TAG, "✅ FCM Token obtained: $token")
 
                     // Cache the token so it can be registered after a later login, and
-                    // register immediately when a session already exists (onNewToken alone
-                    // does not fire on a fresh install — this closes that gap).
+                    // register immediately when a session already exists.
                     tokenStore.saveFcmToken(token)
                     if (tokenStore.isAuthenticated) {
                         appScope.launch {
@@ -99,9 +95,9 @@ class ZarudaApplication : Application(), ImageLoaderFactory {
                         }
                     }
                 }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Firebase initialization failed", e)
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Error retrieving FCM token", e)
+            }
         }
     }
 

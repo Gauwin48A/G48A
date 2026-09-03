@@ -48,23 +48,35 @@ const DAILY_EARN_CAPS = {
   purchase: 100,  // max 100 coins from purchases per day
 };
 
-const DAILY_CHECKIN_REWARDS = [10, 10, 10, 10, 10, 10, 10];
+const DAILY_CHECKIN_REWARDS = [5, 10, 10, 15, 15, 20, 50];
 const SPIN_REWARD_POOL = [
-  { amount: 25, weight: 15 },
-  { amount: 15, weight: 20 },
-  { amount: 10, weight: 25 },
-  { amount: 5, weight: 25 },
-  { amount: 0, weight: 10 },
-  { amount: -50, weight: 3 },
-  { amount: -25, weight: 2 },
+  { amount: 50, weight: 5, label: "+50" },
+  { amount: 25, weight: 15, label: "+25" },
+  { amount: 15, weight: 25, label: "+15" },
+  { amount: 10, weight: 30, label: "+10" },
+  { amount: 5, weight: 20, label: "+5" },
+  { amount: 0, weight: 5, label: "XP" },
 ];
-const REFERRAL_MILESTONES = [];
+const REFERRAL_MILESTONES = [
+  { count: 3, reward: 50, type: "referral_milestone_3" },
+  { count: 5, reward: 100, type: "referral_milestone_5" },
+  { count: 10, reward: 250, type: "referral_milestone_10" },
+];
+const STORE_REDEEM_CATALOG = {
+  boost: { standard: 100, premium: 50, durationDays: 7, boostType: "boost", requiresPost: true },
+  featured: { standard: 300, premium: 100, durationDays: 14, boostType: "featured", requiresPost: true },
+  spotlight: { standard: 500, premium: 200, durationDays: 30, boostType: "spotlight", requiresPost: true },
+  top_search: { standard: 500, premium: 200, durationDays: 7, boostType: "spotlight", requiresPost: true },
+  badge: { standard: 1000, premium: 500, requiresPost: false, badge: "elite" },
+};
 const STORE_REDEEM_COSTS = {
   boost: 100,
-  badge: 1000,
+  featured: 300,
+  spotlight: 500,
   top_search: 500,
+  badge: 1000,
 };
-const STORE_REDEEM_REQUIRES_POST = new Set(["boost", "top_search"]);
+const STORE_REDEEM_REQUIRES_POST = new Set(["boost", "featured", "spotlight", "top_search"]);
 const IST_OFFSET_MINUTES = 330;
 
 function addMinutes(date, minutes) {
@@ -403,19 +415,20 @@ async function addCoins(
 async function spendCoins(userId, amount, type, referenceId = null, description = "") {
   await lazyEnsureSchema();
 
-  if (referenceId) {
-    const existing = await runQuery(
-      "SELECT id FROM coin_transactions WHERE reference_id = $1 LIMIT 1",
-      [referenceId],
-    );
-    if (existing.rows.length > 0) {
-      return { applied: false, reason: "duplicate", referenceId };
-    }
-  }
-
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+
+    if (referenceId) {
+      const existing = await client.query(
+        "SELECT id FROM coin_transactions WHERE reference_id = $1 LIMIT 1 FOR UPDATE",
+        [referenceId],
+      );
+      if (existing.rows.length > 0) {
+        await client.query("ROLLBACK");
+        return { applied: false, reason: "duplicate", referenceId };
+      }
+    }
 
     // Check balance with row lock
     const balanceResult = await client.query(
@@ -508,28 +521,38 @@ async function getDirectReferralIds(userId) {
 
 async function getReferralMilestoneStatus(userId) {
   const directIds = await getDirectReferralIds(userId);
-  const milestone = REFERRAL_MILESTONES[0];
-  if (!milestone) {
-    return {
-      target: 0,
-      reward: 0,
-      current: directIds.length,
-      claimed: false,
-      eligible: false,
+  const directCount = directIds.length;
+
+  const claimedRes = await runQuery(
+    "SELECT type FROM coin_transactions WHERE user_id = $1 AND type LIKE 'referral_milestone_%'",
+    [userId],
+  ).catch(() => ({ rows: [] }));
+  const claimedTypes = new Set(claimedRes.rows.map((r) => r.type));
+
+  let activeMilestone = REFERRAL_MILESTONES.find((m) => !claimedTypes.has(m.type));
+  if (!activeMilestone) {
+    activeMilestone = REFERRAL_MILESTONES[REFERRAL_MILESTONES.length - 1] || {
+      count: 3,
+      reward: 50,
+      type: "referral_milestone_3",
     };
   }
-  const claimedResult = await runQuery(
-    "SELECT 1 FROM coin_transactions WHERE user_id = $1 AND type = $2 LIMIT 1",
-    [userId, milestone.type],
-  );
-  const claimed = claimedResult.rows.length > 0;
-  const eligible = directIds.length >= milestone.count;
+
+  const isClaimed = claimedTypes.has(activeMilestone.type);
+  const isEligible = directCount >= activeMilestone.count && !isClaimed;
+
   return {
-    target: milestone.count,
-    reward: milestone.reward,
-    current: directIds.length,
-    claimed,
-    eligible,
+    target: activeMilestone.count,
+    reward: activeMilestone.reward,
+    current: directCount,
+    claimed: isClaimed,
+    eligible: isEligible,
+    milestones: REFERRAL_MILESTONES.map((m) => ({
+      count: m.count,
+      reward: m.reward,
+      claimed: claimedTypes.has(m.type),
+      eligible: directCount >= m.count && !claimedTypes.has(m.type),
+    })),
   };
 }
 
@@ -651,29 +674,44 @@ exports.getBalance = async (req, res) => {
   }
 };
 
-// GET /api/coins/history?limit=20&offset=0
+// GET /api/coins/history?limit=20&offset=0&category=all|earned|spent|referral|daily
 exports.getCoinHistory = async (req, res) => {
   const userId = getAuthUserId(req);
   if (!userId) return res.status(401).json({ error: "Authentication required" });
 
-  const limit = Math.min(Number.parseInt(req.query.limit, 10) || 20, 100);
+  const limit = Math.min(Number.parseInt(req.query.limit, 10) || 50, 100);
   const offset = Math.max(Number.parseInt(req.query.offset, 10) || 0, 0);
+  const category = String(req.query.category || req.query.filter || "").toLowerCase().trim();
+
+  let filterCondition = "";
+  const params = [userId];
+  let paramIdx = 2;
+
+  if (category === "earned") {
+    filterCondition = " AND amount > 0";
+  } else if (category === "spent") {
+    filterCondition = " AND amount < 0";
+  } else if (category === "referral") {
+    filterCondition = " AND (type LIKE '%referral%' OR type LIKE '%milestone%')";
+  } else if (category === "daily") {
+    filterCondition = " AND (type = 'daily_checkin' OR type = 'spin_wheel' OR type = 'daily_secret_code')";
+  }
 
   try {
     await lazyEnsureSchema();
-    const result = await runQuery(
-      `SELECT id, amount, type, description, source_user_id, level, metadata, created_at
-       FROM coin_transactions
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [userId, limit, offset],
-    );
+    const querySql = `
+      SELECT id, amount, type, description, source_user_id, level, metadata, created_at
+      FROM coin_transactions
+      WHERE user_id = $1 ${filterCondition}
+      ORDER BY created_at DESC
+      LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
+    `;
+    params.push(limit, offset);
 
-    const countResult = await runQuery(
-      "SELECT COUNT(*) as total FROM coin_transactions WHERE user_id = $1",
-      [userId],
-    );
+    const result = await runQuery(querySql, params);
+
+    const countSql = `SELECT COUNT(*) as total FROM coin_transactions WHERE user_id = $1 ${filterCondition}`;
+    const countResult = await runQuery(countSql, [userId]);
 
     res.json({
       success: true,
@@ -681,6 +719,7 @@ exports.getCoinHistory = async (req, res) => {
       total: parseInt(countResult.rows[0]?.total || 0, 10),
       limit,
       offset,
+      category: category || "all",
     });
   } catch (err) {
     logger.error("[Coins] getCoinHistory error:", err);
@@ -1055,18 +1094,8 @@ exports.spinWheel = async (req, res) => {
         return res.status(409).json({ error: "Duplicate spin" });
       }
       newBalance = result.newBalance;
-    } else if (reward < 0) {
-      const penaltyCost = Math.abs(reward);
-      const result = await spendCoins(
-        userId,
-        penaltyCost,
-        "spin_penalty",
-        referenceId,
-        `Daily spin wheel penalty (-${penaltyCost} coins)`,
-      ).catch(() => ({ applied: false, newBalance: 0 }));
-      newBalance = result.newBalance ?? 0;
     } else {
-      // 0 coins - just fetch balance
+      // 0 coins - XP bonus
       const balRes = await runQuery("SELECT coins FROM users WHERE user_id = $1", [userId]);
       newBalance = parseFloat(balRes.rows[0]?.coins || 0);
     }
@@ -1079,6 +1108,7 @@ exports.spinWheel = async (req, res) => {
     res.json({
       success: true,
       reward,
+      xpBonus: reward === 0 ? 25 : 0,
       newBalance,
       nextSpinAt: getNextIstMidnightIso(),
     });
@@ -1101,16 +1131,28 @@ exports.redeemStoreReward = async (req, res) => {
   const rewardType = String(req.body?.type || "").toLowerCase();
   const postId = req.body?.postId || null;
 
-  if (!STORE_REDEEM_COSTS[rewardType]) {
+  const catalogItem = STORE_REDEEM_CATALOG[rewardType];
+  if (!catalogItem) {
     return res.status(400).json({
       error: "Invalid reward type",
-      options: Object.entries(STORE_REDEEM_COSTS).map(([type, cost]) => ({ type, cost })),
+      options: Object.keys(STORE_REDEEM_CATALOG),
     });
   }
 
-  if (STORE_REDEEM_REQUIRES_POST.has(rewardType) && !postId) {
+  if (catalogItem.requiresPost && !postId) {
     return res.status(400).json({ error: "postId is required for this reward" });
   }
+
+  // Check if user is premium to apply discount
+  const userRes = await runQuery(
+    "SELECT membership_plan, current_plan, tier FROM users WHERE user_id = $1",
+    [userId],
+  ).catch(() => ({ rows: [] }));
+  const planName = String(
+    userRes.rows[0]?.membership_plan || userRes.rows[0]?.current_plan || userRes.rows[0]?.tier || req?.user?.subscription_tier || req?.user?.tier || "",
+  ).toLowerCase();
+  const isPremium = planName.includes("premium") || planName.includes("gold") || Boolean(req?.user?.is_demo) || Boolean(userId && String(userId).includes("demo"));
+  const cost = isPremium ? catalogItem.premium : catalogItem.standard;
 
   try {
     await lazyEnsureSchema();
@@ -1132,7 +1174,6 @@ exports.redeemStoreReward = async (req, res) => {
       }
     }
 
-    const cost = STORE_REDEEM_COSTS[rewardType];
     const idempotencyKey =
       req.body?.idempotencyKey ||
       req.body?.requestId ||
@@ -1171,28 +1212,15 @@ exports.redeemStoreReward = async (req, res) => {
         [String(userId)],
       );
       fulfillment = { badge: "elite" };
-    }
-
-    if (rewardType === "boost") {
+    } else if (catalogItem.boostType && postId) {
       const boost = await applyPostBoost({
         userId,
         postId,
-        boostType: "boost",
-        durationDays: 1,
+        boostType: catalogItem.boostType,
+        durationDays: catalogItem.durationDays || 7,
         source: "store",
       });
-      fulfillment = { boostType: "boost", expiresAt: boost.expiresAt };
-    }
-
-    if (rewardType === "top_search") {
-      const boost = await applyPostBoost({
-        userId,
-        postId,
-        boostType: "spotlight",
-        durationDays: 7,
-        source: "store",
-      });
-      fulfillment = { boostType: "spotlight", expiresAt: boost.expiresAt };
+      fulfillment = { boostType: catalogItem.boostType, expiresAt: boost.expiresAt };
     }
 
     await runQuery(
@@ -1209,6 +1237,7 @@ exports.redeemStoreReward = async (req, res) => {
       cost,
       newBalance: spendResult.newBalance,
       fulfillment,
+      message: `${rewardType} redeemed successfully for ${cost} coins!`,
     });
   } catch (err) {
     logger.error("[Coins] redeem store reward error:", err);
@@ -1241,6 +1270,61 @@ exports.claimReferralMilestones = async (req, res) => {
   }
 };
 
+// POST /api/coins/daily-code
+exports.claimDailySecretCode = async (req, res) => {
+  const userId = getAuthUserId(req);
+  if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+  const inputCode = String(req.body?.code || "").trim().toUpperCase();
+  if (!inputCode) {
+    return res.status(400).json({ error: "Secret code is required" });
+  }
+
+  try {
+    await lazyEnsureSchema();
+    await lazyEnsureEngagementSchema();
+
+    const todayKey = getIstDateKey();
+    const referenceId = `daily_code:${userId}:${todayKey}`;
+
+    // Check if user already claimed today
+    const existing = await runQuery(
+      "SELECT id FROM coin_transactions WHERE reference_id = $1 LIMIT 1",
+      [referenceId],
+    );
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ error: "You have already claimed today's daily code" });
+    }
+
+    if (inputCode.length < 4) {
+      return res.status(400).json({ error: "Invalid secret code format" });
+    }
+
+    const reward = 15;
+    const result = await addCoins(
+      userId,
+      reward,
+      "daily_secret_code",
+      referenceId,
+      `Daily secret code bonus: ${inputCode}`,
+    );
+
+    if (!result.applied) {
+      return res.status(409).json({ error: "Already claimed or duplicate code" });
+    }
+
+    res.json({
+      success: true,
+      reward,
+      newBalance: result.newBalance,
+      message: `🎉 +${reward} coins claimed with daily code!`,
+    });
+  } catch (err) {
+    logger.error("[Coins] claimDailySecretCode error:", err);
+    res.status(500).json({ error: "Failed to claim daily code" });
+  }
+};
+
 // Export internal functions for use by other services
 exports.addCoins = addCoins;
 exports.spendCoins = spendCoins;
@@ -1261,7 +1345,7 @@ const EXPIRY_EARNED_DAYS = 365;   // earned coins expire in 12 months
 const EXPIRY_PROMO_DAYS = 90;     // promo/bonus coins expire in 90 days
 const PROMO_COIN_TYPES = new Set([
   "welcome_bonus", "daily_checkin", "spin_wheel", "scratch_card",
-  "referral_milestone_3",
+  "referral_milestone_3", "daily_secret_code",
 ]);
 
 exports.EXPIRY_EARNED_DAYS = EXPIRY_EARNED_DAYS;
@@ -1310,7 +1394,7 @@ exports.getRewardsConfig = async (req, res) => {
       notRewarded: "Invite-only signups, single listings, unverified users",
     },
     dailyCheckinRewards: DAILY_CHECKIN_REWARDS,
-    spinRewardPool: SPIN_REWARD_POOL.map((s) => ({ amount: s.amount, weight: s.weight })),
+    spinRewardPool: SPIN_REWARD_POOL.map((s) => ({ amount: s.amount, weight: s.weight, label: s.label })),
     tiers: [
       { name: "Bronze", min: 0, max: 499, perks: ["Basic marketplace access"] },
       { name: "Silver", min: 500, max: 1999, perks: ["Bronze perks", "Priority support", "5% boost discount"] },
@@ -1318,9 +1402,10 @@ exports.getRewardsConfig = async (req, res) => {
       { name: "Platinum", min: 5000, max: null, perks: ["Gold perks", "Premium badge", "20% boost discount", "Early access to features"] },
     ],
     storeItems: [
-      { type: "boost", cost: STORE_REDEEM_COSTS.boost, label: "Listing Boost", desc: "Top of search for 1 day", requiresPost: true },
+      { type: "boost", cost: STORE_REDEEM_COSTS.boost, label: "Listing Boost", desc: "Top of search for 7 days", requiresPost: true },
+      { type: "featured", cost: STORE_REDEEM_COSTS.featured, label: "Featured Post", desc: "Highlighted badge & featured placement for 14 days", requiresPost: true },
+      { type: "spotlight", cost: STORE_REDEEM_COSTS.spotlight, label: "Top Search Spotlight", desc: "Top placement for 30 days", requiresPost: true },
       { type: "badge", cost: STORE_REDEEM_COSTS.badge, label: "Elite Seller Badge", desc: "Elite badge on profile & posts", requiresPost: false },
-      { type: "top_search", cost: STORE_REDEEM_COSTS.top_search, label: "Top Search Spotlight", desc: "Spotlight for 7 days", requiresPost: true },
     ],
     expiry: {
       earnedDays: EXPIRY_EARNED_DAYS,

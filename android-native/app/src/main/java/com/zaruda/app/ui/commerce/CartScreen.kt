@@ -90,6 +90,7 @@ class CartViewModel @Inject constructor(
     private val salesRepo: SalesRepository,
     private val cartItemDao: com.zaruda.app.data.local.db.CartItemDao,
     private val localeManager: com.zaruda.app.core.LocaleManager,
+    private val analytics: com.zaruda.app.core.AnalyticsHelper,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CartUiState())
     val state: StateFlow<CartUiState> = _state.asStateFlow()
@@ -263,11 +264,15 @@ class CartViewModel @Inject constructor(
             when (val r = salesRepo.requestSale(
                 SaleRequest(postId = postId, sellerId = sellerId, paymentMode = "IN_APP")
             )) {
-                is ApiResult.Success -> _state.value = _state.value.copy(
-                    buying = false,
-                    buyingItem = null,
-                    buyMessage = r.data.message ?: "Purchase request sent! The seller will confirm shortly.",
-                )
+                is ApiResult.Success -> {
+                    val itemTitle = item.title ?: item.postId ?: "item"
+                    analytics.logAddToCart(item.postId ?: "unknown", itemTitle, item.price ?: 0.0)
+                    _state.value = _state.value.copy(
+                        buying = false,
+                        buyingItem = null,
+                        buyMessage = r.data.message ?: "Purchase request sent! The seller will confirm shortly.",
+                    )
+                }
                 is ApiResult.Failure -> _state.value = _state.value.copy(
                     buying = false,
                     buyingItem = null,

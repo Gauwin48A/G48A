@@ -8,6 +8,7 @@ import com.zaruda.app.data.local.TokenStore
 import com.zaruda.app.data.remote.ZarudaApi
 import com.zaruda.app.data.remote.dto.EmailLoginRequest
 import com.zaruda.app.data.remote.dto.EmailSignupRequest
+import com.zaruda.app.data.remote.dto.GoogleSignInRequest
 import com.zaruda.app.data.remote.dto.ForgotPasswordRequest
 import com.zaruda.app.data.remote.dto.ResetPasswordRequest
 import com.zaruda.app.data.remote.dto.AadhaarSendOtpRequest
@@ -27,6 +28,8 @@ import com.zaruda.app.data.local.db.PostDao
 import com.zaruda.app.data.local.db.CategoryDao
 import com.zaruda.app.data.local.db.WishlistItemDao
 import com.zaruda.app.data.local.db.CartItemDao
+import com.zaruda.app.core.AnalyticsHelper
+import com.zaruda.app.core.CrashlyticsHelper
 import com.zaruda.app.domain.model.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,6 +47,8 @@ class AuthRepository @Inject constructor(
     private val categoryDao: CategoryDao,
     private val wishlistItemDao: WishlistItemDao,
     private val cartItemDao: CartItemDao,
+    private val crashlytics: CrashlyticsHelper,
+    private val analytics: AnalyticsHelper,
 ) {
     val isAuthenticated: Flow<Boolean> = tokenStore.accessToken.map { token ->
         !token.isNullOrBlank() && (tokenStore.isDemoSession || !JwtHelper.isExpired(token, bufferSeconds = 10))
@@ -75,6 +80,24 @@ class AuthRepository @Inject constructor(
             .toString()
         val token = "${header.toBase64Url()}.${payload.toBase64Url()}.demo"
         tokenStore.save(token, "local-demo-refresh-token")
+        syncUserContext(null, token)
+    }
+
+    private fun syncUserContext(user: User?, token: String?) {
+        val uid = user?.id?.toString()
+            ?: JwtHelper.extractClaim(token, "userId")
+            ?: JwtHelper.extractClaim(token, "id")
+            ?: JwtHelper.extractClaim(token, "sub")
+            ?: return
+        val email = user?.email ?: JwtHelper.extractClaim(token, "email")
+        val role = user?.role ?: JwtHelper.extractClaim(token, "role")
+        crashlytics.setUser(uid, email, role)
+        analytics.setUserContext(uid, role)
+    }
+
+    private fun clearUserContext() {
+        crashlytics.clearUser()
+        analytics.setUserContext(null, null)
     }
 
     /** Email/password login. Prefetches CSRF token first. Returns AuthResponse to check requireOtp. */
@@ -85,6 +108,7 @@ class AuthRepository @Inject constructor(
         val token = res.token ?: error("Server did not return token")
         tokenStore.save(token, res.refreshToken)
         registerPushTokenIfCached()
+        syncUserContext(res.user, token)
         res
     }
 
@@ -95,6 +119,7 @@ class AuthRepository @Inject constructor(
         if (res.token != null) {
             tokenStore.save(res.token, res.refreshToken)
             registerPushTokenIfCached()
+            syncUserContext(res.user, res.token)
         }
         res
     }
@@ -105,6 +130,20 @@ class AuthRepository @Inject constructor(
         Unit
     }
 
+    /**
+     * Google 1-Tap Sign-In — sends the Google ID token to the backend.
+     * The backend verifies the token, finds/creates the user, and returns a Zaruda JWT.
+     */
+    suspend fun signInWithGoogle(idToken: String, fullName: String? = null, email: String? = null): ApiResult<AuthResponse> = safeApiCall {
+        runCatching { api.csrfToken() }
+        val res = api.googleSignIn(GoogleSignInRequest(idToken = idToken, fullName = fullName, email = email))
+        val token = res.token ?: error("Server did not return token")
+        tokenStore.save(token, res.refreshToken)
+        registerPushTokenIfCached()
+        syncUserContext(res.user, token)
+        res
+    }
+
     /** Email/password signup. Prefetches CSRF token first. */
     suspend fun signUp(fullName: String, email: String, phone: String, password: String): ApiResult<User?> = safeApiCall {
         runCatching { api.csrfToken() } // Prefetch to set XSRF-TOKEN cookie
@@ -112,6 +151,7 @@ class AuthRepository @Inject constructor(
         val token = res.token ?: error("Server did not return token")
         tokenStore.save(token, res.refreshToken)
         registerPushTokenIfCached()
+        syncUserContext(res.user, token)
         res.user
     }
 
@@ -123,6 +163,7 @@ class AuthRepository @Inject constructor(
 
     suspend fun logout(): ApiResult<Unit> = safeApiCall {
         runCatching { api.logout() }
+        clearUserContext()
         tokenStore.clear()
         // Clear all user-specific Room DB caches so a different user won't see stale data
         postDao.clearAll()

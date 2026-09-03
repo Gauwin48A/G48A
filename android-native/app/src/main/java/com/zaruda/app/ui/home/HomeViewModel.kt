@@ -41,6 +41,8 @@ class HomeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val localeManager: LocaleManager,
     val locationManager: com.zaruda.app.core.LocationSetupManager,
+    private val analytics: com.zaruda.app.core.AnalyticsHelper,
+    private val crashlytics: com.zaruda.app.core.CrashlyticsHelper,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeUiState())
@@ -69,6 +71,9 @@ class HomeViewModel @Inject constructor(
         if (key != _categoryKey) {
             _categoryKey = key
             savedStateHandle["categoryKey"] = key
+            if (!key.isNullOrBlank()) {
+                analytics.logCategoryEnter(key, "home_filter")
+            }
             _state.value = _state.value.copy(selectedSubcategory = null, subcategories = emptyList())
             load(initial = true)
         }
@@ -82,6 +87,9 @@ class HomeViewModel @Inject constructor(
             posts = emptyList(),
             loading = true,
         )
+        if (!id.isNullOrBlank()) {
+            analytics.logCategoryEnter(id, "subcategory_filter")
+        }
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             val categoryId = id ?: _categoryKey
@@ -94,10 +102,13 @@ class HomeViewModel @Inject constructor(
                     error = null,
                     lastLoadTimeMs = System.currentTimeMillis(),
                 )
-                is ApiResult.Failure -> _state.value = _state.value.copy(
-                    loading = false,
-                    error = res.error.message,
-                )
+                is ApiResult.Failure -> {
+                    crashlytics.logApiError(res.error, "HOME_FEED", "Failed to load subcategory feed for $categoryId")
+                    _state.value = _state.value.copy(
+                        loading = false,
+                        error = res.error.message,
+                    )
+                }
             }
         }
     }

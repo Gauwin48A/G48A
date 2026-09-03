@@ -96,6 +96,7 @@ import com.zaruda.app.ui.auth.ForgotPasswordScreen
 import com.zaruda.app.ui.auth.LoginScreen
 import com.zaruda.app.ui.auth.ResetPasswordScreen
 import com.zaruda.app.ui.auth.SignUpScreen
+import com.zaruda.app.ui.onboarding.BrandLaunchScreen
 import com.zaruda.app.ui.account.AccountDeleteScreen
 import com.zaruda.app.ui.account.AnalyticsScreen
 import com.zaruda.app.ui.account.DashboardScreen
@@ -181,6 +182,7 @@ import android.os.Bundle
 import com.zaruda.app.data.repository.KycRepository
 import com.zaruda.app.data.repository.TiersRepository
 import com.zaruda.app.core.ApiResult
+import com.zaruda.app.core.CrashlyticsHelper
 
 @HiltViewModel
 class AppThemeViewModel @Inject constructor(
@@ -261,7 +263,14 @@ fun ZarudaApp(
         LaunchedEffect(Unit) {
             showOnboarding = !onboardingVm.onboardingCompleted.value
         }
+        var showSplash by rememberSaveable { mutableStateOf(true) }
         ZarudaTheme(themeMode = themeMode) {
+            if (showSplash) {
+                com.zaruda.app.ui.splash.AnimatedSplashScreen(
+                    onSplashFinished = { showSplash = false },
+                )
+                return@ZarudaTheme
+            }
             if (showOnboarding) {
                 com.zaruda.app.ui.onboarding.OnboardingScreen(
                     onFinished = {
@@ -295,19 +304,24 @@ fun ZarudaApp(
 
         val context = LocalContext.current
         val exitScope = rememberCoroutineScope()
-        // Request location permission on launch and auto-detect when granted
+        // Request location permission on first launch only (skip if already restored from cache)
         val locationPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
             contract = androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions(),
         ) { perms ->
             val fine = perms[android.Manifest.permission.ACCESS_FINE_LOCATION] ?: false
             val coarse = perms[android.Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
             if (fine || coarse) {
-                exitScope.launch {
-                    appLocationVm.detectLocation()
+                // Only detect if location isn't already fresh (cooldown-aware)
+                if (!appLocationVm.isLocationSet.value || !appLocationVm.isLocationFresh()) {
+                    exitScope.launch {
+                        appLocationVm.detectLocation(force = true)
+                    }
                 }
             }
         }
         LaunchedEffect(Unit) {
+            // Skip entirely if location was already restored from SharedPreferences cache
+            if (appLocationVm.isLocationSet.value) return@LaunchedEffect
             val hasFine = androidx.core.content.ContextCompat.checkSelfPermission(
                 context, android.Manifest.permission.ACCESS_FINE_LOCATION
             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
@@ -323,7 +337,33 @@ fun ZarudaApp(
                 appLocationVm.detectLocation()
             }
         }
+        // ── Android 13+ POST_NOTIFICATIONS runtime permission ──────────────
+        val notifPermLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+            contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+        ) { /* no-op: user either grants or denies */ }
+        LaunchedEffect(Unit) {
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                val hasNotif = androidx.core.content.ContextCompat.checkSelfPermission(
+                    context, android.Manifest.permission.POST_NOTIFICATIONS
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                if (!hasNotif) notifPermLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+
         val analytics = remember(context) { FirebaseAnalytics.getInstance(context) }
+
+        androidx.compose.runtime.DisposableEffect(navController) {
+            val listener = androidx.navigation.NavController.OnDestinationChangedListener { _, destination, _ ->
+                val route = destination.route ?: return@OnDestinationChangedListener
+                val params = android.os.Bundle().apply {
+                    putString(FirebaseAnalytics.Param.SCREEN_NAME, route)
+                    putString(FirebaseAnalytics.Param.SCREEN_CLASS, route)
+                }
+                analytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, params)
+            }
+            navController.addOnDestinationChangedListener(listener)
+            onDispose { navController.removeOnDestinationChangedListener(listener) }
+        }
 
 
         fun openAllPosts(categoryKey: String? = null) {
@@ -402,11 +442,16 @@ fun ZarudaApp(
         val localeVersion = localeManager?.localeVersion?.collectAsState()
 
         val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
+        val crashlyticsHelper = remember { com.zaruda.app.core.CrashlyticsHelper() }
         LaunchedEffect(isAuthenticated) {
             if (isAuthenticated) {
                 showAuthGate = false
                 // Schedule daily plan expiry notification checks
                 com.zaruda.app.core.schedulePlanExpiryChecks(appContext)
+                // Set Crashlytics session context
+                crashlyticsHelper.logBreadcrumb("SESSION", "User authenticated")
+            } else {
+                crashlyticsHelper.logBreadcrumb("SESSION", "User not authenticated")
             }
         }
 
@@ -473,18 +518,22 @@ fun ZarudaApp(
         }
 
         val startDestination = if (isAuthenticated) Routes.MAIN_GRAPH else Routes.AUTH_GRAPH
+        var showingLaunch by remember { mutableStateOf(true) }
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Offline banner shown above all content
-            if (connectivityObserver != null) {
-                OfflineBanner(connectivityObserver = connectivityObserver)
-            }
+        if (showingLaunch) {
+            BrandLaunchScreen(onFinished = { showingLaunch = false })
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Offline banner shown above all content
+                if (connectivityObserver != null) {
+                    OfflineBanner(connectivityObserver = connectivityObserver)
+                }
 
-            // Global snackbar host — fires notifications from any child screen
-            Box(modifier = Modifier.fillMaxSize()) {
-                NavHost(
-            navController = navController,
-            startDestination = startDestination,
+                // Global snackbar host — fires notifications from any child screen
+                Box(modifier = Modifier.fillMaxSize()) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = startDestination,
             enterTransition = { ZarudaMotion.pageEnter },
             exitTransition = { ZarudaMotion.pageExit },
             popEnterTransition = { ZarudaMotion.pagePopEnter },
@@ -582,7 +631,7 @@ fun ZarudaApp(
                 }
 
                 composable(Routes.ALL_POSTS) {
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false) {
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = true) {
                         ExploreScreen(
                             onOpenPost = { id ->
                                 navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
@@ -614,7 +663,7 @@ fun ZarudaApp(
                     }
 
                 composable(Routes.FOR_YOU)  {
-                    MainShell(navController = navController, selected = BottomTab.FOR_YOU, showTopBar = false) {
+                    MainShell(navController = navController, selected = BottomTab.FOR_YOU, showTopBar = true) {
                         com.zaruda.app.ui.foryou.ForYouScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
@@ -777,7 +826,10 @@ fun ZarudaApp(
             composable(Routes.LOCATION_SELECTION) {
                 com.zaruda.app.ui.location.LocationSelectionScreen(
                     onBack = { navController.popBackStack() },
-                    onSelect = { _ -> navController.popBackStack() },
+                    onSelect = { city ->
+                        appLocationVm.selectCity(city.name, city.lat, city.lng)
+                        navController.popBackStack()
+                    },
                 )
             }
 
@@ -1229,25 +1281,47 @@ fun ZarudaApp(
                 CentreListingsScreen(centreId = centreId, onBack = { navController.popBackStack() })
             }
 
-            // â”€â”€ Legal â”€â”€
+            val safePopBack: () -> Unit = {
+                if (!navController.popBackStack()) {
+                    navController.navigate(Routes.HOME) { launchSingleTop = true }
+                }
+            }
+
+            // ── Static & Legal Pages ──
+            composable(Routes.ABOUT_US) {
+                com.zaruda.app.ui.staticpages.AboutUsScreen(onBack = safePopBack)
+            }
+
+            composable(Routes.CONTACT_US) {
+                com.zaruda.app.ui.staticpages.ContactUsScreen(onBack = safePopBack)
+            }
+
+            composable(Routes.FAQ) {
+                com.zaruda.app.ui.staticpages.FAQScreen(onBack = safePopBack)
+            }
+
+            composable(Routes.SHIPPING_POLICY) {
+                com.zaruda.app.ui.legal.ShippingPolicyScreen(onBack = safePopBack)
+            }
+
             composable(Routes.TERMS) {
-                TermsScreen(onBack = { navController.popBackStack() })
+                TermsScreen(onBack = safePopBack)
             }
 
             composable(Routes.PRIVACY) {
-                PrivacyScreen(onBack = { navController.popBackStack() })
+                PrivacyScreen(onBack = safePopBack)
             }
 
             composable(Routes.REFUND) {
-                RefundScreen(onBack = { navController.popBackStack() })
+                RefundScreen(onBack = safePopBack)
             }
 
             composable(Routes.HELP_SUPPORT) {
-                HelpSupportScreen(onBack = { navController.popBackStack() })
+                HelpSupportScreen(onBack = safePopBack)
             }
 
             composable(Routes.ADMIN_PANEL) {
-                AdminPanelScreen(onBack = { navController.popBackStack() })
+                AdminPanelScreen(onBack = safePopBack)
             }
 
             composable(
@@ -1255,7 +1329,7 @@ fun ZarudaApp(
                 arguments = listOf(navArgument("code") { type = NavType.StringType }),
             ) { entry ->
                 val code = entry.arguments?.getString("code").orEmpty()
-                InviteScreen(code = code, onBack = { navController.popBackStack() })
+                InviteScreen(code = code, onBack = safePopBack)
             }
 
         } // end NavHost
@@ -1325,7 +1399,6 @@ fun ZarudaApp(
                     val drawerNav: (String) -> Unit = { route ->
                         showMoreDrawer = false
                         navController.navigate(route) {
-                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                             launchSingleTop = true
                         }
                     }
@@ -1363,6 +1436,7 @@ fun ZarudaApp(
                 }
             }
         }
+    }
 
         } // close CompositionLocalProvider
     }
@@ -1424,8 +1498,15 @@ fun MainShell(
                 val appLocationVm: com.zaruda.app.ui.location.AppLocationViewModel = hiltViewModel()
                 val currentCity by appLocationVm.currentCity.collectAsState()
                 val currentArea by appLocationVm.currentArea.collectAsState()
-                val displayLocationText = remember(currentCity, currentArea) {
-                    if (currentArea.isNotBlank() && currentArea != currentCity) {
+                val currentPincode by appLocationVm.currentPincode.collectAsState()
+                val displayLocationText = remember(currentCity, currentArea, currentPincode) {
+                    if (currentArea.isNotBlank() && currentPincode.isNotBlank()) {
+                        "$currentArea $currentPincode"
+                    } else if (currentPincode.isNotBlank() && currentCity.isNotBlank() && currentCity != "Detecting...") {
+                        "$currentCity $currentPincode"
+                    } else if (currentPincode.isNotBlank()) {
+                        currentPincode
+                    } else if (currentArea.isNotBlank() && currentArea != currentCity) {
                         "$currentArea, $currentCity"
                     } else if (currentCity.isNotBlank() && currentCity != "Detecting...") {
                         currentCity
@@ -1433,6 +1514,7 @@ fun MainShell(
                         "Detecting..."
                     }
                 }
+                val isDetecting by appLocationVm.isDetecting.collectAsState()
                 ZarudaTopBar(
                     onSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                     onWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
@@ -1443,6 +1525,8 @@ fun MainShell(
                     onCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
                     onProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
                     onLocationClick = { navController.navigate(Routes.LOCATION_SELECTION) { launchSingleTop = true } },
+                    onLocationRefresh = { appLocationVm.detectLocation(force = true) },
+                    isLocationDetecting = isDetecting,
                     locationText = displayLocationText,
                 )
                 }

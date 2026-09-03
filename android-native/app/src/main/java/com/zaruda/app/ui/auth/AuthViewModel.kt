@@ -3,7 +3,9 @@ package com.zaruda.app.ui.auth
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.zaruda.app.core.AnalyticsHelper
 import com.zaruda.app.core.ApiResult
+import com.zaruda.app.core.CrashlyticsHelper
 import com.zaruda.app.core.JwtHelper
 import com.zaruda.app.data.repository.AuthRepository
 import com.zaruda.app.ui.common.InputValidators
@@ -36,6 +38,9 @@ data class AuthUiState(
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val repo: AuthRepository,
+    private val googleSignInHelper: GoogleSignInHelper,
+    private val analytics: AnalyticsHelper,
+    private val crashlytics: CrashlyticsHelper,
 ) : ViewModel() {
 
     private companion object {
@@ -53,18 +58,6 @@ class AuthViewModel @Inject constructor(
     /** True if the stored session is a local demo session (no real JWT issued by the server). */
     val isDemoSession: Boolean get() = repo.isDemoSession
 
-    init {
-        // On startup, if a session exists but the access token is expired, proactively refresh.
-        // This prevents the app from landing on the login screen just because a short-lived
-        // access token expired while the app was in the background.
-        if (repo.hasSession && !repo.isCurrentlyAuthenticated) {
-            viewModelScope.launch {
-                repo.tryRefreshToken()
-                // isAuthenticated flow will auto-update when tokenStore.accessToken changes
-            }
-        }
-    }
-
     val isAdmin: StateFlow<Boolean> =
         repo.accessTokenFlow.map { token ->
             val role = JwtHelper.extractClaim(token, "role")
@@ -76,8 +69,71 @@ class AuthViewModel @Inject constructor(
             JwtHelper.extractClaim(token, "userId") ?: JwtHelper.extractClaim(token, "id")
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    init {
+        // Set Crashlytics userId from existing session on startup
+        val existingUserId = currentUserId.value
+        if (existingUserId != null) {
+            crashlytics.setUserId(existingUserId)
+        }
+        // On startup, if a session exists but the access token is expired, proactively refresh.
+        // This prevents the app from landing on the login screen just because a short-lived
+        // access token expired while the app was in the background.
+        if (repo.hasSession && !repo.isCurrentlyAuthenticated) {
+            viewModelScope.launch {
+                repo.tryRefreshToken()
+                // isAuthenticated flow will auto-update when tokenStore.accessToken changes
+            }
+        }
+    }
+
     fun clearError() { _state.value = _state.value.copy(error = null) }
     fun setError(msg: String) { _state.value = _state.value.copy(error = msg, loading = false) }
+
+    /**
+     * Google 1-Tap Sign-In — exchanges Google ID token for a Zaruda JWT via backend.
+     * Called after Credential Manager successfully returns a Google ID token.
+     */
+    fun googleSignIn(idToken: String) {
+        if (_state.value.loading) return
+        if (idToken.isBlank()) {
+            _state.value = AuthUiState(error = "Google sign-in failed: no token received")
+            return
+        }
+        _state.value = AuthUiState(loading = true)
+        viewModelScope.launch {
+            when (val res = repo.signInWithGoogle(idToken)) {
+                is ApiResult.Success -> {
+                    analytics.logLogin("google")
+                    crashlytics.log("Google sign-in successful")
+                    _state.value = AuthUiState(loading = false, success = true)
+                }
+                is ApiResult.Failure -> _state.value = AuthUiState(loading = false, error = res.error.message)
+            }
+        }
+    }
+
+    /**
+     * Full Google 1-Tap flow: launches Credential Manager \u2192 exchanges token with backend.
+     * This is the single-call entry point for UI composables.
+     */
+    fun signInWithGoogle() {
+        if (_state.value.loading) return
+        _state.value = AuthUiState(loading = true)
+        viewModelScope.launch {
+            try {
+                val idToken = googleSignInHelper.signIn()
+                if (idToken != null) {
+                    googleSignIn(idToken)
+                } else {
+                    // User cancelled or sign-in failed \u2014 reset loading
+                    _state.value = AuthUiState()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Google sign-in error", e)
+                _state.value = AuthUiState(error = "Google sign-in failed: ${e.localizedMessage}")
+            }
+        }
+    }
 
     fun signInWithEmail(identifier: String, password: String) {
         if (_state.value.loading) return
@@ -102,6 +158,8 @@ class AuthViewModel @Inject constructor(
                         _state.value = AuthUiState(loading = false, requireOtp = true, otpPhone = identifier, otpCountdown = 120)
                         startOtpCountdown()
                     } else {
+                        analytics.logLogin("email")
+                        crashlytics.log("Email sign-in successful")
                         _state.value = AuthUiState(loading = false, success = true)
                     }
                 }
@@ -245,7 +303,11 @@ class AuthViewModel @Inject constructor(
         _state.value = AuthUiState(loading = true)
         viewModelScope.launch {
             when (val res = repo.signUp(fullName, email, phone, password)) {
-                is ApiResult.Success -> _state.value = AuthUiState(loading = false, success = true)
+                is ApiResult.Success -> {
+                    analytics.logSignUp("email")
+                    crashlytics.log("Email sign-up successful")
+                    _state.value = AuthUiState(loading = false, success = true)
+                }
                 is ApiResult.Failure -> _state.value = AuthUiState(loading = false, error = res.error.message)
             }
         }

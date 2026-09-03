@@ -130,8 +130,8 @@ router.post("/broadcast", protect, async (req, res) => {
     }
 
     // Android FCM tokens via Firebase Admin SDK, web subscriptions via VAPID web-push.
-    const androidTokens = result.rows.filter(r => r.platform !== "web").map(r => r.token);
-    const webTokens = result.rows.filter(r => r.platform === "web").map(r => r.token);
+    const androidTokens = result.rows.filter(r => r.platform === "android").map(r => r.token);
+    const webTokens = result.rows.filter(r => r.platform !== "android").map(r => r.token);
 
     let androidResult = { successCount: 0 };
     if (androidTokens.length) {
@@ -145,6 +145,18 @@ router.post("/broadcast", protect, async (req, res) => {
         deep_link: data?.deep_link || "",
         data: data || {}
       });
+
+      if (androidResult.invalidTokens && androidResult.invalidTokens.length > 0) {
+        try {
+          await runQuery(
+            "UPDATE device_tokens SET is_active = false, updated_at = NOW() WHERE fcm_token = ANY($1::text[])",
+            [androidResult.invalidTokens]
+          );
+          logger.info(`[Push] Pruned ${androidResult.invalidTokens.length} stale FCM tokens on broadcast`);
+        } catch (pruneErr) {
+          logger.warn("[Push] Failed to prune stale broadcast FCM tokens:", pruneErr.message);
+        }
+      }
     }
     const webResult = webTokens.length
       ? await fcm.sendToMultiple(webTokens, title, body, data || {})

@@ -52,6 +52,7 @@ import androidx.compose.material.icons.outlined.Toll
 import androidx.compose.material.icons.outlined.Upgrade
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -638,6 +639,29 @@ class RewardsViewModel @Inject constructor(
         }
     }
 
+    fun claimDailyCode(code: String) {
+        val trimmed = code.trim().uppercase()
+        if (trimmed.isBlank()) return
+        _state.value = _state.value.copy(actionLoading = "daily_code")
+        viewModelScope.launch {
+            when (val r = rewardsRepository.claimDailyCode(trimmed)) {
+                is ApiResult.Success -> {
+                    _state.value = _state.value.copy(
+                        actionLoading = null,
+                        actionResult = r.data.message ?: "\uD83C\uDF89 +15 coins claimed with daily code!",
+                    )
+                    load(refresh = true)
+                }
+                is ApiResult.Failure -> {
+                    _state.value = _state.value.copy(
+                        actionLoading = null,
+                        actionResult = r.error.message.ifBlank { "Invalid code or already claimed today" },
+                    )
+                }
+            }
+        }
+    }
+
     fun clearActionResult() {
         _state.value = _state.value.copy(actionResult = null)
     }
@@ -889,7 +913,7 @@ fun RewardsScreen(
                                     // Member plan badge row
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         Text(
-                                            text = "🪙 Balance: $userCoins Coins (₹${if (isPremium) (userCoins * 0.05).toInt() else (userCoins * 0.01).toInt()})",
+                                            text = "🪙 $userCoins Coins • Marketplace Credits",
                                             style = MaterialTheme.typography.titleMedium,
                                             color = Color.White,
                                             fontWeight = FontWeight.Bold
@@ -909,8 +933,8 @@ fun RewardsScreen(
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Text(
-                                        if (isPremium) "🔥 Premium Active Perk: 100 coins = ₹5.00 (5x Valuation Bonus!)"
-                                        else "Standard Rate: 100 coins = ₹1.00. Upgrade to Premium for 5x valuation!",
+                                        if (isPremium) "🔥 Premium Active Perk: Save up to 5x on Listing Boosts & Spotlights!"
+                                        else "Standard Rate: 100 coins = ₹1.00 in platform value. Upgrade to Premium for 5x boost discounts!",
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.SemiBold,
                                         color = if (isPremium) Color(0xFFD97706) else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1062,15 +1086,14 @@ fun RewardsScreen(
                                             Text("\uD83D\uDD25 $streak-day milestone! Keep going!", modifier = Modifier.padding(8.dp), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
                                         }
                                     }
-                                    // 7-day calendar with reward values
-                                    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                                    val dayRewards = listOf("+10", "+10", "+10", "+10", "+10", "+10", "+10")
-                                    val todayCal = java.util.Calendar.getInstance()
-                                    val todayIndex = (todayCal.get(java.util.Calendar.DAY_OF_WEEK) + 5) % 7
+                                    // 7-day streak progression ladder with escalating reward values
+                                    val days = listOf("Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7")
+                                    val dayRewards = listOf("+5", "+10", "+10", "+15", "+15", "+20", "+50")
+                                    val activeDayIndex = if (canCheckIn) (streak % 7) else ((streak - 1).coerceAtLeast(0) % 7)
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                         days.forEachIndexed { index, day ->
-                                            val isCompleted = if (weekProgress.isNotEmpty()) weekProgress.getOrElse(index) { false } else index < streak
-                                            val isToday = index == todayIndex
+                                            val isCompleted = index < (if (canCheckIn) streak % 7 else ((streak - 1).coerceAtLeast(0) % 7) + 1)
+                                            val isToday = index == activeDayIndex
                                             val isMilestone = listOf(2, 4, 6).contains(index)
                                             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                                 Text(day, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
@@ -1078,18 +1101,18 @@ fun RewardsScreen(
                                                     modifier = Modifier.size(38.dp).clip(CircleShape)
                                                         .background(when {
                                                             isCompleted -> Color(0xFF10B981)
-                                                            isToday && !isCompleted -> Color(0xFF4F46E5)
+                                                            isToday && canCheckIn -> Color(0xFF4F46E5)
                                                             isMilestone -> Color(0xFFFFD700).copy(alpha = 0.3f)
                                                             else -> MaterialTheme.colorScheme.surfaceVariant
                                                         })
-                                                        .then(if (isToday && !isCompleted) Modifier.border(2.dp, Color(0xFF4F46E5), CircleShape) else Modifier)
+                                                        .then(if (isToday && canCheckIn) Modifier.border(2.dp, Color(0xFF4F46E5), CircleShape) else Modifier)
                                                         .then(if (isMilestone && !isCompleted && !isToday) Modifier.border(1.dp, Color(0xFFFFD700).copy(alpha = 0.5f), CircleShape) else Modifier),
                                                     contentAlignment = Alignment.Center,
                                                 ) {
                                                     if (isCompleted) Text("\u2713", color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall)
                                                     else {
                                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                            Text(dayRewards[index], style = MaterialTheme.typography.labelSmall, color = if (isToday) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                                            Text(dayRewards[index], style = MaterialTheme.typography.labelSmall, color = if (isToday && canCheckIn) Color.White else MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                                                         }
                                                     }
                                                 }
@@ -1189,48 +1212,7 @@ fun RewardsScreen(
                             }
                         }
 
-                        // ─── Daily Secret Code (Auto-Generated) ───────────
-                        if (selectedTab == 1) item {
-                            val dailyCode = remember {
-                                val cal = java.util.Calendar.getInstance()
-                                val dayOfYear = cal.get(java.util.Calendar.DAY_OF_YEAR)
-                                val year = cal.get(java.util.Calendar.YEAR)
-                                val hash = (dayOfYear * 31 + year * 7).toString(16).take(6).uppercase()
-                                "CODE$hash"
-                            }
-                            AccentTopCard(listOf(Color(0xFF10B981), Color(0xFF059669)), if (darkTheme) Color(0xFF0F2E20) else Color(0xFFF0FDF4)) {
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(stringResource(R.string.rewards_daily_code), style = MaterialTheme.typography.labelSmall, color = if (darkTheme) Color(0xFF6EE7B7) else Color(0xFF059669), letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold)
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)).padding(horizontal = 16.dp, vertical = 14.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        Column {
-                                            Text(
-                                                text = dailyCode,
-                                                style = MaterialTheme.typography.headlineSmall,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.primary,
-                                                letterSpacing = 2.sp,
-                                            )
-                                            Text(
-                                                "Auto-refreshes daily",
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            )
-                                        }
-                                        OutlinedButton(
-                                            onClick = { clipboardManager.setText(AnnotatedString(dailyCode)); haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
-                                            shape = RoundedCornerShape(8.dp),
-                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                        ) {
-                                            Text("📋 Copy", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                                        }
-                                    }
-                                }
-                            }
-                        }
+
 
                         // ─── Referral Challenge ─────────────────────────
                         if (selectedTab == 2) item {
@@ -1259,7 +1241,7 @@ fun RewardsScreen(
                             }
                         }
 
-                        // ─── Referral Code (Copy) ────────────────────────
+                        // ─── Referral Code (Copy + Share) ────────────────────────
                         if (selectedTab == 2) item {
                             AccentTopCard(listOf(MaterialTheme.colorScheme.primary, Color(0xFF8B5CF6)), if (darkTheme) Color(0xFF1A2744) else Color(0xFFF8FAFF)) {
                                 Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1285,6 +1267,79 @@ fun RewardsScreen(
                                         }
                                     }
                                     Text("Share this code with friends to earn rewards!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                                    // Share buttons row
+                                    val shareText = "🛍️ Join Zaruda — India's Safe & Verified Marketplace! Use my invite code ${user.referralCode ?: "JOINME"} to unlock ₹100 Escrow Bonus on your first deal: https://zaruda.app/invite/${user.referralCode ?: "JOINME"}"
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        // WhatsApp share
+                                        Button(
+                                            onClick = {
+                                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                                    type = "text/plain"
+                                                    putExtra(Intent.EXTRA_TEXT, shareText)
+                                                    setPackage("com.whatsapp")
+                                                }
+                                                try {
+                                                    context.startActivity(intent)
+                                                } catch (_: android.content.ActivityNotFoundException) {
+                                                    // WhatsApp not installed, open chooser
+                                                    val chooser = Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(Intent.EXTRA_TEXT, shareText)
+                                                    }, "Share referral code")
+                                                    context.startActivity(chooser)
+                                                }
+                                            },
+                                            modifier = Modifier.weight(1f).height(38.dp),
+                                            shape = RoundedCornerShape(10.dp),
+                                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                        ) {
+                                            Text("WhatsApp", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        }
+                                        // SMS share
+                                        Button(
+                                            onClick = {
+                                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                                    data = Uri.parse("smsto:")
+                                                    putExtra("sms_body", shareText)
+                                                }
+                                                try {
+                                                    context.startActivity(intent)
+                                                } catch (_: android.content.ActivityNotFoundException) {
+                                                    val chooser = Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(Intent.EXTRA_TEXT, shareText)
+                                                    }, "Share referral code")
+                                                    context.startActivity(chooser)
+                                                }
+                                            },
+                                            modifier = Modifier.weight(1f).height(38.dp),
+                                            shape = RoundedCornerShape(10.dp),
+                                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                        ) {
+                                            Text("SMS", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        }
+                                        // General share
+                                        Button(
+                                            onClick = {
+                                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                                    type = "text/plain"
+                                                    putExtra(Intent.EXTRA_TEXT, shareText)
+                                                }
+                                                context.startActivity(Intent.createChooser(intent, "Share referral code"))
+                                            },
+                                            modifier = Modifier.weight(1f).height(38.dp),
+                                            shape = RoundedCornerShape(10.dp),
+                                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                        ) {
+                                            Text("Share", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1423,7 +1478,7 @@ fun RewardsScreen(
                                     Text(stringResource(R.string.rewards_redeem_store), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                     // Category filter chips
                                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                                        listOf("All", "Premium", "Accessories", "Gift Cards").forEach { cat ->
+                                        listOf("All", "Listing Boosts", "Seller Badges").forEach { cat ->
                                             FilterChip(
                                                 selected = redeemFilter == cat,
                                                 onClick = { redeemFilter = cat },
@@ -1432,27 +1487,19 @@ fun RewardsScreen(
                                             )
                                         }
                                     }
-                                    Text(stringResource(R.string.rewards_store_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    // Premium items
-                                    if (redeemFilter == "All" || redeemFilter == "Premium") {
+                                    Text("Redeem your hard-earned coins for search priority and verified badges", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    // Listing Boost items
+                                    if (redeemFilter == "All" || redeemFilter == "Listing Boosts") {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            RedeemCard("🚀", if (isPremium) "Boost (50c)" else "Boost (200c)", if (isPremium) 50 else 200, user.totalCoins >= if (isPremium) 50 else 200, Color(0xFF10B981), darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
+                                            RedeemCard("🚀", if (isPremium) "Boost (50c)" else "Boost (100c)", if (isPremium) 50 else 100, user.totalCoins >= if (isPremium) 50 else 100, Color(0xFF10B981), darkTheme, Modifier.weight(1f)) { redeemDialogType = "boost" }
                                             RedeemCard("⭐", if (isPremium) "Featured (100c)" else "Featured (300c)", if (isPremium) 100 else 300, user.totalCoins >= if (isPremium) 100 else 300, Color(0xFF7C3AED), darkTheme, Modifier.weight(1f)) { redeemDialogType = "featured" }
                                             RedeemCard("🏆", if (isPremium) "Spotlight (200c)" else "Spotlight (500c)", if (isPremium) 200 else 500, user.totalCoins >= if (isPremium) 200 else 500, Color(0xFFF59E0B), darkTheme, Modifier.weight(1f)) { redeemDialogType = "spotlight" }
                                         }
                                     }
-                                    // Gift Cards
-                                    if (redeemFilter == "All" || redeemFilter == "Gift Cards") {
+                                    // Seller Badges
+                                    if (redeemFilter == "All" || redeemFilter == "Seller Badges") {
                                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            RedeemCard("🎁", "₹5 Gift Card", 250, user.totalCoins >= 250, Color(0xFFEC4899), darkTheme, Modifier.weight(1f)) { redeemDialogType = "gift_5" }
-                                            RedeemCard("🎫", "₹10 Voucher", 450, user.totalCoins >= 450, Color(0xFF14B8A6), darkTheme, Modifier.weight(1f)) { redeemDialogType = "voucher_10" }
-                                        }
-                                    }
-                                    // Accessories
-                                    if (redeemFilter == "All" || redeemFilter == "Accessories") {
-                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            RedeemCard("🎨", "Custom Theme", 150, user.totalCoins >= 150, MaterialTheme.colorScheme.primary, darkTheme, Modifier.weight(1f)) { redeemDialogType = "theme" }
-                                            RedeemCard("🏷️", "Badge Pack", 80, user.totalCoins >= 80, Color(0xFF10B981), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badges" }
+                                            RedeemCard("💎", if (isPremium) "Elite Badge (500c)" else "Elite Badge (1000c)", if (isPremium) 500 else 1000, user.totalCoins >= if (isPremium) 500 else 1000, Color(0xFF0EA5E9), darkTheme, Modifier.weight(1f)) { redeemDialogType = "badge" }
                                         }
                                     }
                                 }
@@ -1487,9 +1534,12 @@ fun RewardsScreen(
                                             }
                                         }
                                         val filteredHistory = state.coinHistory.filter { tx ->
-                                            val descLower = (tx.description ?: tx.action ?: "").lowercase()
+                                            val text = ((tx.description ?: "") + " " + (tx.action ?: "")).lowercase()
                                             when (historyFilter) {
-                                                "bonus" -> tx.action?.contains("bonus", true) == true || tx.action?.contains("referral", true) == true
+                                                "earned" -> tx.amount > 0
+                                                "spent" -> tx.amount < 0
+                                                "referral" -> text.contains("referral") || text.contains("milestone") || text.contains("invite")
+                                                "daily" -> text.contains("checkin") || text.contains("check-in") || text.contains("spin") || text.contains("daily")
                                                 else -> true
                                             }
                                         }
@@ -1780,6 +1830,49 @@ fun RewardsScreen(
                             }
                         }
 
+                        // ─── Referral Leaderboard ────────────────────────
+                        if (selectedTab == 2 && state.leaderboard.isNotEmpty()) item {
+                            Card(
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else MaterialTheme.colorScheme.surface),
+                                elevation = CardDefaults.cardElevation(4.dp),
+                                modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text("🏆 Referral Leaderboard", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        Surface(shape = RoundedCornerShape(999.dp), color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)) {
+                                            Text(
+                                                "Your Rank: #${state.myLeaderboardPosition}",
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                    Text("Top referrers this week", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    state.leaderboard.take(5).forEachIndexed { idx, entry ->
+                                        val medal = when (idx) {
+                                            0 -> "🥇"
+                                            1 -> "🥈"
+                                            2 -> "🥉"
+                                            else -> "#${idx + 1}"
+                                        }
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(if (idx < 3) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f) else Color.Transparent).padding(horizontal = 10.dp, vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        ) {
+                                            Text(medal, fontSize = if (idx < 3) 16.sp else 13.sp, fontWeight = FontWeight.Bold)
+                                            Text(entry.name ?: "User", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                            Text("${entry.referrals} referrals", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         item { Spacer(Modifier.height(56.dp)) }
                     } // end LazyColumn
                     } // end Column
@@ -2045,16 +2138,15 @@ fun SpinWheelCanvas(
 ) {
     val segments = remember {
         listOf(
-            "+25" to Color(0xFF96CEB4),
-            "+15" to Color(0xFF45B7D1),
-            "+10" to Color(0xFF4ECDC4),
-            "+5" to Color(0xFFFFEAA7),
-            "0" to Color(0xFF9CA3AF),
-            "-25" to Color(0xFFFF6B6B),
-            "-50" to Color(0xFFEF4444),
+            "+50" to Color(0xFFFFD700),
+            "+25" to Color(0xFF10B981),
+            "+15" to Color(0xFF3B82F6),
+            "+10" to Color(0xFF8B5CF6),
+            "+5" to Color(0xFFF59E0B),
+            "XP" to Color(0xFF06B6D4),
         )
     }
-    val segmentValues = remember { listOf(25, 15, 10, 5, 0, -25, -50) }
+    val segmentValues = remember { listOf(50, 25, 15, 10, 5, 0) }
     val anglePerSegment = 360f / segments.size
 
     val rotation = remember { Animatable(0f) }
@@ -2230,7 +2322,7 @@ fun SpinWheelCanvas(
                 ) {
                     Text("🎉", fontSize = 14.sp)
                     Text(
-                        "+${segmentValues[winningIndex]} coins",
+                        if (segmentValues[winningIndex] == 0) "+25 XP bonus!" else "+${segmentValues[winningIndex]} coins",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,

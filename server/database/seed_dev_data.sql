@@ -57,6 +57,6 @@ CROSS JOIN (SELECT category_id FROM categories WHERE name='Vehicles' LIMIT 1) c;
 
 -- Profiles for users
 INSERT INTO profiles (user_id, full_name, bio, avatar_url)
-SELECT user_id, full_name, 'MHub marketplace seller', ''
+SELECT user_id, COALESCE(name, username), 'MHub marketplace seller', ''
 FROM users 
-ON CONFLICT DO NOTHING;
+ON CONFLICT (user_id) DO NOTHING;

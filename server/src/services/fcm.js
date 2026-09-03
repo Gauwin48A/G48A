@@ -134,6 +134,18 @@ async function sendToUser(userId, title, body, data = {}) {
         deep_link: data.deep_link || "",
         data
       });
+
+      if (androidResult.invalidTokens && androidResult.invalidTokens.length > 0) {
+        try {
+          await pool.query(
+            "UPDATE device_tokens SET is_active = false, updated_at = NOW() WHERE fcm_token = ANY($1::text[])",
+            [androidResult.invalidTokens]
+          );
+          logger.info(`[Push] Deactivated ${androidResult.invalidTokens.length} stale FCM tokens`);
+        } catch (pruneErr) {
+          logger.warn("[Push] Failed to prune stale FCM tokens:", pruneErr.message);
+        }
+      }
     }
     let webResult = { successCount: 0 };
     if (webTokens.length) {

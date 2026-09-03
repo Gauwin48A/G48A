@@ -38,6 +38,8 @@ class KycViewModel @Inject constructor(
     private val kycRepo: KycRepository,
     private val uploadRepo: UploadRepository,
     private val authRepo: AuthRepository,
+    private val analytics: com.zaruda.app.core.AnalyticsHelper,
+    private val crashlytics: com.zaruda.app.core.CrashlyticsHelper,
 ) : ViewModel() {
     private val _state = MutableStateFlow(KycState())
     val state: StateFlow<KycState> = _state.asStateFlow()
@@ -162,11 +164,19 @@ class KycViewModel @Inject constructor(
             )
             when (val r = kycRepo.submit(req)) {
                 is ApiResult.Success -> {
+                    val bundle = android.os.Bundle().apply {
+                        putString("doc_type", s.docType)
+                    }
+                    analytics.logEvent("kyc_submitted", bundle)
+                    crashlytics.logBreadcrumb("KYC", "KYC submitted successfully with docType=${s.docType}")
                     _state.value = _state.value.copy(submitting = false, success = true)
                     refresh()
                 }
-                is ApiResult.Failure ->
+                is ApiResult.Failure -> {
+                    crashlytics.logApiError(r.error, "KYC", "KYC submission failed")
+                    analytics.logError("KYC_SUBMIT_FAILED", r.error.message)
                     _state.value = _state.value.copy(submitting = false, error = r.error.message)
+                }
             }
         }
     }

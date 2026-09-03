@@ -345,24 +345,68 @@ fun SignUpScreen(
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
                         )
-
-                        // Sign in link
-                        Row(
-                            Modifier.fillMaxWidth().padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Already have an account? ", fontSize = 13.sp, color = mutedText)
-                            Text(
-                                "Sign in here",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = linkColor,
-                                modifier = Modifier.clickable { onSignIn() }
-                            )
-                        }
                     }
                 }
+            }
+
+            // ── Google 1-Tap Sign-Up ────────────────────────────────────
+            if (GoogleSignInHelper.isConfigured()) {
+                Spacer(Modifier.height(12.dp))
+                androidx.compose.material3.OutlinedButton(
+                    onClick = {
+                        viewModel.clearError()
+                        viewModel.signInWithGoogle()
+                    },
+                    enabled = !state.loading,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 460.dp)
+                        .height(48.dp),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = "G",
+                                color = Color(0xFF4285F4),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = "Sign up with Google",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                }
+            }
+
+            // ── Divider + Sign in link ──────────────────────────────────
+            Spacer(Modifier.height(8.dp))
+            Row(
+                Modifier.fillMaxWidth().widthIn(max = 460.dp).padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Already have an account? ", fontSize = 13.sp, color = mutedText)
+                Text(
+                    "Sign in here",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = linkColor,
+                    modifier = Modifier.clickable { onSignIn() }
+                )
             }
         }
     }

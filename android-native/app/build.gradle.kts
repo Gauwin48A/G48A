@@ -202,8 +202,11 @@ dependencies {
     // Location (GPS / FusedLocationProvider) — web parity
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
-    // Google Sign-In (guarded by GoogleSignInHelper.isConfigured())
-    implementation("com.google.android.gms:play-services-auth:21.2.0")
+    // Google Sign-In — Credential Manager 1-Tap (modern replacement for legacy GoogleSignIn)
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
     // Paging 3 — web parity pagination for post feed
     implementation("androidx.paging:paging-runtime-ktx:3.3.4")

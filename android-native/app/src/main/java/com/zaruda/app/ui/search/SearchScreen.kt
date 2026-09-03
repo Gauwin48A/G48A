@@ -105,6 +105,7 @@ class SearchViewModel @Inject constructor(
     private val brandsRepo: com.zaruda.app.data.repository.BrandsRepository,
     private val prefs: com.zaruda.app.data.local.AppPreferences,
     private val localeManager: com.zaruda.app.core.LocaleManager,
+    private val analytics: com.zaruda.app.core.AnalyticsHelper,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SearchState())
     val state: StateFlow<SearchState> = _state.asStateFlow()
@@ -176,6 +177,7 @@ class SearchViewModel @Inject constructor(
     fun search(query: String, minPrice: Double? = null, maxPrice: Double? = null, condition: String? = null, sortBy: String? = null, brand: String? = null, model: String? = null, locationRadius: Int? = null, dateFrom: String? = null, dateTo: String? = null) {
         job?.cancel()
         _state.value = _state.value.copy(query = query, loading = true, error = null, suggestions = emptyList())
+        if (query.isNotBlank()) analytics.logSearch(query)
         job = viewModelScope.launch {
             when (val result = repo.feed(query = query, categoryId = _state.value.selectedCategory)) {
                 is ApiResult.Success -> {

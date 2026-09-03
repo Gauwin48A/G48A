@@ -562,6 +562,79 @@ fun LoginScreen(
                 }
             }
 
+            // ── Google 1-Tap Sign-In ────────────────────────────────────
+            if (GoogleSignInHelper.isConfigured()) {
+                Spacer(Modifier.height(12.dp))
+                androidx.compose.material3.OutlinedButton(
+                    onClick = {
+                        viewModel.clearError()
+                        viewModel.signInWithGoogle()
+                    },
+                    enabled = !state.loading,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 460.dp)
+                        .height(48.dp),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        // Google 'G' icon (simplified as text)
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Color.White),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = "G",
+                                color = Color(0xFF4285F4),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                            )
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = "Continue with Google",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                }
+            }
+
+            // ── Divider ───────────────────────────────────────────────────
+            if (GoogleSignInHelper.isConfigured()) {
+                Spacer(Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 460.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(1.dp)
+                            .background(borderColor),
+                    )
+                    Text(
+                        text = "  OR  ",
+                        color = mutedText,
+                        fontSize = 12.sp,
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(1.dp)
+                            .background(borderColor),
+                    )
+                }
+            }
+
             // ── Demo Login ─────────────────────────────────────────────────
             Spacer(Modifier.height(12.dp))
             androidx.compose.material3.OutlinedButton(
@@ -586,6 +659,51 @@ fun LoginScreen(
                     )
                 }
             }
+
+            // Social proof
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFF059669).copy(alpha = 0.08f),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Text("🛡️", fontSize = 16.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "Join 50,000+ verified users • ₹4.2Cr+ Escrow Protected",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF059669),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+
+            // ── Continue as Guest ──────────────────────────────────────────
+            Spacer(Modifier.height(8.dp))
+            TextButton(
+                onClick = { onSignedIn() },
+                modifier = Modifier.padding(vertical = 4.dp),
+            ) {
+                Text(
+                    text = "🛍️ Explore Marketplace as Guest →",
+                    color = linkColor,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            Text(
+                text = "By signing in, you agree to Zaruda Terms & Privacy Policy",
+                color = mutedText,
+                fontSize = 11.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+            )
 
         }
     }

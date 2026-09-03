@@ -1,26 +1,29 @@
 package com.zaruda.app.ui.auth
 
 import android.content.Context
-import android.content.Intent
 import android.util.Log
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.GetCredentialResponse
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.zaruda.app.BuildConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * GoogleSignInHelper — safely gates Google Sign-In behind a valid OAuth Web Client ID.
+ * GoogleSignInHelper — modern Credential Manager 1-Tap Google Sign-In.
  *
- * When `isConfigured()` returns false (no Web Client ID set), all Google login UI
- * elements should be hidden, and [signIn] is a no-op. This prevents runtime crashes
- * when Google OAuth is not yet provisioned (e.g. local dev, staging, or before Play Console setup).
+ * Replaces the legacy GoogleSignInClient with the Jetpack Credential Manager API,
+ * which provides a faster, more reliable, and more secure Google Sign-In experience.
  *
- * Usage in LoginScreen:
- *   if (GoogleSignInHelper.isConfigured()) { /* show Google button */ }
+ * When [isConfigured] returns false, all Google sign-in UI should be hidden.
  */
 @Singleton
 class GoogleSignInHelper @Inject constructor(
@@ -31,9 +34,7 @@ class GoogleSignInHelper @Inject constructor(
 
         /**
          * Check whether a valid Google OAuth Web Client ID is configured.
-         *
-         * Returns `true` only when the build has a non-empty, non-placeholder client ID.
-         * Safe to call from any thread — reads BuildConfig only.
+         * Returns true only when the build has a non-empty, non-placeholder client ID.
          */
         fun isConfigured(): Boolean {
             val clientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
@@ -44,59 +45,88 @@ class GoogleSignInHelper @Inject constructor(
         }
     }
 
-    private val googleSignInClient: GoogleSignInClient? by lazy {
-        if (!isConfigured()) {
-            Log.d(TAG, "Google Sign-In not configured — skipping client init")
-            return@lazy null
-        }
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(BuildConfig.GOOGLE_WEB_CLIENT_ID)
-            .requestEmail()
-            .build()
-        GoogleSignIn.getClient(context, gso)
+    private val credentialManager: CredentialManager by lazy {
+        CredentialManager.create(context)
     }
 
     /**
-     * Launch the Google Sign-In intent. Returns an [Intent] to be used with
-     * `ActivityResultContracts.StartActivityForResult`, or `null` if not configured.
+     * Launch Google 1-Tap Sign-In and return the Google ID token.
+     *
+     * Returns the raw Google ID token string on success, or null on failure/cancellation.
+     * This is a suspending function that should be called from a coroutine scope.
      */
-    fun signInIntent(): Intent? {
+    suspend fun signIn(): String? {
         if (!isConfigured()) {
-            Log.w(TAG, "signInIntent called but Google Sign-In is not configured")
+            Log.w(TAG, "signIn called but Google Sign-In is not configured")
             return null
         }
-        return googleSignInClient?.signInIntent
-    }
 
-    /**
-     * Parse the result from the Google Sign-In activity result.
-     * Returns the idToken on success, or null on failure/cancellation.
-     */
-    fun parseResult(data: Intent?): String? {
-        if (data == null) return null
+        val googleIdOption = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false) // Show all Google accounts, not just previously authorized
+            .setAutoSelectEnabled(true) // Enable auto-select if user has only one Google account
+            .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
+            .build()
+
+        val request = GetCredentialRequest.Builder()
+            .addCredentialOption(googleIdOption)
+            .build()
+
         return try {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-            val account = task.getResult(ApiException::class.java)
-            account?.idToken
-        } catch (e: ApiException) {
-            Log.w(TAG, "Google Sign-In failed: code=${e.statusCode}, message=${e.statusMessage}")
+            val response = withContext(Dispatchers.IO) {
+                credentialManager.getCredential(
+                    context = context,
+                    request = request,
+                )
+            }
+            parseCredentialResponse(response)
+        } catch (e: GetCredentialCancellationException) {
+            Log.d(TAG, "Google Sign-In cancelled by user")
+            null
+        } catch (e: GetCredentialException) {
+            Log.w(TAG, "Google Sign-In failed: ${e.message}")
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Google Sign-In unexpected error", e)
             null
         }
     }
 
     /**
-     * Sign out from Google (e.g. on app logout) to clear cached credentials.
+     * Parse the Credential Manager response and extract the Google ID token.
      */
-    fun signOut(onComplete: (() -> Unit)? = null) {
-        if (!isConfigured()) { onComplete?.invoke(); return }
-        googleSignInClient?.signOut()?.addOnCompleteListener { onComplete?.invoke() }
+    private fun parseCredentialResponse(response: GetCredentialResponse): String? {
+        val credential = response.credential
+
+        return try {
+            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+            googleIdTokenCredential.idToken
+        } catch (e: GoogleIdTokenParsingException) {
+            Log.w(TAG, "Failed to parse Google ID token: ${e.message}")
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "Unexpected error parsing credential", e)
+            null
+        }
     }
 
     /**
-     * Revoke access (full disconnect, e.g. account deletion).
+     * Clear any cached credentials (e.g. on logout).
+     * Note: Credential Manager doesn't have a direct sign-out like GoogleSignInClient,
+     * but clearing preferences can help reset the state.
+     */
+    fun signOut(onComplete: (() -> Unit)? = null) {
+        // Credential Manager doesn't cache sessions the same way legacy GoogleSignIn did.
+        // The user will be shown the account picker on next sign-in attempt.
+        Log.d(TAG, "Google sign-out (Credential Manager) — no cached session to clear")
+        onComplete?.invoke()
+    }
+
+    /**
+     * Revoke access — not directly supported by Credential Manager.
+     * For full account disconnect, users should manage via Google account settings.
      */
     fun revokeAccess(onComplete: (() -> Unit)? = null) {
-        if (!isConfigured()) { onComplete?.invoke(); return }
-        googleSignInClient?.revokeAccess()?.addOnCompleteListener { onComplete?.invoke() }
+        Log.d(TAG, "Google revoke access — Credential Manager does not support direct revoke")
+        onComplete?.invoke()
     }
 }

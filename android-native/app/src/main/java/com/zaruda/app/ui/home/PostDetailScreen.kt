@@ -638,6 +638,9 @@ fun PostDetailScreen(
                 }.ifEmpty { listOf<String?>(null) }
                 val pagerState = rememberPagerState(pageCount = { images.size })
                 val lazyState = rememberLazyListState()
+                
+                var showOfferDialog by remember { mutableStateOf(false) }
+                var offerAmount by remember { mutableStateOf("") }
 
                 Column(
                     modifier = Modifier
@@ -881,6 +884,35 @@ fun PostDetailScreen(
                                                 color = condColor,
                                                 fontWeight = FontWeight.Bold,
                                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                                
+                                // Escrow Buyer Protection Card
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFF059669).copy(alpha = 0.08f),
+                                    border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.3f)),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        Text("🛡️", fontSize = 28.sp)
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                "Escrow Buyer Protection",
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 13.sp,
+                                                color = Color(0xFF059669),
+                                            )
+                                            Text(
+                                                "Your money stays protected until you inspect & verify the item. 100% refund guarantee.",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
                                     }
@@ -1273,8 +1305,6 @@ fun PostDetailScreen(
                     Surface(color = MaterialTheme.colorScheme.surface) {
                         Column(Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp)) {
                             // Make Offer row
-                            var showOfferDialog by remember { mutableStateOf(false) }
-                            var offerAmount by remember { mutableStateOf("") }
                             if (state.offerSent) {
                                 Surface(shape = RoundedCornerShape(8.dp), color = if (isDark) Color(0xFF0D2818) else Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                                     Text(stringResource(R.string.detail_offer_success), color = Color(0xFF22C55E), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(12.dp))
@@ -1405,6 +1435,48 @@ fun PostDetailScreen(
                                         post.userId?.let { sellerId -> onOpenSale(post.stableId, sellerId) }
                                     },
                                 )
+                            }
+                        }
+                    }
+                } // ends LazyColumn
+                
+                // Sticky Bottom Action Bar
+                if (!isOwner) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shadowElevation = 8.dp,
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedButton(
+                                onClick = { showOfferDialog = true },
+                                modifier = Modifier.weight(0.4f).height(50.dp),
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Text("💬 Make Offer")
+                            }
+                            Button(
+                                onClick = {
+                                    post.userId?.let { sellerId ->
+                                        if (salePrefs.getBoolean("buy_flow_seen_${post.stableId}", false)) {
+                                            onOpenSale(post.stableId, sellerId)
+                                        } else {
+                                            showBuyFlowHowItWorks = true
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.weight(0.6f).height(50.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669))
+                            ) {
+                                Text("🛡️ Buy with Escrow", fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }

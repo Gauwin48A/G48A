@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.outlined.DarkMode
@@ -99,6 +101,8 @@ fun ZarudaTopBar(
     onCart: () -> Unit = {},
     onProfile: () -> Unit = {},
     onLocationClick: () -> Unit = {},
+    onLocationRefresh: () -> Unit = {},
+    isLocationDetecting: Boolean = false,
     onFilter: () -> Unit = {},
     activeFilterCount: Int = 0,
     unreadNotifCount: Int = 0,
@@ -134,36 +138,65 @@ fun ZarudaTopBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Location chip — shows detected city & opens location picker
-            Box(
+            Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color.White.copy(alpha = 0.15f))
                     .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
                     .clickable { onLocationClick() }
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center,
+                    .padding(start = 10.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(
-                        Icons.Default.LocationOn,
-                        contentDescription = "Location",
-                        tint = Color.White,
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Text(
-                        text = locationText.ifBlank { "Detecting..." },
-                        color = Color.White,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.widthIn(max = 100.dp),
-                    )
+                Icon(
+                    Icons.Default.LocationOn,
+                    contentDescription = "Location",
+                    tint = Color.White,
+                    modifier = Modifier.size(14.dp),
+                )
+                Text(
+                    text = locationText.ifBlank { "Detecting..." },
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 140.dp),
+                )
+                // Refresh button — force re-detect location (bypasses cooldown)
+                IconButton(
+                    onClick = { onLocationRefresh() },
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    if (isLocationDetecting) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(12.dp),
+                            color = Color.White,
+                            strokeWidth = 1.5.dp,
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Refresh location",
+                            tint = Color.White.copy(alpha = 0.8f),
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
                 }
             }
 
             // Actions row — compact: only essential icons visible, rest in overflow
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Search icon button with ripple
+                IconButton(onClick = onSearch, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = "Search marketplace",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+
                 // Profile (person icon — moved from bottom nav to top bar)
                 IconButton(onClick = onProfile, modifier = Modifier.size(36.dp)) {
                     Icon(

@@ -162,9 +162,9 @@ fun ContactUsScreen(onBack: () -> Unit) {
             }
             // Direct contact info
             item {
-                ContactRow(icon = Icons.Filled.Email, label = "support@zarudatech.com")
-                ContactRow(icon = Icons.Filled.Report, label = "Grievance Officer: grievance@zarudatech.com")
-                ContactRow(icon = Icons.Filled.Comment, label = "In-app: More → Feedback / Complaints")
+                ContactRow(icon = Icons.Filled.Comment, label = "In-App Feedback: More → Feedback")
+                ContactRow(icon = Icons.Filled.Report, label = "Complaints & Disputes: More → Complaints")
+                ContactRow(icon = Icons.Filled.Info, label = "Platform Operator: Wyntech Labs")
             }
             if (!submitted) {
                 item {

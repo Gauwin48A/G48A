@@ -3,6 +3,20 @@ const { getMessaging } = require("firebase-admin/messaging");
 const logger = require("../utils/logger");
 
 let messaging = null;
+let auth = null;
+
+function getAuthService() {
+    if (auth) return auth;
+    if (!getApps().length) return null;
+    try {
+        const { getAuth } = require("firebase-admin/auth");
+        auth = getAuth();
+        return auth;
+    } catch (e) {
+        logger.warn(`⚠️ Could not load getAuth: ${e.message}`);
+        return null;
+    }
+}
 
 if (!getApps().length) {
     try {
@@ -38,7 +52,7 @@ if (!getApps().length) {
             messaging = getMessaging();
             logger.info("✅ Firebase Admin SDK initialized from env credentials");
         } else {
-            logger.warn("⚠️ Firebase Admin credentials not found. Push notifications will run in mock/local mode.");
+            logger.warn("⚠️ Firebase Admin credentials not found. Push notifications & Google Auth will run in mock/local mode.");
         }
     } catch (err) {
         logger.warn(`⚠️ Firebase Admin initialization failed: ${err.message}. Running in mock mode.`);
@@ -49,4 +63,9 @@ if (!getApps().length) {
 
 module.exports = {
     messaging,
+    get auth() {
+        return getAuthService();
+    },
+    getAuth: getAuthService,
+    getMessaging: () => messaging || (getApps().length ? getMessaging() : null)
 };

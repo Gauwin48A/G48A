@@ -36,6 +36,9 @@ interface ZarudaApi {
     @GET("api/auth/csrf-token")
     suspend fun csrfToken(): CsrfTokenResponse
 
+    @POST("api/auth/google")
+    suspend fun googleSignIn(@Body body: GoogleSignInRequest): AuthResponse
+
     @POST("api/auth/logout")
     suspend fun logout(): MessageResponse
 
@@ -281,6 +284,9 @@ interface ZarudaApi {
 
     @POST("api/coins/referral-milestones")
     suspend fun claimReferralMilestone(): MessageResponse
+
+    @POST("api/coins/daily-code")
+    suspend fun claimDailyCode(@Body body: Map<String, String>): MessageResponse
 
     @GET("api/referral/leaderboard")
     suspend fun referralLeaderboard(

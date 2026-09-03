@@ -333,6 +333,8 @@ class RewardsRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun redeemCoins(type: String, postId: String? = null): ApiResult<com.zaruda.app.data.remote.dto.MessageResponse> =
         safeApiCall { api.redeemCoins(com.zaruda.app.data.remote.dto.RedeemCoinsRequest(type, postId)) }
     suspend fun claimReferralMilestone(): ApiResult<com.zaruda.app.data.remote.dto.MessageResponse> = safeApiCall { api.claimReferralMilestone() }
+    suspend fun claimDailyCode(code: String): ApiResult<com.zaruda.app.data.remote.dto.MessageResponse> =
+        safeApiCall { api.claimDailyCode(mapOf("code" to code)) }
     suspend fun referralLeaderboard(): ApiResult<com.zaruda.app.data.remote.dto.ReferralLeaderboardResponse> = safeApiCall { api.referralLeaderboard() }
     suspend fun updateProfile(body: com.zaruda.app.data.remote.dto.ProfileUpdateRequest): ApiResult<com.zaruda.app.data.remote.dto.MessageResponse> =
         safeApiCall { api.updateProfile(body) }

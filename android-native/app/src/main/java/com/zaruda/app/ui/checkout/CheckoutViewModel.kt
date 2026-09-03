@@ -27,6 +27,8 @@ data class CheckoutUiState(
 class CheckoutViewModel @Inject constructor(
     private val orderRepo: OrderRepository,
     private val savedState: SavedStateHandle,
+    private val analytics: com.zaruda.app.core.AnalyticsHelper,
+    private val crashlytics: com.zaruda.app.core.CrashlyticsHelper,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CheckoutUiState())
     val state: StateFlow<CheckoutUiState> = _state.asStateFlow()
@@ -52,6 +54,9 @@ class CheckoutViewModel @Inject constructor(
             )
             when (val result = orderRepo.placeOrder(request)) {
                 is ApiResult.Success -> {
+                    val orderId = result.data.orderId ?: "order_${System.currentTimeMillis()}"
+                    analytics.logOrderCompleted(orderId, subtotal)
+                    crashlytics.logBreadcrumb("CHECKOUT", "Order placed successfully: $orderId")
                     _state.value = _state.value.copy(
                         placing = false,
                         placed = true,
@@ -59,9 +64,12 @@ class CheckoutViewModel @Inject constructor(
                     )
                 }
                 is ApiResult.Failure -> {
+                    val errorMsg = result.error.message
+                    crashlytics.logApiError(result.error, "CHECKOUT", "Failed to place order for amount $subtotal")
+                    analytics.logError("ORDER_FAILURE", errorMsg)
                     _state.value = _state.value.copy(
                         placing = false,
-                        error = result.error.message ?: "Order failed. Please try again.",
+                        error = errorMsg,
                     )
                 }
             }

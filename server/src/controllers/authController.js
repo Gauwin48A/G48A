@@ -1983,3 +1983,180 @@ exports.changePassword = async (req, res) => {
 
 // Export createSession for social auth flows
 exports.createSession = createSession;
+
+// ── Google 1-Tap Sign-In ──────────────────────────────────────────────
+exports.googleSignIn = async (req, res) => {
+  const { idToken, fullName, email } = req.body;
+
+  if (!idToken) {
+    return res.status(400).json({ error: 'Google ID token is required' });
+  }
+
+  try {
+    // Verify the Google ID token using unified Firebase Admin config
+    const firebaseConfig = require('../config/firebase');
+    const authService = firebaseConfig.getAuth();
+
+    if (!authService) {
+      logger.error('[GOOGLE AUTH] Firebase Admin Auth service is not initialized');
+      return res.status(500).json({ error: 'Google authentication service unavailable' });
+    }
+
+    const decodedToken = await authService.verifyIdToken(idToken);
+
+    if (decodedToken.email && decodedToken.email_verified === false) {
+      return res.status(403).json({ error: 'Google email is not verified' });
+    }
+
+    const googleId = decodedToken.sub; // Google user ID
+    const googleEmail = decodedToken.email || email || null;
+    const googleName = decodedToken.name || fullName || 'Google User';
+    const googlePicture = decodedToken.picture || null;
+
+    if (!googleId) {
+      return res.status(400).json({ error: 'Invalid Google token: missing user ID' });
+    }
+
+    // Check if user already exists by google_id or email
+    const client = await pool.connect();
+    try {
+      let existingUser = null;
+
+      // First try to find by google_id
+      const googleUserResult = await client.query(
+        'SELECT * FROM users WHERE google_id = $1 LIMIT 1',
+        [googleId]
+      );
+
+      if (googleUserResult.rows.length > 0) {
+        existingUser = googleUserResult.rows[0];
+      } else if (googleEmail) {
+        // Try to find by email
+        const emailUserResult = await client.query(
+          'SELECT * FROM users WHERE LOWER(email) = LOWER($1) LIMIT 1',
+          [googleEmail]
+        );
+        if (emailUserResult.rows.length > 0) {
+          existingUser = emailUserResult.rows[0];
+          // Link Google account to existing user
+          await client.query(
+            'UPDATE users SET google_id = $1 WHERE user_id = $2',
+            [googleId, existingUser.user_id]
+          );
+          existingUser.google_id = googleId;
+        }
+      }
+
+      if (existingUser) {
+        // Existing user — create session
+        logger.info(`[GOOGLE AUTH] Existing user logged in: ${existingUser.user_id}`);
+        const sessionData = await createSession(existingUser, req, res);
+        return res.status(200).json({ success: true, ...sessionData });
+      }
+
+      // New user — create account
+      await client.query('BEGIN');
+
+      const usernameBase = googleEmail
+        ? googleEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '_').slice(0, 20)
+        : `google_${googleId.slice(0, 8)}`;
+      const username = `${usernameBase}_${crypto.randomBytes(4).toString('hex')}`;
+
+      // Generate a random phone placeholder (required by schema)
+      const placeholderPhone = `g${googleId.slice(-9)}`;
+
+      const newUserResult = await client.query(
+        `INSERT INTO users (username, name, phone_number, email, google_id, role, password_hash)
+         VALUES ($1, $2, $3, $4, $5, 'user', $6)
+         RETURNING user_id, phone_number, email, name, role`,
+        [username, googleName, placeholderPhone, googleEmail, googleId, DUMMY_ARGON_HASH]
+      );
+      const newUser = newUserResult.rows[0];
+
+      // Create profile
+      await client.query(
+        `INSERT INTO profiles (user_id, full_name, phone)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (user_id) DO NOTHING`,
+        [newUser.user_id, googleName, placeholderPhone]
+      );
+
+      // Award signup bonus
+      let signupRewardChange = null;
+      await client.query('SAVEPOINT google_signup_rewards');
+      try {
+        signupRewardChange = await applyRewardDeltaInTransaction({
+          client: client,
+          userId: newUser.user_id,
+          pointsDelta: 25,
+          action: 'signup_bonus',
+          description: 'Google signup bonus',
+          idempotencyKey: `signup-bonus:${newUser.user_id}`,
+        });
+      } catch (rewardErr) {
+        await client.query('ROLLBACK TO SAVEPOINT google_signup_rewards');
+        logger.warn('[GOOGLE SIGNUP] Rewards award failed:', rewardErr.message);
+        signupRewardChange = null;
+      }
+
+      await client.query('COMMIT');
+
+      if (signupRewardChange?.applied) {
+        afterCommitRewardMutation(signupRewardChange);
+      }
+
+      // Welcome coin bonus
+      try {
+        const { addCoins, EARN_AMOUNTS } = require('./coinController');
+        await addCoins(
+          newUser.user_id,
+          EARN_AMOUNTS.welcome_bonus,
+          'welcome_bonus',
+          `welcome_bonus:${newUser.user_id}`,
+          'Welcome bonus (Google signup)',
+        );
+      } catch (coinErr) {
+        logger.warn('[GOOGLE SIGNUP] Welcome coin bonus failed:', coinErr.message);
+      }
+
+      // Create notification preferences
+      try {
+        await runQuery(
+          `INSERT INTO notification_preferences (user_id, push_enabled, email_enabled, sms_enabled,
+             likes_enabled, comments_enabled, follows_enabled, mentions_enabled,
+             order_updates_enabled, marketing_enabled, security_enabled, system_enabled,
+             price_drop_enabled, message_enabled)
+           VALUES ($1, true, true, false, true, true, true, true, true, true, true, true, true, true)
+           ON CONFLICT (user_id) DO NOTHING`,
+          [newUser.user_id]
+        );
+      } catch (prefErr) {
+        logger.warn('[GOOGLE SIGNUP] Notification preferences skipped:', prefErr.message);
+      }
+
+      // Audit log
+      try {
+        await runQuery(
+          'INSERT INTO audit_logs (user_id, action, ip_address, user_agent) VALUES ($1, $2, $3, $4)',
+          [newUser.user_id, 'GOOGLE_SIGNUP_SUCCESS', req.ip, req.headers['user-agent']]
+        );
+      } catch (logErr) {
+        logger.warn('[GOOGLE SIGNUP] Audit log failed:', logErr.message);
+      }
+
+      logger.info(`[GOOGLE AUTH] New user created: ${newUser.user_id}`);
+      const sessionData = await createSession(newUser, req, res);
+      res.status(201).json({ success: true, ...sessionData });
+
+    } catch (err) {
+      await client.query('ROLLBACK');
+      logger.error('[GOOGLE SIGNUP ERROR]', err);
+      res.status(500).json({ error: 'Server error during Google sign-up' });
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    logger.error('[GOOGLE AUTH ERROR]', err);
+    res.status(401).json({ error: 'Invalid Google token' });
+  }
+};

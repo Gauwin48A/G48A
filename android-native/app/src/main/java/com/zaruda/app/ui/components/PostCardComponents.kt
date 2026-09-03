@@ -90,7 +90,7 @@ fun PostCard(
         targetValue = if (isWishlisted) 1.15f else 1f,
         animationSpec = tween(200), label = "saveScale")
 
-    Card(onClick = onClick, shape = RoundedCornerShape(16.dp),
+    Card(onClick = onClick, shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
         modifier = modifier.fillMaxWidth()) {
@@ -101,11 +101,11 @@ fun PostCard(
                 if (images.isNotEmpty()) {
                     AsyncImage(model = images[0], contentDescription = post.displayTitle,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)))
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)))
                     Box(Modifier.fillMaxWidth().height(80.dp).align(Alignment.BottomCenter)
                         .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f)), startY = 0f)))
                 } else {
-                    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    Box(Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                         Icon(Icons.Outlined.ImageNotSupported, null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }

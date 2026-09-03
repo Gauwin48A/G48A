@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const { authenticateToken } = require("../middleware/security");
-const { publicReadSlowDown } = require("../middleware/rateLimiter");
+const { publicReadSlowDown, rewardRedeemLimiter } = require("../middleware/rateLimiter");
 const coinController = require("../controllers/coinController");
 
 router.get("/balance", authenticateToken, coinController.getBalance);
@@ -10,11 +10,12 @@ router.get(
   publicReadSlowDown,
   coinController.getRewardsConfig,
 ); // public — no auth needed
-router.post("/redeem", authenticateToken, coinController.redeemCoins);
+router.post("/redeem", authenticateToken, rewardRedeemLimiter, coinController.redeemCoins);
 router.get("/engagement", authenticateToken, coinController.getEngagementStatus);
-router.post("/daily-checkin", authenticateToken, coinController.claimDailyCheckIn);
-router.post("/spin", authenticateToken, coinController.spinWheel);
-router.post("/store-redeem", authenticateToken, coinController.redeemStoreReward);
-router.post("/referral-milestones", authenticateToken, coinController.claimReferralMilestones);
+router.post("/daily-checkin", authenticateToken, rewardRedeemLimiter, coinController.claimDailyCheckIn);
+router.post("/spin", authenticateToken, rewardRedeemLimiter, coinController.spinWheel);
+router.post("/store-redeem", authenticateToken, rewardRedeemLimiter, coinController.redeemStoreReward);
+router.post("/referral-milestones", authenticateToken, rewardRedeemLimiter, coinController.claimReferralMilestones);
+router.post("/daily-code", authenticateToken, rewardRedeemLimiter, coinController.claimDailySecretCode);
 
 module.exports = router;

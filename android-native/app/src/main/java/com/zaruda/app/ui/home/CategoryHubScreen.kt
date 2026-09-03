@@ -91,6 +91,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalTime
 import javax.inject.Inject
 
 /* ── App tile data (mirrors web CategoryHub.jsx APPS array) ─────────────── */
@@ -220,8 +221,14 @@ fun CategoryHubScreen(
             item(key = "header") {
                 Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
                     Spacer(Modifier.height(8.dp))
+                    val hour = LocalTime.now().hour
+                    val greeting = when {
+                        hour < 12 -> "Good morning ☀️"
+                        hour < 17 -> "Good afternoon 🌤️"
+                        else -> "Good evening 🌆"
+                    }
                     Text(
-                        stringResource(R.string.hub_title),
+                        greeting,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
@@ -279,6 +286,39 @@ fun CategoryHubScreen(
                             )
                         }
                     }
+                    
+                    if (!state.loading) {
+                        Spacer(Modifier.height(24.dp))
+                        Text(
+                            text = "🕐 Continue Where You Left Off",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 8.dp)
+                        ) {
+                            items(5) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
+                                    modifier = Modifier.size(120.dp, 90.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.fillMaxSize(),
+                                        verticalArrangement = Arrangement.Center,
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Icon(Icons.Filled.Search, contentDescription = null, tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
+                                        Spacer(Modifier.height(4.dp))
+                                        Text("Recent Item", fontSize = 11.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -296,7 +336,56 @@ fun CategoryHubScreen(
                     Spacer(Modifier.height(16.dp))
                 }
 
-                // ── Row 1: Electronics + Fashion ───────────────────────
+                item(key = "flash_deal") {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .padding(horizontal = 16.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.Transparent
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Brush.horizontalGradient(listOf(Color(0xFFFF6B00), Color(0xFFFF8C00))))
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("⚡", fontSize = 18.sp)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Flash Deals", fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                            androidx.compose.material3.TextButton(onClick = { }, contentPadding = PaddingValues(0.dp)) {
+                                Text("View Deals →", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+
+                item(key = "trust_stats") {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .height(40.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                "🛡️ 100% Escrow Protected • Zero Scam Deals • Verified Sellers",
+                                fontSize = 11.sp,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
 
                 // ── Row 1: Electronics + Fashion ───────────────────────
                 item(key = "row1") {
