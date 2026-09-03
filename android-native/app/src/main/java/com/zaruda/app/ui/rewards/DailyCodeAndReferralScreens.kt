@@ -95,7 +95,7 @@ class DailyCodeViewModel @Inject constructor() : ViewModel() {
             loading = false,
             code = code,
             expiresAt = expiresAt,
-            reward = 10,
+            reward = 15,
         )
     }
 }

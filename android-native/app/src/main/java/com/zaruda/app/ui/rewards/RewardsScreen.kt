@@ -614,9 +614,12 @@ class RewardsViewModel @Inject constructor(
                     )
                     load(refresh = true)
                 }
-                is ApiResult.Failure -> _state.value = _state.value.copy(
-                    actionLoading = null, actionResult = "Redeem is available when rewards sync is online.",
-                )
+                is ApiResult.Failure -> {
+                    _state.value = _state.value.copy(
+                        actionLoading = null,
+                        actionResult = r.error.message.ifBlank { "Redemption failed. Please check your coin balance." },
+                    )
+                }
             }
         }
     }
@@ -763,25 +766,17 @@ fun RewardsScreen(
                     var redeemPostId by remember { mutableStateOf("") }
                     redeemDialogType?.let { type ->
                         val itemName = when (type) {
-                            "boost" -> if (isPremium) "Listing Boost (7 Days)" else "Listing Boost (7 Days)"
+                            "boost" -> "Listing Boost (7 Days)"
+                            "featured" -> "Featured Post (14 Days)"
+                            "spotlight" -> "Top Search Spotlight (30 Days)"
                             "badge" -> "Elite Seller Badge"
-                            "featured" -> if (isPremium) "Featured Post (14 Days)" else "Featured Post (14 Days)"
-                            "spotlight" -> if (isPremium) "Spotlight / Top Placement (30 Days)" else "Spotlight / Top Placement (30 Days)"
-                            "gift_5" -> "₹5 Gift Card"
-                            "voucher_10" -> "₹10 Voucher"
-                            "theme" -> "Custom Theme"
-                            "badges" -> "Badge Pack"
                             else -> type
                         }
                         val itemCost = when (type) {
-                            "boost" -> if (isPremium) 50 else 200
+                            "boost" -> if (isPremium) 50 else 100
                             "featured" -> if (isPremium) 100 else 300
                             "spotlight" -> if (isPremium) 200 else 500
-                            "badge" -> 1000
-                            "gift_5" -> 250
-                            "voucher_10" -> 450
-                            "theme" -> 150
-                            "badges" -> 80
+                            "badge" -> if (isPremium) 500 else 1000
                             else -> if (isPremium) 50 else 200
                         }
                         AlertDialog(
@@ -1401,23 +1396,23 @@ fun RewardsScreen(
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp), color = Color(0xFF10B981).copy(alpha = 0.08f)) {
                                             Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Text("Basic", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                Text("200c", fontWeight = FontWeight.Bold, color = Color(0xFF059669))
-                                                Text("3 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text("Boost", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text(if (isPremium) "50c" else "100c", fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                                                Text("7 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
                                         Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp), color = Color(0xFF7C3AED).copy(alpha = 0.08f)) {
                                             Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Text("Pro", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                Text("500c", fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED))
-                                                Text("7 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text("Featured", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text(if (isPremium) "100c" else "300c", fontWeight = FontWeight.Bold, color = Color(0xFF7C3AED))
+                                                Text("14 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
                                         Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp), color = Color(0xFFF59E0B).copy(alpha = 0.08f)) {
                                             Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                                Text("Premium", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                Text("1000c", fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B))
-                                                Text("14 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text("Spotlight", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text(if (isPremium) "200c" else "500c", fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B))
+                                                Text("30 days", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             }
                                         }
                                     }
@@ -1507,11 +1502,11 @@ fun RewardsScreen(
                         }
 
                         // ─── My Rewards ─────────────────────────────────
-                        // ─── Coin History ────────────────────────────────
-                        if (selectedTab == 3 && state.coinHistory.isNotEmpty()) {
+                        // ─── Coin History (Always shown on Tab 3 with Empty State) ──
+                        if (selectedTab == 3) {
                             item {
                                 Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = if (darkTheme) Color(0xFF1E293B) else MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(4.dp), modifier = Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))) {
-                                    Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Column(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                         Text(stringResource(R.string.rewards_coin_history), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                         var historyFilter by remember { mutableStateOf("all") }
                                         val filterChips = listOf(
@@ -1533,23 +1528,41 @@ fun RewardsScreen(
                                                 }
                                             }
                                         }
-                                        val filteredHistory = state.coinHistory.filter { tx ->
-                                            val text = ((tx.description ?: "") + " " + (tx.action ?: "")).lowercase()
-                                            when (historyFilter) {
-                                                "earned" -> tx.amount > 0
-                                                "spent" -> tx.amount < 0
-                                                "referral" -> text.contains("referral") || text.contains("milestone") || text.contains("invite")
-                                                "daily" -> text.contains("checkin") || text.contains("check-in") || text.contains("spin") || text.contains("daily")
-                                                else -> true
-                                            }
-                                        }
-                                        filteredHistory.take(20).forEach { tx ->
-                                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                                Column(modifier = Modifier.weight(1f)) {
-                                                    Text(tx.description ?: tx.action ?: "Activity", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-                                                    tx.createdAt?.take(10)?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+
+                                        if (state.coinHistory.isEmpty()) {
+                                            Box(modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
+                                                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                                    Text("🪙", fontSize = 32.sp)
+                                                    Text("No coin activity yet", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                                    Text("Check in daily, spin the wheel, or invite friends to earn coins!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                                                 }
-                                                Text("${if (tx.amount >= 0) "+" else ""}${tx.amount}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = if (tx.amount >= 0) { if (darkTheme) Color(0xFF6EE7B7) else Color(0xFF059669) } else { if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFDC2626) })
+                                            }
+                                        } else {
+                                            val filteredHistory = state.coinHistory.filter { tx ->
+                                                val text = ((tx.description ?: "") + " " + (tx.action ?: "")).lowercase()
+                                                when (historyFilter) {
+                                                    "earned" -> tx.amount > 0
+                                                    "spent" -> tx.amount < 0
+                                                    "referral" -> text.contains("referral") || text.contains("milestone") || text.contains("invite")
+                                                    "daily" -> text.contains("checkin") || text.contains("check-in") || text.contains("spin") || text.contains("daily")
+                                                    else -> true
+                                                }
+                                            }
+
+                                            if (filteredHistory.isEmpty()) {
+                                                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                                                    Text("No transactions found in this category", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                            } else {
+                                                filteredHistory.take(25).forEach { tx ->
+                                                    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                                        Column(modifier = Modifier.weight(1f)) {
+                                                            Text(tx.description ?: tx.action ?: "Activity", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                                                            tx.createdAt?.take(10)?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                                        }
+                                                        Text("${if (tx.amount >= 0) "+" else ""}${tx.amount}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = if (tx.amount >= 0) { if (darkTheme) Color(0xFF6EE7B7) else Color(0xFF059669) } else { if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFDC2626) })
+                                                    }
+                                                }
                                             }
                                         }
                                     }

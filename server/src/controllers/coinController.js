@@ -287,6 +287,33 @@ async function ensureEngagementSchema() {
   ).catch((err) => {
     logger.warn("[Coins] Schema migration (profiles.reward_badge) skipped:", { message: err?.message });
   });
+
+  await runQuery(`
+    CREATE TABLE IF NOT EXISTS reward_daily_code_claims (
+      id SERIAL PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      code_claimed VARCHAR(50) NOT NULL,
+      claim_date DATE NOT NULL,
+      reward_amount NUMERIC(10,2) NOT NULL DEFAULT 15.00,
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (user_id, claim_date)
+    )
+  `).catch((err) => {
+    logger.warn("[Coins] Schema migration (reward_daily_code_claims) skipped:", { message: err?.message });
+  });
+
+  await runQuery(`
+    CREATE TABLE IF NOT EXISTS referral_milestone_claims (
+      id SERIAL PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      milestone_count INTEGER NOT NULL,
+      reward_amount NUMERIC(10,2) NOT NULL,
+      claimed_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (user_id, milestone_count)
+    )
+  `).catch((err) => {
+    logger.warn("[Coins] Schema migration (referral_milestone_claims) skipped:", { message: err?.message });
+  });
 }
 
 let _engagementSchemaPromise = null;
@@ -639,6 +666,14 @@ async function applyReferralMilestoneRewards(userId, directCountOverride = null)
       );
       if (result?.applied) {
         applied.push({ count: milestone.count, reward: milestone.reward });
+        await runQuery(
+          `INSERT INTO referral_milestone_claims (user_id, milestone_count, reward_amount)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (user_id, milestone_count) DO NOTHING`,
+          [String(userId), milestone.count, milestone.reward],
+        ).catch((err) => {
+          logger.warn("[Coins] referral_milestone_claims insert skipped:", { message: err?.message });
+        });
       }
     } catch (err) {
       logger.warn("[Coins] Failed to apply referral milestone", {
@@ -870,7 +905,8 @@ exports.getEngagementStatus = async (req, res) => {
     await lazyEnsureEngagementSchema();
 
     const todayKey = getIstDateKey();
-    const yesterdayKey = getIstDateKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
+    const thirtySixHoursAgo = new Date(Date.now() - 36 * 60 * 60 * 1000);
+    const graceKey = getIstDateKey(thirtySixHoursAgo);
 
     const [checkinRes, spinRes] = await Promise.all([
       runQuery(
@@ -890,11 +926,11 @@ exports.getEngagementStatus = async (req, res) => {
     const rawStreak = Number(checkinRow?.streak || 0);
     const bestStreak = Number(checkinRow?.best_streak || 0);
     const hasCheckedInToday = lastKey === todayKey;
-    const isStreakActive = lastKey === todayKey || lastKey === yesterdayKey;
+    const isStreakActive = lastKey === todayKey || lastKey === graceKey;
     const currentDay = isStreakActive ? Math.max(1, Math.min(rawStreak || 1, 7)) : 1;
     const nextStreak = hasCheckedInToday
       ? Math.min(rawStreak + 1, 7)
-      : lastKey === yesterdayKey
+      : lastKey === graceKey
         ? Math.min(rawStreak + 1, 7)
         : 1;
     const nextReward = DAILY_CHECKIN_REWARDS[nextStreak - 1] || DAILY_CHECKIN_REWARDS[0];
@@ -932,6 +968,7 @@ exports.getEngagementStatus = async (req, res) => {
     res.json({
       dailyCheckIn: {
         hasCheckedInToday,
+        canCheckIn: !hasCheckedInToday,
         streak: rawStreak || 0,
         currentDay,
         bestStreak,
@@ -942,6 +979,7 @@ exports.getEngagementStatus = async (req, res) => {
       dailyCheckinRewards: DAILY_CHECKIN_REWARDS,
       spin: {
         hasSpunToday,
+        canSpin: !hasSpunToday,
         reward: spinReward,
         spinDate: spinRow?.spin_date ? String(spinRow.spin_date).slice(0, 10) : null,
         nextSpinAt: getNextIstMidnightIso(),
@@ -964,7 +1002,8 @@ exports.claimDailyCheckIn = async (req, res) => {
     await lazyEnsureEngagementSchema();
 
     const todayKey = getIstDateKey();
-    const yesterdayKey = getIstDateKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
+    const thirtySixHoursAgo = new Date(Date.now() - 36 * 60 * 60 * 1000);
+    const graceKey = getIstDateKey(thirtySixHoursAgo);
 
     const checkinRes = await runQuery(
       "SELECT last_checkin_date, streak, best_streak FROM reward_daily_checkins WHERE user_id = $1 LIMIT 1",
@@ -997,7 +1036,7 @@ exports.claimDailyCheckIn = async (req, res) => {
     }
 
     let nextStreak = 1;
-    if (lastKey === yesterdayKey) {
+    if (lastKey === graceKey) {
       nextStreak = Math.min(Number(row?.streak || 0) + 1, 7);
     }
 
@@ -1312,6 +1351,15 @@ exports.claimDailySecretCode = async (req, res) => {
     if (!result.applied) {
       return res.status(409).json({ error: "Already claimed or duplicate code" });
     }
+
+    await runQuery(
+      `INSERT INTO reward_daily_code_claims (user_id, code_claimed, claim_date, reward_amount)
+       VALUES ($1, $2, CURRENT_DATE, $3)
+       ON CONFLICT (user_id, claim_date) DO NOTHING`,
+      [String(userId), inputCode, reward],
+    ).catch((err) => {
+      logger.warn("[Coins] reward_daily_code_claims record skipped:", { message: err?.message });
+    });
 
     res.json({
       success: true,
