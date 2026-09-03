@@ -9,35 +9,56 @@ const logger = require("../utils/logger");
 // Redis Connection Options
 // =============================================================================
 
-const REDIS_CONFIG = {
-  host: process.env.REDIS_HOST || "localhost",
-  port: Number.parseInt(process.env.REDIS_PORT, 10) || 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
-  db: Number.parseInt(process.env.REDIS_DB, 10) || 0,
-  keyPrefix: "mhub:",
-  retryStrategy: (times) => {
-    if (times > 3) {
-      logger.info(
-        "[Redis] Max retries reached, falling back to in-memory cache"
-      );
-      return null;
+function buildRedisOptions() {
+  const redisUrl = String(process.env.REDIS_URL || "").trim();
+  const commonOptions = {
+    keyPrefix: "mhub:",
+    retryStrategy: (times) => {
+      if (times > 3) {
+        logger.info(
+          "[Redis] Max retries reached, falling back to in-memory cache"
+        );
+        return null;
+      }
+      return Math.min(times * 200, 1e3);
+    },
+    lazyConnect: true,
+    maxRetriesPerRequest: 1,
+    connectTimeout: 5e3,
+  };
+
+  if (redisUrl) {
+    if (redisUrl.startsWith("rediss://")) {
+      commonOptions.tls = {
+        rejectUnauthorized: process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== "false",
+      };
     }
-    return Math.min(times * 200, 1e3);
-  },
-  lazyConnect: true,
-  maxRetriesPerRequest: 1,
-  connectTimeout: 3e3,
-};
+    return { url: redisUrl, options: commonOptions };
+  }
+
+  return {
+    url: null,
+    options: {
+      host: process.env.REDIS_HOST || "localhost",
+      port: Number.parseInt(process.env.REDIS_PORT, 10) || 6379,
+      password: process.env.REDIS_PASSWORD || undefined,
+      db: Number.parseInt(process.env.REDIS_DB, 10) || 0,
+      ...commonOptions,
+    },
+  };
+}
 
 // =============================================================================
 // Cache TTL Defaults (seconds)
 // =============================================================================
 
-/** @type {{ FEED: number, POSTS: number, USER: number, CATEGORIES: number }} */
+/** @type {{ FEED: number, POSTS: number, REELS: number, USER: number, UNREAD: number, CATEGORIES: number }} */
 const CACHE_TTL = {
   FEED: 5,
   POSTS: 30,
+  REELS: 30,
   USER: 60,
+  UNREAD: 10,
   CATEGORIES: 300,
 };
 
@@ -77,7 +98,8 @@ async function getRedisClient() {
   connectionAttempted = true;
 
   try {
-    redisClient = new Redis(REDIS_CONFIG);
+    const { url, options } = buildRedisOptions();
+    redisClient = url ? new Redis(url, options) : new Redis(options);
 
     redisClient.on("connect", () => {
       logger.info("[Redis] Connected successfully");
@@ -375,6 +397,24 @@ function categoriesKey() {
   return `categories:all`;
 }
 
+/**
+ * Builds a cache key for reels metadata.
+ * @param {string|number} reelId
+ * @returns {string}
+ */
+function reelKey(reelId) {
+  return `reel:${reelId}`;
+}
+
+/**
+ * Builds a cache key for user unread notification/message counter.
+ * @param {string|number} userId
+ * @returns {string}
+ */
+function unreadCounterKey(userId) {
+  return `unread:${userId}`;
+}
+
 // =============================================================================
 // Cache Statistics
 // =============================================================================
@@ -486,7 +526,9 @@ module.exports = {
   clearPattern: clearPattern,
   feedKey: feedKey,
   postKey: postKey,
+  reelKey: reelKey,
   userKey: userKey,
+  unreadCounterKey: unreadCounterKey,
   categoriesKey: categoriesKey,
   getStats: getStats,
   healthCheck: healthCheck,

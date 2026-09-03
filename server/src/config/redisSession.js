@@ -56,6 +56,12 @@ const initRedis = () => {
       const redisUrl = String(process.env.REDIS_URL || "").trim();
 
       if (redisUrl) {
+        if (redisUrl.startsWith("rediss://")) {
+          connectionOptions.tls = {
+            rejectUnauthorized:
+              process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== "false",
+          };
+        }
         redis = new Redis(redisUrl, connectionOptions);
       } else {
         redis = new Redis({
@@ -253,6 +259,28 @@ const incr = async (key, ttlSeconds = 900) => {
   return nextCount;
 };
 
+/**
+ * Sets expiry TTL in seconds for a key.
+ * @param {string} key - Session or rate limit key.
+ * @param {number} [ttlSeconds=900] - TTL in seconds.
+ * @returns {Promise<boolean>}
+ */
+const expire = async (key, ttlSeconds = 900) => {
+  if (isRedisAvailable && redis) {
+    try {
+      const result = await redis.expire(key, ttlSeconds);
+      return result === 1;
+    } catch {
+      // fall through to memory store
+    }
+  }
+  if (memoryStore.has(key)) {
+    scheduleMemoryExpiry(key, ttlSeconds);
+    return true;
+  }
+  return false;
+};
+
 // =============================================================================
 // Teardown
 // =============================================================================
@@ -300,6 +328,7 @@ module.exports = {
   setIfNotExists: setIfNotExists,
   del: del,
   incr: incr,
+  expire: expire,
   close: close,
   isRedisAvailable: () => isRedisAvailable,
 };
