@@ -22,6 +22,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +38,7 @@ fun AnimatedSplashScreen(
     var taglineVisible by remember { mutableStateOf(false) }
     var badgeVisible by remember { mutableStateOf(false) }
     var contentVisible by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     val scaleAnim = animateFloatAsState(
         targetValue = logoScale,
@@ -60,7 +63,10 @@ fun AnimatedSplashScreen(
     LaunchedEffect(Unit) {
         delay(150)
         logoScale = 1f
-        delay(250)
+        // Tactile tick the instant the golden trust spark ✦ springs into visibility.
+        delay(160)
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        delay(90)
         glowAlpha = 0.6f
         delay(200)
         taglineVisible = true
@@ -68,7 +74,8 @@ fun AnimatedSplashScreen(
         badgeVisible = true
         delay(100)
         contentVisible = true
-        delay(600)
+        // Hard cap: splash never exceeds 1200ms total (quick, snappy launch).
+        delay(350)
         onSplashFinished()
     }
 
@@ -179,10 +186,36 @@ fun AnimatedSplashScreen(
 
         AnimatedVisibility(
             visible = contentVisible,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 38.dp),
             enter = fadeIn(tween(800)),
         ) {
-            Text("🇮🇳 Made with \u2764\uFE0F in India", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // National security micro-pill — RBI-compliant escrow trust signal.
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xFFF59E0B).copy(alpha = 0.12f),
+                    modifier = Modifier.border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.35f), RoundedCornerShape(20.dp)),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        Text("\uD83C\uDFDB\uFE0F", fontSize = 10.sp)
+                        Text(
+                            "RBI-Compliant Escrow Architecture",
+                            color = Color(0xFFFCD34D),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.3.sp,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(10.dp))
+                Text("🇮🇳 Made with \u2764\uFE0F in India", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            }
         }
 
         Text(
@@ -191,7 +224,7 @@ fun AnimatedSplashScreen(
             fontSize = 10.sp,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
+                .padding(bottom = 12.dp)
         )
     }
 }

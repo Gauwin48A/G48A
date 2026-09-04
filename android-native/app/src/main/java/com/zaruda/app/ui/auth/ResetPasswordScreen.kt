@@ -14,6 +14,10 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -23,11 +27,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.random.Random
+import kotlinx.coroutines.delay
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -238,6 +252,33 @@ fun ResetPasswordScreen(
                                 ),
                                 modifier = Modifier.fillMaxWidth().height(52.dp),
                             )
+                            // Instant red mismatch warning pill (live, before submit).
+                            if (confirmPassword.isNotBlank() && confirmPassword != password) {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = Color(0xFFEF4444).copy(alpha = if (darkTheme) 0.18f else 0.10f),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.WarningAmber,
+                                            null,
+                                            tint = if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFDC2626),
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                        Text(
+                                            "Passwords do not match",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (darkTheme) Color(0xFFFECACA) else Color(0xFFB91C1C),
+                                        )
+                                    }
+                                }
+                            }
                             val canSubmit = !state.loading && password.isNotBlank() && confirmPassword.isNotBlank() && allMet
                             GradientButton(
                                 if (state.loading) "Resetting…" else "Reset Password",
@@ -248,6 +289,80 @@ fun ResetPasswordScreen(
                 }
             }
             Spacer(Modifier.height(24.dp))
+        }
+
+        // CRED-style confetti celebration on successful reset.
+        if (state.success) {
+            ConfettiOverlay()
+        }
+    }
+}
+
+private data class ConfettiParticle(
+    val startX: Float,
+    val startY: Float,
+    val velocity: Float,
+    val angle: Float,
+    val size: Float,
+    val spin: Float,
+    val color: Color,
+)
+
+@Composable
+private fun ConfettiOverlay() {
+    val confettiColors = listOf(
+        Color(0xFFF59E0B),
+        Color(0xFF10B981),
+        Color(0xFF3B82F6),
+        Color(0xFFF87171),
+        Color(0xFFA78BFA),
+        Color(0xFFFDE68A),
+        Color.White,
+    )
+    val particles = remember {
+        List(110) { index ->
+            val rng = Random(index * 7919L + 17)
+            ConfettiParticle(
+                startX = 0.5f + (rng.nextFloat() - 0.5f) * 0.12f,
+                startY = 0.32f,
+                velocity = 0.30f + rng.nextFloat() * 0.45f,
+                angle = (-90f + (rng.nextFloat() - 0.5f) * 110f) * (PI.toFloat() / 180f),
+                size = 5f + rng.nextFloat() * 7f,
+                spin = (rng.nextFloat() - 0.5f) * 900f,
+                color = confettiColors[index % confettiColors.size],
+            )
+        }
+    }
+    val progress = remember { Animatable(0f) }
+    val haptic = LocalHapticFeedback.current
+    LaunchedEffect(Unit) {
+        // Heavy celebratory thud.
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        delay(70)
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        progress.animateTo(1f, animationSpec = tween(1400, easing = FastOutSlowInEasing))
+    }
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val t = progress.value
+        val gravity = 1.35f
+        particles.forEach { p ->
+            val travel = p.velocity * t
+            val x = (p.startX + cos(p.angle) * travel * 0.6f) * size.width
+            val y = (p.startY + sin(p.angle) * travel + gravity * t * t * 0.55f) * size.height
+            if (y > size.height * 1.15f) return@forEach
+            val alpha = (1f - t).coerceIn(0f, 1f)
+            val rectSize = p.size * (if (t < 0.5f) 1f else 1f - (t - 0.5f) * 0.6f)
+            withTransform({
+                translate(left = x, top = y)
+                rotate(degrees = p.spin * t, pivot = androidx.compose.ui.geometry.Offset(rectSize / 2f, rectSize / 2f))
+            }) {
+                drawRect(
+                    color = p.color.copy(alpha = alpha),
+                    topLeft = androidx.compose.ui.geometry.Offset.Zero,
+                    size = androidx.compose.ui.geometry.Size(rectSize, rectSize * 0.55f),
+                )
+            }
         }
     }
 }

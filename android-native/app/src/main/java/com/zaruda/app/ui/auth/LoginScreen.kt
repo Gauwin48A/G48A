@@ -10,6 +10,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -58,12 +65,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import kotlin.math.roundToInt
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -104,6 +115,10 @@ fun LoginScreen(
     val mobileDigits = remember(mobile) { mobile.filter { it.isDigit() }.take(10) }
     val isValidMobile = remember(mobileDigits) {
         mobileDigits.length == 10 && mobileDigits.first() in '6'..'9'
+    }
+    // Auto-format as "XXXXX XXXXX" while keeping the raw digits for validation/submission.
+    val formattedMobile = remember(mobileDigits) {
+        if (mobileDigits.length > 5) "${mobileDigits.take(5)} ${mobileDigits.drop(5)}" else mobileDigits
     }
     val isValidEmail = remember(email) {
         email.isNotBlank() && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
@@ -333,7 +348,7 @@ fun LoginScreen(
                                     )
                                 }
                                 OutlinedTextField(
-                                    value = mobile,
+                                    value = formattedMobile,
                                     onValueChange = { input ->
                                         mobile = input.filter { it.isDigit() }.take(10)
                                         if (state.error != null) viewModel.clearError()
@@ -674,28 +689,13 @@ fun LoginScreen(
                 }
             }
 
-            // Social proof
-            Surface(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFF059669).copy(alpha = 0.08f),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Text("🛡️", fontSize = 16.sp)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        "Join 50,000+ verified users • ₹4.2Cr+ Escrow Protected",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color(0xFF059669),
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
+            // ── Live Deal Security Ticker (auto-scrolling marquee) ──────────
+            SecurityTicker(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 460.dp)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+            )
 
             // ── Continue as Guest ──────────────────────────────────────────
             Spacer(Modifier.height(8.dp))
@@ -719,6 +719,77 @@ fun LoginScreen(
                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
             )
 
+        }
+    }
+}
+
+/**
+ * Auto-scrolling live-deal security ticker (marquee).
+ * Renders the trust message set twice and translates one copy width per loop for a seamless crawl.
+ */
+@Composable
+private fun SecurityTicker(
+    modifier: Modifier = Modifier,
+) {
+    val items = listOf(
+        "₹4.2 Cr Protected in Escrow Today",
+        "50,000+ Aadhaar Verified Users",
+        "Zero Fraud Policy",
+        "100% Escrow Buyer Protection",
+    )
+    var copyWidth by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    val infinite = rememberInfiniteTransition(label = "securityTicker")
+    val ratio by infinite.animateFloat(
+        initialValue = 0f,
+        targetValue = -1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 18000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "tickerOffset",
+    )
+
+    val darkTheme = ColorTokens.isDarkTheme()
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color(0xFF059669).copy(alpha = 0.10f))
+            .height(34.dp)
+            .clipToBounds(),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Row(
+            modifier = Modifier.offset { IntOffset((ratio * copyWidth).roundToInt(), 0) },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            repeat(2) { copyIndex ->
+                Row(
+                    modifier = Modifier.onSizeChanged { size ->
+                        // Measure one copy; the second copy starts exactly one width later.
+                        if (copyIndex == 0 && size.width > 0) copyWidth = size.width
+                    },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    items.forEachIndexed { i, item ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.padding(horizontal = 14.dp),
+                        ) {
+                            Text("🛡️", fontSize = 12.sp)
+                            Text(
+                                item,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (darkTheme) Color(0xFF6EE7B7) else Color(0xFF047857),
+                            )
+                        }
+                        if (i < items.lastIndex) {
+                            Text("•", fontSize = 10.sp, color = if (darkTheme) Color(0xFF10B981) else Color(0xFF10B981))
+                        }
+                    }
+                }
+            }
         }
     }
 }

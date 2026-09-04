@@ -25,10 +25,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import androidx.hilt.navigation.compose.hiltViewModel
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun SignUpScreen(
     onSignedUp: () -> Unit,
@@ -100,6 +108,26 @@ fun SignUpScreen(
             password.length >= 6 &&
             password == confirmPassword &&
             !state.loading
+
+    // Password requirement pills (live CRED/Apple-ID style validation).
+    val passwordPills = remember(password) {
+        listOf(
+            "8+ chars" to (password.length >= 8),
+            "Uppercase" to password.any { it.isUpperCase() },
+            "Number" to password.any { it.isDigit() },
+            "Symbol" to password.any { !it.isLetterOrDigit() },
+        )
+    }
+
+    // Gentle double-tap pulse the instant the whole form becomes valid.
+    val signUpHaptics = LocalHapticFeedback.current
+    LaunchedEffect(canSubmit) {
+        if (canSubmit && password.isNotBlank()) {
+            signUpHaptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            delay(90)
+            signUpHaptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize().background(pageGradient)) {
         Column(
@@ -278,6 +306,40 @@ fun SignUpScreen(
                                     }
                                 }
                                 Text(strengthLabel, color = strengthColor, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                            // Live requirement micro-pills — bounce and turn green as they are satisfied.
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth().animateContentSize().padding(top = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                passwordPills.forEach { (label, met) ->
+                                    val scale by animateFloatAsState(
+                                        targetValue = if (met) 1.06f else 1f,
+                                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+                                        label = "pill_$label",
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(20.dp),
+                                        color = if (met) successColor.copy(alpha = 0.16f) else if (darkTheme) Color(0xFF1E293B) else Color(0xFFF1F5F9),
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            1.dp,
+                                            if (met) successColor.copy(alpha = 0.7f) else borderColor,
+                                        ),
+                                        modifier = Modifier.graphicsLayer {
+                                            scaleX = scale
+                                            scaleY = scale
+                                        },
+                                    ) {
+                                        Text(
+                                            text = (if (met) "✅ " else "○ ") + label,
+                                            color = if (met) successColor else mutedText,
+                                            fontSize = 10.sp,
+                                            fontWeight = if (met) FontWeight.Bold else FontWeight.Medium,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                        )
+                                    }
+                                }
                             }
                         }
 

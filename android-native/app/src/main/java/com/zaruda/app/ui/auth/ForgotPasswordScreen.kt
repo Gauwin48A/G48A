@@ -1,5 +1,6 @@
 package com.zaruda.app.ui.auth
 import com.zaruda.app.ui.theme.ColorTokens
+import kotlinx.coroutines.delay
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -50,6 +52,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -64,6 +68,7 @@ import com.zaruda.app.R
 import com.zaruda.app.core.ApiResult
 import com.zaruda.app.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -125,6 +130,15 @@ fun ForgotPasswordScreen(
     val state by viewModel.state.collectAsState()
     var identifier by rememberSaveable { mutableStateOf("") }
     @Suppress("UNUSED_VARIABLE") val scope = rememberCoroutineScope()
+
+    // Auto-focus the identifier field with the keyboard open on launch.
+    val identifierFocus = remember { FocusRequester() }
+    LaunchedEffect(state.sent) {
+        if (!state.sent) {
+            delay(250)
+            identifierFocus.requestFocus()
+        }
+    }
 
     val darkTheme = ColorTokens.isDarkTheme()
     val pageGradient = Brush.verticalGradient(
@@ -302,25 +316,12 @@ fun ForgotPasswordScreen(
                                 color = mutedText,
                                 fontSize = 14.sp,
                             )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = stringResource(R.string.forgot_didnt_receive),
-                                    color = mutedText,
-                                    fontSize = 13.sp,
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                TextButton(
-                                    onClick = { viewModel.reset(); identifier = "" },
-                                    contentPadding = PaddingValues(0.dp),
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.forgot_try_again),
-                                        color = linkColor,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium,
-                                    )
-                                }
-                            }
+                            // 30s resend cooldown with animated circular countdown ring.
+                            ResendCountdownRow(
+                                linkColor = linkColor,
+                                borderColor = borderColor,
+                                onResend = { viewModel.reset(); identifier = "" },
+                            )
                         } else {
                             Text(
                                 text = stringResource(R.string.forgot_field_label),
@@ -339,15 +340,16 @@ fun ForgotPasswordScreen(
                                 },
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp)
+                                    .focusRequester(identifierFocus),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF3B82F6),
                                     unfocusedBorderColor = borderColor,
                                     focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
                                     unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
                                 ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(52.dp),
                             )
 
                             Button(
@@ -402,5 +404,73 @@ fun ForgotPasswordScreen(
         }
     }
 }
+
+/**
+ * Resend cooldown row: animated circular countdown ring + disabled-until-zero resend action.
+ */
+@Composable
+private fun ResendCountdownRow(
+    linkColor: Color,
+    borderColor: Color,
+    onResend: () -> Unit,
+) {
+    val totalSeconds = 30
+    var secondsLeft by remember { mutableIntStateOf(totalSeconds) }
+    LaunchedEffect(Unit) {
+        while (secondsLeft > 0) {
+            delay(1000)
+            secondsLeft--
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Circular countdown ring (progress = fraction remaining).
+        Box(
+            modifier = Modifier.size(28.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator(
+                progress = { secondsLeft / totalSeconds.toFloat() },
+                strokeWidth = 3.dp,
+                color = linkColor,
+                trackColor = borderColor,
+                modifier = Modifier.size(28.dp),
+            )
+            Text(
+                text = secondsLeft.toString(),
+                fontSize = 9.sp,
+                color = linkColor,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = "Did not receive instructions?",
+            color = mutedTextDark(linkColor),
+            fontSize = 13.sp,
+        )
+        Spacer(Modifier.width(4.dp))
+        TextButton(
+            onClick = onResend,
+            enabled = secondsLeft == 0,
+            contentPadding = PaddingValues(0.dp),
+        ) {
+            Text(
+                text = if (secondsLeft == 0) "Resend instructions" else "in ${secondsLeft}s",
+                color = if (secondsLeft == 0) linkColor else borderColor,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun mutedTextDark(linkColor: Color): Color = linkColor.copy(alpha = 0.75f)
 
 /** End of file. */
