@@ -631,11 +631,17 @@ exports.get2FAStatus = async (req, res) => {
     }
 
     const record = await fetchTwoFactorRecord(userId, storageMode);
-    res.json({ enabled: Boolean(record?.enabled), available: true });
+    res.json({ success: true, enabled: Boolean(record?.enabled), available: true });
   } catch (error) {
     logger.error("2FA Status error:", error);
     res.status(500).json({ error: "Failed to get 2FA status" });
   }
 };
 
+exports._resetCache = () => {
+  twoFactorColumnsAvailabilityPromise = null;
+  twoFactorFallbackTableReadyPromise = null;
+};
+
 module.exports = exports;
+

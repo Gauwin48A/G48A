@@ -1831,7 +1831,7 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
             when (action) {
                 "sold" -> navController.navigate(Routes.expiryAction(id)) { launchSingleTop = true }
                 "repost" -> navController.navigate(Routes.expiryAction(id)) { launchSingleTop = true }
-                else -> navController.navigate("${Routes.POST_DETAIL}/$id")
+                else -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
             }
         }
         "expiry-action" -> {

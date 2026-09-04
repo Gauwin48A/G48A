@@ -707,6 +707,7 @@ const apiRouteMounts = [
   ["/api/contacts", contactsRoutes],
   ["/api/cms", cmsRoutes],
   ["/api/auth/2fa", twoFactorRoutes],
+  ["/api/2fa", twoFactorRoutes],
   [
     "/api/payments",
     [

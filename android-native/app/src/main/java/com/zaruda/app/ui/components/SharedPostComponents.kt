@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -255,7 +256,45 @@ fun BuyerInterestModal(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "⚡ Quick Message / Counter-Offer:",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            androidx.compose.foundation.lazy.LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                contentPadding = PaddingValues(vertical = 2.dp),
+            ) {
+                val chips = listOf(
+                    "👋 Is this still available?",
+                    "🏷️ Would you accept 10% off?",
+                    "🛡️ Ready to buy via Escrow",
+                    "🚚 Can you courier via Porter/Dunzo?",
+                    "📍 Can we meet today for inspection?",
+                )
+                items(chips.size) { i ->
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                        modifier = Modifier.clickable {
+                            message = if (message.isBlank()) chips[i] else "$message ${chips[i]}"
+                        }
+                    ) {
+                        Text(
+                            text = chips[i],
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
             OutlinedTextField(
                 value = message,
                 onValueChange = { message = it },

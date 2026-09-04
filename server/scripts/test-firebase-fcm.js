@@ -3,7 +3,8 @@
  * Comprehensive Firebase Admin SDK & FCM Push Diagnostics
  */
 
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 const { getApps } = require("firebase-admin/app");
 const firebase = require("../src/config/firebase");
 const { sendFcmMessage, sendFcmMulticast } = require("../src/services/fcmAdminService");

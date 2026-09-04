@@ -307,14 +307,46 @@ fun CategoryDetailScreen(
                 }
 
                 // Brand filter (from post data)
-                if (state.posts.isNotEmpty()) {
+                // Brand filter (Curated & Interactive)
+                val curatedBrands = when (viewModel.categoryKey.lowercase()) {
+                    "electronics" -> listOf("Apple", "Samsung", "OnePlus", "Sony", "Dell", "Xiaomi")
+                    "vehicles" -> listOf("Royal Enfield", "Honda", "Yamaha", "Hyundai", "Tata", "Maruti")
+                    "fashion" -> listOf("Zara", "Nike", "Adidas", "Levi's", "H&M", "Puma")
+                    else -> state.posts.mapNotNull { it.brand }.distinct().take(6)
+                }
+                if (curatedBrands.isNotEmpty()) {
                     item {
-                        val brands = state.posts.mapNotNull { it.brand }.distinct().take(5)
-                        if (brands.isNotEmpty()) {
-                            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                item { Text("Brand:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                items(brands) { brand ->
-                                    FilterChip(selected = false, onClick = {}, label = { Text(brand, fontSize = 11.sp) })
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            item {
+                                Text("🔥 Top Brands:", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            items(curatedBrands) { brand ->
+                                val isSelected = state.searchQuery.equals(brand, ignoreCase = true)
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = if (isSelected) gradients.first().copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.dp,
+                                        if (isSelected) gradients.first() else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                                    ),
+                                    modifier = Modifier.clickable {
+                                        if (isSelected) viewModel.setSearch("") else viewModel.setSearch(brand)
+                                    }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(brand, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium, color = if (isSelected) gradients.first() else MaterialTheme.colorScheme.onSurface)
+                                        if (isSelected) {
+                                            Icon(Icons.Filled.Clear, null, modifier = Modifier.size(12.dp), tint = gradients.first())
+                                        }
+                                    }
                                 }
                             }
                         }

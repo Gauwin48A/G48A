@@ -216,6 +216,12 @@ class ExploreViewModel @Inject constructor(
     private val _state = MutableStateFlow(ExploreState())
     val state: StateFlow<ExploreState> = _state.asStateFlow()
 
+    private val _wishlisted = MutableStateFlow<Set<String>>(emptySet())
+    val wishlisted: StateFlow<Set<String>> = _wishlisted.asStateFlow()
+
+    private val _prefsSaving = MutableStateFlow(false)
+    val prefsSaving: StateFlow<Boolean> = _prefsSaving.asStateFlow()
+
     private var searchJob: Job? = null
     private var lastLocaleVersion = 0L
 
@@ -795,9 +801,6 @@ class ExploreViewModel @Inject constructor(
         _state.value = _state.value.copy(searchQuery = "", searchResults = emptyList(), isSearching = false)
     }
 
-    private val _wishlisted = MutableStateFlow<Set<String>>(emptySet())
-    val wishlisted: StateFlow<Set<String>> = _wishlisted.asStateFlow()
-
     fun toggleWishlist(postId: String) {
         val current = _wishlisted.value.toMutableSet()
         if (current.contains(postId)) {
@@ -837,9 +840,6 @@ class ExploreViewModel @Inject constructor(
     }
 
     // ── Preferences persistence (moved from ProfileViewModel) ──
-    private val _prefsSaving = MutableStateFlow(false)
-    val prefsSaving: StateFlow<Boolean> = _prefsSaving.asStateFlow()
-
     fun loadPreferences() {
         viewModelScope.launch {
             try {
@@ -2619,6 +2619,53 @@ private fun AllPostsBrowse(
                     ) {
                         Text("Compare Now", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
+                }
+            }
+        }
+    }
+
+    // ── Floating View Mode Switcher (Airbnb / District Standard) ─────────────
+    val browseHaptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    Surface(
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .padding(bottom = if (state.compareItems.size >= 2) 80.dp else 16.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 8.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = if (!isGridView) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                modifier = Modifier.clickable {
+                    browseHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    isGridView = false
+                },
+            ) {
+                Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.AutoMirrored.Filled.ViewList, null, modifier = Modifier.size(14.dp), tint = if (!isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.width(5.dp))
+                    Text("List", fontSize = 12.sp, fontWeight = if (!isGridView) FontWeight.Bold else FontWeight.Medium, color = if (!isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = if (isGridView) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                modifier = Modifier.clickable {
+                    browseHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                    isGridView = true
+                },
+            ) {
+                Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.GridView, null, modifier = Modifier.size(14.dp), tint = if (isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.width(5.dp))
+                    Text("Grid", fontSize = 12.sp, fontWeight = if (isGridView) FontWeight.Bold else FontWeight.Medium, color = if (isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

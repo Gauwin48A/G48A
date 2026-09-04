@@ -2116,7 +2116,13 @@ fun ListPostCard(
                         Text(cat, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669).copy(alpha = 0.12f)) {
+                        Text("🛡️ 100% Escrow", style = MaterialTheme.typography.labelSmall, color = Color(0xFF059669), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    }
+                    Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF3B82F6).copy(alpha = 0.10f)) {
+                        Text("⚡ Replies in ~15m", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    }
                     post.condition?.let { cond ->
                         Surface(shape = RoundedCornerShape(6.dp), color = if (cond.lowercase() == "new") Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant) {
                             Text(cond.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, color = if (cond.lowercase() == "new") Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
@@ -2179,45 +2185,140 @@ fun GridPostCard(
     onUserClick: (() -> Unit)? = null,
     pageDensity: PageDensity = PageDensity.NORMAL,
 ) {
-    var wishlisted by remember { mutableStateOf(false) }
+    val allImages = remember(post) {
+        buildList {
+            post.primaryImage?.let { add(it) }
+            post.images.filter { it != post.primaryImage }.forEach { add(it) }
+        }
+    }
     val cardPadding = pageDensity.cardPadding.dp
-    Card(onClick = onClick, shape = RoundedCornerShape(14.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), modifier = modifier) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
+        modifier = modifier
+    ) {
         Column {
             Box(modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f)) {
-                if (post.primaryImage != null) {
-                    AsyncImage(model = post.primaryImage, contentDescription = post.displayTitle, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)))
+                if (allImages.size > 1) {
+                    val pagerState = rememberPagerState(pageCount = { allImages.size })
+                    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                        AsyncImage(
+                            model = allImages[page],
+                            contentDescription = post.displayTitle,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                        )
+                    }
+                    // Mini dot indicators
+                    Row(
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        repeat(allImages.size.coerceAtMost(5)) { i ->
+                            Box(
+                                modifier = Modifier
+                                    .size(if (i == pagerState.currentPage) 6.dp else 4.dp)
+                                    .clip(CircleShape)
+                                    .background(if (i == pagerState.currentPage) Color.White else Color.White.copy(alpha = 0.5f))
+                            )
+                        }
+                    }
+                } else if (post.primaryImage != null) {
+                    AsyncImage(
+                        model = post.primaryImage,
+                        contentDescription = post.displayTitle,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    )
                 } else {
-                    Box(modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(Icons.Outlined.ImageNotSupported, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.6f)), startY = 60f)))
+                Box(
+                    modifier = Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f)), startY = 40f)
+                    )
+                )
                 post.price?.let { price ->
-                    Text("INR ${"%,.0f".format(price)}", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(8.dp))
+                    Text(
+                        "₹${"%,.0f".format(price)}",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.BottomStart).padding(8.dp)
+                    )
                 }
                 val wishlistPosts by com.zaruda.app.ui.explore.SharedExploreStore.wishlistFlow.collectAsState()
                 val wishlisted = wishlistPosts.any { it.stableId == post.stableId }
                 val saveColor by animateColorAsState(if (wishlisted) Color(0xFF6366F1) else Color.White, label = "save")
                 Box(
-                    modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape).clickable {
-                        if (wishlisted) {
-                            com.zaruda.app.ui.explore.SharedExploreStore.removeWishlist(post.stableId)
-                        } else {
-                            com.zaruda.app.ui.explore.SharedExploreStore.addWishlist(post)
-                        }
-                    },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(6.dp)
+                        .size(28.dp)
+                        .background(Color.Black.copy(alpha = 0.35f), CircleShape)
+                        .clickable {
+                            if (wishlisted) {
+                                com.zaruda.app.ui.explore.SharedExploreStore.removeWishlist(post.stableId)
+                            } else {
+                                com.zaruda.app.ui.explore.SharedExploreStore.addWishlist(post)
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(imageVector = if (wishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, contentDescription = "Wishlist", tint = saveColor, modifier = Modifier.size(14.dp))
+                    Icon(
+                        imageVector = if (wishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+                        contentDescription = "Wishlist",
+                        tint = saveColor,
+                        modifier = Modifier.size(14.dp)
+                    )
                 }
                 PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(6.dp))
             }
-            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = cardPadding, vertical = cardPadding), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(text = post.displayTitle, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = cardPadding, vertical = cardPadding),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    text = post.displayTitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF059669).copy(alpha = 0.10f)) {
+                        Text(
+                            "🛡️ Escrow",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF059669),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 9.sp,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                        )
+                    }
                     post.condition?.let { cond ->
-                        Surface(shape = RoundedCornerShape(4.dp), color = if (cond.lowercase() == "new") Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant) {
-                            Text(cond.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, color = if (cond.lowercase() == "new") Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp))
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = if (cond.lowercase() == "new") Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Text(
+                                cond.replaceFirstChar { it.uppercase() },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (cond.lowercase() == "new") Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 9.sp,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
                         }
                     }
                     post.sellerName?.let {
@@ -2225,12 +2326,19 @@ fun GridPostCard(
                         Icon(Icons.Default.VerifiedUser, contentDescription = "Verified", tint = Color(0xFF3B82F6), modifier = Modifier.size(12.dp).then(clickableMod))
                     }
                 }
-                post.location?.let {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(11.dp))
-                        Spacer(Modifier.width(2.dp))
-                        Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    post.location?.let {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f, fill = false)) {
+                            Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(11.dp))
+                            Spacer(Modifier.width(2.dp))
+                            Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
+                    Text("⚡ ~15m", fontSize = 9.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB))
                 }
             }
         }

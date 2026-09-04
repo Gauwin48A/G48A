@@ -4,7 +4,8 @@
  * Supports local Redis as well as Upstash / GCP Memorystore Mumbai (REDIS_URL / TLS).
  */
 
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
 const Redis = require("ioredis");
 const redisSession = require("../src/config/redisSession");
 const redisCache = require("../src/config/redisCache");

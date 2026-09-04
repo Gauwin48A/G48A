@@ -660,6 +660,7 @@ fun PostDetailScreen(
                 }.ifEmpty { listOf<String?>(null) }
                 val pagerState = rememberPagerState(pageCount = { images.size })
                 val lazyState = rememberLazyListState()
+                val coroutineScope = rememberCoroutineScope()
                 
                 var showOfferDialog by remember { mutableStateOf(false) }
                 var offerAmount by remember { mutableStateOf("") }
@@ -786,6 +787,53 @@ fun PostDetailScreen(
                                         initialIndex = zoomImageIndex.coerceIn(0, zoomUrls.lastIndex),
                                         onDismiss = { showImageZoom = false },
                                     )
+                                }
+                            }
+                        }
+
+                        if (images.size > 1) {
+                            item(key = "photo_thumbnail_strip") {
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    itemsIndexed(images) { idx, imgUrl ->
+                                        val isSelected = pagerState.currentPage == idx
+                                        val resolved = resolveImageUrl(imgUrl)
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            border = BorderStroke(
+                                                width = if (isSelected) 2.dp else 1.dp,
+                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                            ),
+                                            shadowElevation = if (isSelected) 2.dp else 0.dp,
+                                            modifier = Modifier
+                                                .size(52.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .clickable {
+                                                    coroutineScope.launch {
+                                                        pagerState.animateScrollToPage(idx)
+                                                    }
+                                                },
+                                        ) {
+                                            if (resolved != null) {
+                                                AsyncImage(
+                                                    model = resolved,
+                                                    contentDescription = null,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier.fillMaxSize(),
+                                                )
+                                            } else {
+                                                Box(
+                                                    modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant),
+                                                    contentAlignment = Alignment.Center,
+                                                ) {
+                                                    Icon(Icons.Outlined.ImageNotSupported, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -961,6 +1009,44 @@ fun PostDetailScreen(
                                                 "Your money stays protected until you inspect & verify the item. 100% refund guarantee.",
                                                 fontSize = 11.sp,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Hyperlocal Distance & 2-Hour Courier ETA Card
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        Text("📍", fontSize = 22.sp)
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                post.location ?: "Nearby in your city",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                            )
+                                            Text(
+                                                "Direct pickup or Dunzo / Porter courier delivery in ~2 hrs",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669).copy(alpha = 0.12f)) {
+                                            Text(
+                                                "⚡ Fast ETA",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF059669),
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                             )
                                         }
                                     }

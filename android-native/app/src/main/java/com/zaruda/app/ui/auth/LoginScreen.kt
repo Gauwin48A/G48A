@@ -255,6 +255,19 @@ fun LoginScreen(
                                 fontSize = 13.sp,
                                 textAlign = TextAlign.Center,
                             )
+                            Spacer(Modifier.height(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color.White.copy(alpha = 0.18f),
+                            ) {
+                                Text(
+                                    text = "🛡️ ₹4.2Cr+ Escrow Protected • 50k+ Aadhaar Verified",
+                                    color = Color.White,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                )
+                            }
                         }
                     }
 
@@ -313,9 +326,10 @@ fun LoginScreen(
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Text(
-                                        text = stringResource(R.string.auth_country_code),
+                                        text = "🇮🇳 +91",
                                         color = prefixText,
                                         fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
                                     )
                                 }
                                 OutlinedTextField(
