@@ -108,6 +108,7 @@ import com.zaruda.app.data.repository.RecommendationsRepository
 import com.zaruda.app.data.repository.WishlistRepository
 import com.zaruda.app.domain.model.Category
 import com.zaruda.app.domain.model.Post
+import com.zaruda.app.ui.components.AnimatedLazyItem
 import com.zaruda.app.ui.components.AppEmptyState
 import com.zaruda.app.ui.components.PromoBadgeRow
 import com.zaruda.app.ui.components.SectionHeader
@@ -3535,8 +3536,10 @@ private fun SearchResults(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(posts, key = { it.stableId }) { post ->
-                SearchResultCard(post = post, onClick = { onOpenPost(post.stableId) })
+            items(posts.size) { index ->
+                AnimatedLazyItem(index = index, delayPerItemMs = 40) {
+                    SearchResultCard(post = posts[index], onClick = { onOpenPost(posts[index].stableId) })
+                }
             }
         }
     }

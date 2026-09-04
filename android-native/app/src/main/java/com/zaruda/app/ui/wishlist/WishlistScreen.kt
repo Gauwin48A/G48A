@@ -84,6 +84,7 @@ import com.zaruda.app.domain.model.Post
 import com.zaruda.app.ui.components.AppEmptyState
 import com.zaruda.app.ui.components.AppErrorState
 import com.zaruda.app.ui.components.ListShimmer
+import com.zaruda.app.ui.components.SwipeToAction
 import com.zaruda.app.ui.explore.SharedExploreStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -602,17 +603,22 @@ fun WishlistScreen(
                                     modifier = Modifier.fillMaxSize(),
                                 ) {
                                     items(filteredItems, key = { it.stableId }) { post ->
-                                        WishlistListCard(
-                                            post = post,
-                                            onOpen = { onOpenPost(post.stableId) },
-                                            onRemove = { removeConfirmId = post.stableId },
-                                            onAddToCart = { viewModel.addToCart(post.stableId) },
-                                            onTogglePriceAlert = { enabled -> viewModel.togglePriceAlert(post.stableId, enabled) },
-                                            isMultiSelectMode = state.isMultiSelectMode,
-                                            isSelected = post.stableId in state.selectedItems,
-                                            onToggleSelect = { viewModel.toggleItemSelection(post.stableId) },
+                                        SwipeToAction(
+                                            onSwipeLeft = { removeConfirmId = post.stableId },
+                                            onSwipeRight = { viewModel.addToCart(post.stableId) },
                                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                        )
+                                        ) {
+                                            WishlistListCard(
+                                                post = post,
+                                                onOpen = { onOpenPost(post.stableId) },
+                                                onRemove = { removeConfirmId = post.stableId },
+                                                onAddToCart = { viewModel.addToCart(post.stableId) },
+                                                onTogglePriceAlert = { enabled -> viewModel.togglePriceAlert(post.stableId, enabled) },
+                                                isMultiSelectMode = state.isMultiSelectMode,
+                                                isSelected = post.stableId in state.selectedItems,
+                                                onToggleSelect = { viewModel.toggleItemSelection(post.stableId) },
+                                            )
+                                        }
                                     }
                                 }
                             }

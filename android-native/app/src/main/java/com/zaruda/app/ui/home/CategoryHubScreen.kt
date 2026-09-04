@@ -93,6 +93,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import javax.inject.Inject
+import androidx.compose.ui.text.style.TextOverflow
 
 /* ── App tile data (mirrors web CategoryHub.jsx APPS array) ─────────────── */
 
@@ -240,6 +241,32 @@ fun CategoryHubScreen(
                     )
                     Spacer(Modifier.height(4.dp))
 
+                    // ── Category Icons Strip — instantly visible horizontal row ──
+                    // (Checklist #4.3: horizontally scrolling category strip)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(top = 8.dp, bottom = 4.dp),
+                    ) {
+                        item {
+                            CategoryIconPill(emoji = "📱", label = "Electronics", gradientColors = listOf(Color(0xFF3B82F6), Color(0xFF6366F1)), onClick = { onSelectApp("electronics") }, isDark = isDark)
+                        }
+                        item {
+                            CategoryIconPill(emoji = "🚗", label = "Vehicles", gradientColors = listOf(Color(0xFF10B981), Color(0xFF14B8A6)), onClick = { onSelectApp("vehicles") }, isDark = isDark)
+                        }
+                        item {
+                            CategoryIconPill(emoji = "👗", label = "Fashion", gradientColors = listOf(Color(0xFFEC4899), Color(0xFFF43F5E)), onClick = { onSelectApp("fashion") }, isDark = isDark)
+                        }
+                        item {
+                            CategoryIconPill(emoji = "🏠", label = "Property", gradientColors = listOf(Color(0xFFF59E0B), Color(0xFFEF4444)), onClick = { onSelectApp("others") }, isDark = isDark)
+                        }
+                        item {
+                            CategoryIconPill(emoji = "⚡", label = "Deals", gradientColors = listOf(Color(0xFF8B5CF6), Color(0xFF6366F1)), onClick = { onOpenAllPosts() }, isDark = isDark)
+                        }
+                        item {
+                            CategoryIconPill(emoji = "🔍", label = "Search", gradientColors = listOf(Color(0xFF64748B), Color(0xFF475569)), onClick = { onOpenSearch() }, isDark = isDark)
+                        }
+                    }
+
                     // ── Quick-Ribbon: 1-tap shortcuts ──────────────────
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -300,20 +327,39 @@ fun CategoryHubScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(bottom = 8.dp)
                         ) {
-                            items(5) {
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
-                                    modifier = Modifier.size(120.dp, 90.dp)
-                                ) {
-                                    Column(
-                                        modifier = Modifier.fillMaxSize(),
-                                        verticalArrangement = Arrangement.Center,
-                                        horizontalAlignment = Alignment.CenterHorizontally
+                            val recentPosts = com.zaruda.app.ui.explore.SharedExploreStore.recentlyViewedPosts
+                            if (recentPosts.isNotEmpty()) {
+                                items(recentPosts.take(6)) { post ->
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
+                                        modifier = Modifier
+                                            .size(120.dp, 90.dp)
+                                            .clickable { onOpenAllPosts() }
                                     ) {
-                                        Icon(Icons.Filled.Search, contentDescription = null, tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
-                                        Spacer(Modifier.height(4.dp))
-                                        Text("Recent Item", fontSize = 11.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
+                                        Column(
+                                            modifier = Modifier.fillMaxSize().padding(8.dp),
+                                            verticalArrangement = Arrangement.Center,
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text((post.title ?: "Untitled").take(15), fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A), maxLines = 2)
+                                            Spacer(Modifier.height(2.dp))
+                                            Text(String.format("\u20B9%,.0f", post.price ?: 0.0), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6366F1))
+                                        }
+                                    }
+                                }
+                            } else {
+                                items(3) {
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
+                                        modifier = Modifier.size(120.dp, 90.dp)
+                                    ) {
+                                        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Icon(Icons.Filled.Search, contentDescription = null, tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
+                                            Spacer(Modifier.height(4.dp))
+                                            Text("Browse", fontSize = 11.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
+                                        }
                                     }
                                 }
                             }
@@ -582,6 +628,50 @@ private fun QuickRibbonPill(
                 color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155),
             )
         }
+    }
+}
+
+/**
+ * Category Icon Pill — circular icon with gradient background + label.
+ * (Checklist #4.3: horizontally scrolling category strip)
+ */
+@Composable
+private fun CategoryIconPill(
+    emoji: String,
+    label: String,
+    gradientColors: List<Color>,
+    onClick: () -> Unit,
+    isDark: Boolean,
+) {
+    Column(
+        modifier = Modifier
+            .width(68.dp)
+            .clickable { onClick() },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Surface(
+            shape = CircleShape,
+            modifier = Modifier.size(56.dp),
+            shadowElevation = 4.dp,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(Brush.linearGradient(gradientColors)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(emoji, fontSize = 26.sp)
+            }
+        }
+        Text(
+            label,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
