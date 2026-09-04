@@ -18,32 +18,30 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Checkroom
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.Workspaces
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -61,11 +59,15 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.compose.ui.res.stringResource
 import com.zaruda.app.R
 import androidx.compose.ui.semantics.contentDescription
@@ -94,6 +96,10 @@ import kotlinx.coroutines.launch
 import java.time.LocalTime
 import javax.inject.Inject
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 
 /* ── App tile data (mirrors web CategoryHub.jsx APPS array) ─────────────── */
 
@@ -101,19 +107,49 @@ private data class AppDef(
     val key: String,
     val label: String,
     val tagline: String,
-    val emoji: String,
-    val gradient: List<Color>,
+    val offer: String,
+    val ctaText: String,
+    val imageUrl: String,
+    val fallbackGradient: List<Color>,
 )
 
 private val APPS = listOf(
-    AppDef("electronics", "Electronics", "Phones, laptops & gadgets", "🏪",
-        listOf(Color(0xFF3B82F6), Color(0xFF4F46E5), Color(0xFF7C3AED))),
-    AppDef("fashion", "Fashion", "Clothing, shoes & accessories", "🏪",
-        listOf(Color(0xFFEC4899), Color(0xFFF43F5E), Color(0xFFEF4444))),
-    AppDef("vehicles", "Vehicles", "Cars, bikes & spare parts", "🏪",
-        listOf(Color(0xFF10B981), Color(0xFF14B8A6), Color(0xFF0891B2))),
-    AppDef("others", "Others", "Home, services, jobs & more", "✨",
-        listOf(Color(0xFFA855F7), Color(0xFF7C3AED), Color(0xFF4F46E5))),
+    AppDef(
+        key = "electronics",
+        label = "Electronics",
+        tagline = "Phones, laptops & gadgets",
+        offer = "Up to 40% Off",
+        ctaText = "Explore Now",
+        imageUrl = "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format&fit=crop&q=80",
+        fallbackGradient = listOf(Color(0xFF1E3A8A), Color(0xFF2563EB), Color(0xFF38BDF8)),
+    ),
+    AppDef(
+        key = "vehicles",
+        label = "Vehicles",
+        tagline = "Cars, bikes & spare parts",
+        offer = "100% Inspected",
+        ctaText = "View Wheels",
+        imageUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&auto=format&fit=crop&q=80",
+        fallbackGradient = listOf(Color(0xFF064E3B), Color(0xFF059669), Color(0xFF34D399)),
+    ),
+    AppDef(
+        key = "fashion",
+        label = "Fashion",
+        tagline = "Clothing, shoes & accessories",
+        offer = "Trending Drops",
+        ctaText = "Shop Drops",
+        imageUrl = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop&q=80",
+        fallbackGradient = listOf(Color(0xFF831843), Color(0xFFDB2777), Color(0xFFF472B6)),
+    ),
+    AppDef(
+        key = "others",
+        label = "Living & Spaces",
+        tagline = "Homes, decor & services",
+        offer = "Zero Brokerage",
+        ctaText = "Discover",
+        imageUrl = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&auto=format&fit=crop&q=80",
+        fallbackGradient = listOf(Color(0xFF4C1D95), Color(0xFF7C3AED), Color(0xFFA78BFA)),
+    ),
 )
 
 /* ── ViewModel ──────────────────────────────────────────────────────────── */
@@ -201,409 +237,637 @@ fun CategoryHubScreen(
     viewModel: CategoryHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-
     val isDark = ColorTokens.isDarkTheme()
-    val pageGradient = if (isDark) Brush.verticalGradient(listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2236)))
-        else Brush.verticalGradient(listOf(Color(0xFFF8FAFC), Color(0xFFF1F5F9), Color(0xFFEEF2FF)))
+
     PullToRefreshBox(
         isRefreshing = state.refreshing,
         onRefresh = { viewModel.refresh() },
-        modifier = Modifier.fillMaxSize().background(pageGradient),
+        modifier = Modifier.fillMaxSize(),
     ) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp,
-                bottom = 100.dp,
-            ),
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // ── Layer 1: Parallax Full-Bleed Scenic Hero Header ──────────────
+            MarketplaceHeroHeader(
+                onOpenSearch = onOpenSearch,
+                onOpenNotifications = onOpenNotifications,
+                onOpenCart = onOpenCart,
+                cartCount = cartItemCount,
+                unreadNotifications = unreadNotifications,
+            )
 
-            // ── Header: welcome greeting ───────────────────────────────
-            item(key = "header") {
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                    Spacer(Modifier.height(8.dp))
-                    val hour = LocalTime.now().hour
-                    val greeting = when {
-                        hour < 12 -> "Good morning ☀️"
-                        hour < 17 -> "Good afternoon 🌤️"
-                        else -> "Good evening 🌆"
-                    }
-                    Text(
-                        greeting,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
-                    )
-                    Text(
-                        stringResource(R.string.hub_subtitle),
-                        fontSize = 13.sp,
-                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
-                    )
-                    Spacer(Modifier.height(4.dp))
+            // ── Layer 2: Floating Curved Sheet (Rapido Standard) ─────────────
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 90.dp),
+            ) {
+                // Top spacer so hero header is visible
+                item(key = "hero_spacer") {
+                    Spacer(Modifier.height(210.dp))
+                }
 
-                    // ── Category Icons Strip — instantly visible horizontal row ──
-                    // (Checklist #4.3: horizontally scrolling category strip)
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        contentPadding = PaddingValues(top = 8.dp, bottom = 4.dp),
+                // Curved Sheet content
+                item(key = "curved_sheet") {
+                    Surface(
+                        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                        color = if (isDark) Color(0xFF0F172A) else Color(0xFFF8FAFC),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(elevation = 16.dp, shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)),
                     ) {
-                        item {
-                            CategoryIconPill(emoji = "📱", label = "Electronics", gradientColors = listOf(Color(0xFF3B82F6), Color(0xFF6366F1)), onClick = { onSelectApp("electronics") }, isDark = isDark)
-                        }
-                        item {
-                            CategoryIconPill(emoji = "🚗", label = "Vehicles", gradientColors = listOf(Color(0xFF10B981), Color(0xFF14B8A6)), onClick = { onSelectApp("vehicles") }, isDark = isDark)
-                        }
-                        item {
-                            CategoryIconPill(emoji = "👗", label = "Fashion", gradientColors = listOf(Color(0xFFEC4899), Color(0xFFF43F5E)), onClick = { onSelectApp("fashion") }, isDark = isDark)
-                        }
-                        item {
-                            CategoryIconPill(emoji = "🏠", label = "Property", gradientColors = listOf(Color(0xFFF59E0B), Color(0xFFEF4444)), onClick = { onSelectApp("others") }, isDark = isDark)
-                        }
-                        item {
-                            CategoryIconPill(emoji = "⚡", label = "Deals", gradientColors = listOf(Color(0xFF8B5CF6), Color(0xFF6366F1)), onClick = { onOpenAllPosts() }, isDark = isDark)
-                        }
-                        item {
-                            CategoryIconPill(emoji = "🔍", label = "Search", gradientColors = listOf(Color(0xFF64748B), Color(0xFF475569)), onClick = { onOpenSearch() }, isDark = isDark)
-                        }
-                    }
-
-                    // ── Quick-Ribbon: 1-tap shortcuts ──────────────────
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(top = 4.dp),
-                    ) {
-                        item {
-                            QuickRibbonPill(
-                                emoji = "🏆",
-                                label = stringResource(R.string.hub_ribbon_rewards),
-                                onClick = onOpenRewards,
-                                isDark = isDark,
-                            )
-                        }
-                        item {
-                            QuickRibbonPill(
-                                emoji = "👤",
-                                label = stringResource(R.string.hub_ribbon_profile),
-                                onClick = onOpenProfile,
-                                isDark = isDark,
-                            )
-                        }
-                        item {
-                            QuickRibbonPill(
-                                emoji = "💎",
-                                label = stringResource(R.string.hub_ribbon_plan),
-                                onClick = onOpenTierSelection,
-                                isDark = isDark,
-                            )
-                        }
-                        item {
-                            QuickRibbonPill(
-                                emoji = "🆔",
-                                label = "KYC Verified",
-                                onClick = onOpenKyc,
-                                isDark = isDark,
-                            )
-                        }
-                        item {
-                            QuickRibbonPill(
-                                emoji = "🏦",
-                                label = "Wallet",
-                                onClick = onOpenPayouts,
-                                isDark = isDark,
-                            )
-                        }
-                    }
-                    
-                    if (!state.loading) {
-                        Spacer(Modifier.height(24.dp))
-                        Text(
-                            text = "🕐 Continue Where You Left Off",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 8.dp)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
+                            // Sheet drag handle indicator
+                            Box(
+                                modifier = Modifier
+                                    .width(42.dp)
+                                    .height(4.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1))
+                            )
+
+                            Spacer(Modifier.height(16.dp))
+
+                            // ── Row 1: Electronics + Vehicles ────────────────────────
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                            ) {
+                                val s0 = state.stats.find { it.key?.lowercase() == "electronics" }
+                                val s1 = state.stats.find { it.key?.lowercase() == "vehicles" }
+                                RapidoCategoryCard(
+                                    app = APPS[0],
+                                    listingsCount = s0?.activeCount ?: state.categories.count { (it.categoryGroup ?: "").lowercase() == "electronics" },
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { onSelectApp(APPS[0].key) },
+                                )
+                                RapidoCategoryCard(
+                                    app = APPS[1],
+                                    listingsCount = s1?.activeCount ?: state.categories.count { (it.categoryGroup ?: "").lowercase() == "vehicles" },
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { onSelectApp(APPS[1].key) },
+                                )
+                            }
+
+                            Spacer(Modifier.height(14.dp))
+
+                            // ── Row 2: Fashion + Living & Spaces ─────────────────────
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                            ) {
+                                val s2 = state.stats.find { it.key?.lowercase() == "fashion" }
+                                val s3 = state.stats.find { it.key?.lowercase() == "others" }
+                                RapidoCategoryCard(
+                                    app = APPS[2],
+                                    listingsCount = s2?.activeCount ?: state.categories.count { (it.categoryGroup ?: "").lowercase() == "fashion" },
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { onSelectApp(APPS[2].key) },
+                                )
+                                RapidoCategoryCard(
+                                    app = APPS[3],
+                                    listingsCount = s3?.activeCount ?: state.categories.count {
+                                        (it.categoryGroup ?: "").lowercase() !in listOf("electronics", "fashion", "vehicles")
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { onSelectApp(APPS[3].key) },
+                                )
+                            }
+
+                            Spacer(Modifier.height(18.dp))
+
+                            // ── Storytelling Editorial Banner ────────────────────────
+                            EscrowStorytellingBanner(onClick = onOpenAllPosts)
+
+                            Spacer(Modifier.height(16.dp))
+
+                            // ── Flash Deals Banner ───────────────────────────────────
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                                    .clickable { onOpenAllPosts() },
+                                shape = RoundedCornerShape(16.dp),
+                                color = Color.Transparent,
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Brush.horizontalGradient(listOf(Color(0xFFFF6B00), Color(0xFFFF8C00))))
+                                        .padding(horizontal = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.LocalOffer, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Column {
+                                            Text("Flash Deals & Steals", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                                            Text("Limited-time verified drops", color = Color.White.copy(alpha = 0.85f), fontSize = 10.sp)
+                                        }
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("View Deals", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Spacer(Modifier.width(4.dp))
+                                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(16.dp))
+
+                            // ── Category Quick Actions (Material Icons, no emojis) ──
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                contentPadding = PaddingValues(vertical = 4.dp),
+                            ) {
+                                item { CategoryIconPill(icon = Icons.Default.PhoneAndroid, label = "Phones", gradientColors = listOf(Color(0xFF3B82F6), Color(0xFF6366F1)), onClick = { onSelectApp("electronics") }, isDark = isDark) }
+                                item { CategoryIconPill(icon = Icons.Default.DirectionsCar, label = "Vehicles", gradientColors = listOf(Color(0xFF10B981), Color(0xFF14B8A6)), onClick = { onSelectApp("vehicles") }, isDark = isDark) }
+                                item { CategoryIconPill(icon = Icons.Default.Checkroom, label = "Fashion", gradientColors = listOf(Color(0xFFEC4899), Color(0xFFF43F5E)), onClick = { onSelectApp("fashion") }, isDark = isDark) }
+                                item { CategoryIconPill(icon = Icons.Default.Home, label = "Homes", gradientColors = listOf(Color(0xFFF59E0B), Color(0xFFEF4444)), onClick = { onSelectApp("others") }, isDark = isDark) }
+                                item { CategoryIconPill(icon = Icons.Default.LocalOffer, label = "Deals", gradientColors = listOf(Color(0xFF8B5CF6), Color(0xFF6366F1)), onClick = { onOpenAllPosts() }, isDark = isDark) }
+                                item { CategoryIconPill(icon = Icons.Default.Search, label = "Search", gradientColors = listOf(Color(0xFF64748B), Color(0xFF475569)), onClick = { onOpenSearch() }, isDark = isDark) }
+                            }
+
+                            Spacer(Modifier.height(14.dp))
+
+                            // ── Quick-Ribbon: 1-tap shortcuts (Material icons) ────
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                contentPadding = PaddingValues(vertical = 4.dp),
+                            ) {
+                                item { QuickRibbonPill(icon = Icons.Default.EmojiEvents, label = "Rewards", onClick = onOpenRewards, isDark = isDark) }
+                                item { QuickRibbonPill(icon = Icons.Default.Person, label = "Profile", onClick = onOpenProfile, isDark = isDark) }
+                                item { QuickRibbonPill(icon = Icons.Default.Workspaces, label = "Premium", onClick = onOpenTierSelection, isDark = isDark) }
+                                item { QuickRibbonPill(icon = Icons.Default.Verified, label = "KYC", onClick = onOpenKyc, isDark = isDark) }
+                                item { QuickRibbonPill(icon = Icons.Default.AccountBalance, label = "Wallet", onClick = onOpenPayouts, isDark = isDark) }
+                            }
+
+                            // ── Continue Where You Left Off ──────────────────────────
                             val recentPosts = com.zaruda.app.ui.explore.SharedExploreStore.recentlyViewedPosts
                             if (recentPosts.isNotEmpty()) {
-                                items(recentPosts.take(6)) { post ->
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
-                                        modifier = Modifier
-                                            .size(120.dp, 90.dp)
-                                            .clickable { onOpenAllPosts() }
+                                Spacer(Modifier.height(20.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = "Continue Where You Left Off",
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
+                                    )
+                                    Row(
+                                        modifier = Modifier.clickable { onOpenRecentlyViewed() },
+                                        verticalAlignment = Alignment.CenterVertically,
                                     ) {
-                                        Column(
-                                            modifier = Modifier.fillMaxSize().padding(8.dp),
-                                            verticalArrangement = Arrangement.Center,
-                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        Text(
+                                            text = "View All",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                        Spacer(Modifier.width(2.dp))
+                                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                                    }
+                                }
+                                Spacer(Modifier.height(10.dp))
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    contentPadding = PaddingValues(bottom = 8.dp),
+                                ) {
+                                    items(recentPosts.take(6)) { post ->
+                                        Surface(
+                                            shape = RoundedCornerShape(14.dp),
+                                            color = if (isDark) Color(0xFF1E293B) else Color(0xFFFFFFFF),
+                                            shadowElevation = 3.dp,
+                                            modifier = Modifier
+                                                .width(160.dp)
+                                                .height(100.dp)
+                                                .clickable { onOpenAllPosts() }
                                         ) {
-                                            Text((post.title ?: "Untitled").take(15), fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A), maxLines = 2)
-                                            Spacer(Modifier.height(2.dp))
-                                            Text(String.format("\u20B9%,.0f", post.price ?: 0.0), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6366F1))
+                                            Column(
+                                                modifier = Modifier.fillMaxSize().padding(12.dp),
+                                                verticalArrangement = Arrangement.SpaceBetween,
+                                            ) {
+                                                Text(
+                                                    (post.title ?: "Untitled").take(20),
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A),
+                                                    maxLines = 2,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                )
+                                                Text(
+                                                    String.format("\u20B9%,.0f", post.price ?: 0.0),
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    color = Color(0xFF10B981),
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            } else {
-                                items(3) {
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = if (isDark) Color(0xFF1E293B) else Color(0xFFE2E8F0),
-                                        modifier = Modifier.size(120.dp, 90.dp)
-                                    ) {
-                                        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Icon(Icons.Filled.Search, contentDescription = null, tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
-                                            Spacer(Modifier.height(4.dp))
-                                            Text("Browse", fontSize = 11.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
-                                        }
-                                    }
-                                }
                             }
+
+                            Spacer(Modifier.height(24.dp))
                         }
                     }
-                }
-            }
-
-            // Offline handling is done silently via global OfflineBanner in ZarudaApp.kt
-
-            // ── Loading state ──────────────────────────────────────────
-            if (state.loading) {
-                item(key = "loading") {
-                    Box(Modifier.fillMaxWidth().height(340.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFF6366F1))
-                    }
-                }
-            } else {
-                item(key = "section_spacer") {
-                    Spacer(Modifier.height(16.dp))
-                }
-
-                item(key = "flash_deal") {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .padding(horizontal = 16.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color.Transparent
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Brush.horizontalGradient(listOf(Color(0xFFFF6B00), Color(0xFFFF8C00))))
-                                .padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("⚡", fontSize = 18.sp)
-                                Spacer(Modifier.width(8.dp))
-                                Text("Flash Deals", fontWeight = FontWeight.Bold, color = Color.White)
-                            }
-                            androidx.compose.material3.TextButton(onClick = { }, contentPadding = PaddingValues(0.dp)) {
-                                Text("View Deals →", color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp)
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                }
-
-                item(key = "trust_stats") {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                            .height(40.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(
-                                "🛡️ 100% Escrow Protected • Zero Scam Deals • Verified Sellers",
-                                fontSize = 11.sp,
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(16.dp))
-                }
-
-                // ── Row 1: Electronics + Fashion ───────────────────────
-                item(key = "row1") {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        val s0 = state.stats.find { it.key?.lowercase() == "electronics" }
-                        val s1 = state.stats.find { it.key?.lowercase() == "fashion" }
-                        AppTile(
-                            app = APPS[0],
-                            listingsCount = s0?.activeCount ?: state.categories.count { (it.categoryGroup ?: "").lowercase() == "electronics" },
-                            newToday = s0?.newToday ?: 0,
-                            index = 0,
-                            modifier = Modifier.weight(1f),
-                            onClick = { onSelectApp(APPS[0].key) },
-                        )
-                        AppTile(
-                            app = APPS[1],
-                            listingsCount = s1?.activeCount ?: state.categories.count { (it.categoryGroup ?: "").lowercase() == "fashion" },
-                            newToday = s1?.newToday ?: 0,
-                            index = 1,
-                            modifier = Modifier.weight(1f),
-                            onClick = { onSelectApp(APPS[1].key) },
-                        )
-                    }
-                }
-                // ── Row 2: Vehicles + Others ───────────────────────────
-                item(key = "row2") {
-                    Spacer(Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        val s2 = state.stats.find { it.key?.lowercase() == "vehicles" }
-                        val s3 = state.stats.find { it.key?.lowercase() == "others" }
-                        AppTile(
-                            app = APPS[2],
-                            listingsCount = s2?.activeCount ?: state.categories.count { (it.categoryGroup ?: "").lowercase() == "vehicles" },
-                            newToday = s2?.newToday ?: 0,
-                            index = 2,
-                            modifier = Modifier.weight(1f),
-                            onClick = { onSelectApp(APPS[2].key) },
-                        )
-                        AppTile(
-                            app = APPS[3],
-                            listingsCount = s3?.activeCount ?: state.categories.count {
-                                (it.categoryGroup ?: "").lowercase() !in listOf("electronics", "fashion", "vehicles")
-                            },
-                            newToday = s3?.newToday ?: 0,
-                            index = 3,
-                            modifier = Modifier.weight(1f),
-                            onClick = { onSelectApp(APPS[3].key) },
-                        )
-                    }
-                }
-
-                item(key = "bottom_spacer") {
-                    Spacer(Modifier.height(32.dp))
                 }
             }
         }
     }
 }
 
-/* ── App tile composable ────────────────────────────────────────────────── */
+/* ── Marketplace Hero Header (Full-Bleed Scenic Rapido Standard) ────────── */
 
 @Composable
-private fun AppTile(app: AppDef, listingsCount: Int, newToday: Int = 0, index: Int = 0, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { delay(index * 120L); visible = true }
-    val tileAlpha by animateFloatAsState(if (visible) 1f else 0f, tween(350), label = "tileAlpha")
-
+private fun MarketplaceHeroHeader(
+    onOpenSearch: () -> Unit,
+    onOpenNotifications: () -> Unit,
+    onOpenCart: () -> Unit,
+    cartCount: Int,
+    unreadNotifications: Int,
+) {
+    val context = LocalContext.current
     Box(
-        modifier = modifier
-            .height(200.dp)
-            .alpha(tileAlpha)
-            .shadow(14.dp, RoundedCornerShape(24.dp))
-            .clip(RoundedCornerShape(24.dp))
-            .background(Brush.linearGradient(app.gradient))
-            .clickable { onClick() }
-            .semantics {
-                role = Role.Button
-                contentDescription = "Open ${app.label} app"
-                stateDescription = "$listingsCount listings${if (newToday > 0) ", plus $newToday today" else ""}"
-            }
-            .padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(260.dp),
     ) {
-        Column(
+        // High-res scenic backdrop
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data("https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1080&auto=format&fit=crop&q=80")
+                .crossfade(true)
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween,
-        ) {
-            // Top: emoji + LIVE badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(app.emoji, fontSize = 36.sp)
-                if (listingsCount > 0) AppLiveBadge()
-            }
+        )
 
-            // Middle: label + tagline
-            Column {
-                Text(app.label, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-                Text(app.tagline, color = Color.White.copy(alpha = 0.75f), fontSize = 11.sp)
-            }
-
-            // Bottom: stats + enter
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column {
-                    Text(
-                        if (listingsCount > 0) "$listingsCount listings" else "—",
-                        color = Color.White.copy(alpha = 0.6f), fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+        // Dark vignette scrim overlay for maximum text legibility
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.45f),
+                            Color.Black.copy(alpha = 0.30f),
+                            Color.Black.copy(alpha = 0.70f),
+                        )
                     )
-                    if (newToday > 0) {
+                )
+        )
+
+        // Hero contents
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(WindowInsets.statusBars.asPaddingValues())
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // Top action bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Search capsule shortcut
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.Black.copy(alpha = 0.4f),
+                    modifier = Modifier.clickable { onOpenSearch() }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Search, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Search Zaruda...", color = Color.White.copy(alpha = 0.9f), fontSize = 13.sp)
+                    }
+                }
+
+                // Notifications and Cart actions
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.Black.copy(alpha = 0.4f),
+                        modifier = Modifier.size(38.dp).clickable { onOpenNotifications() }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.Notifications, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            if (unreadNotifications > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFEF4444))
+                                        .align(Alignment.TopEnd)
+                                )
+                            }
+                        }
+                    }
+
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.Black.copy(alpha = 0.4f),
+                        modifier = Modifier.size(38.dp).clickable { onOpenCart() }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.ShoppingCart, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                            if (cartCount > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF10B981))
+                                        .align(Alignment.TopEnd)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            // Clean headline — no promo codes, no clutter
+            Text(
+                text = "Discover Nearby Deals",
+                color = Color.White,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.ExtraBold,
+                textAlign = TextAlign.Center,
+                letterSpacing = (-0.3).sp,
+            )
+
+            Spacer(Modifier.height(6.dp))
+
+            Text(
+                text = "Verified sellers \u2022 Escrow protected \u2022 Zero scams",
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+/* ── Rapido Photorealistic Category Card ─────────────────────────────────── */
+
+@Composable
+private fun RapidoCategoryCard(
+    app: AppDef,
+    listingsCount: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+
+    Surface(
+        shape = RoundedCornerShape(22.dp),
+        shadowElevation = 8.dp,
+        modifier = modifier
+            .height(210.dp)
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            },
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Background photographic image
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(app.imageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = app.label,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            // Fallback gradient behind image
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = 0.25f }.background(Brush.linearGradient(app.fallbackGradient))
+            )
+
+            // Dark vignette bottom scrim for high text contrast
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.25f),
+                                Color.Black.copy(alpha = 0.85f),
+                                Color.Black.copy(alpha = 0.95f),
+                            ),
+                            startY = 60f,
+                        )
+                    )
+            )
+
+            // Live badge at top right
+            if (listingsCount > 0) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.Black.copy(alpha = 0.5f),
+                    ) {
                         Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(3.dp),
                         ) {
-                            AppPulsingDot()
-                            Text("+$newToday today", color = Color.White.copy(alpha = 0.85f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            Box(Modifier.size(5.dp).clip(CircleShape).background(Color(0xFF22C55E)))
+                            Text("$listingsCount", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }
-                Box(
-                    modifier = Modifier.size(28.dp).clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.25f)),
-                    contentAlignment = Alignment.Center,
+            }
+
+            // Bottom contents: Title + Value Hook + White Pill Button
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = app.label,
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 17.sp,
+                )
+                Text(
+                    text = app.offer,
+                    color = Color(0xFFFDE047),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                // Elevated White Pill Button
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.White,
+                    shadowElevation = 4.dp,
+                    modifier = Modifier
+                        .height(34.dp)
+                        .clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onClick()
+                        },
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    Box(
+                        modifier = Modifier.padding(horizontal = 14.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = app.ctaText,
+                            color = Color(0xFF0F172A),
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 12.sp,
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-private fun AppLiveBadge() {
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = Color(0xFF22C55E).copy(alpha = 0.28f),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            AppPulsingDot()
-            Text("LIVE", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-        }
-    }
-}
+/* ── Storytelling Editorial Banner ───────────────────────────────────────── */
 
 @Composable
-private fun AppPulsingDot() {
-    val transition = rememberInfiniteTransition(label = "pulseDot")
-    val dotAlpha by transition.animateFloat(
-        initialValue = 0.35f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(750), RepeatMode.Reverse),
-        label = "dotAlpha",
-    )
-    Box(Modifier.size(6.dp).alpha(dotAlpha).background(Color(0xFF4ADE80), CircleShape))
+private fun EscrowStorytellingBanner(
+    onClick: () -> Unit,
+) {
+    val context = LocalContext.current
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 6.dp,
+        color = Color(0xFFF1F5F9),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(130.dp),
+        ) {
+            // Background aesthetic landscape texture
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop&q=80")
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            // Translucent overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.94f),
+                                Color.White.copy(alpha = 0.85f),
+                                Color.White.copy(alpha = 0.60f),
+                            )
+                        )
+                    )
+            )
+
+            // Content overlay
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column {
+                    Text(
+                        text = "Every Deal Safe in Escrow",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF0F172A),
+                        letterSpacing = (-0.2).sp,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = "Buy verified items with 100% money-back guarantee",
+                        fontSize = 11.sp,
+                        color = Color(0xFF475569),
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669).copy(alpha = 0.12f)) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            ) {
+                                Icon(Icons.Default.Verified, null, tint = Color(0xFF059669), modifier = Modifier.size(10.dp))
+                                Text("Escrow Insured", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                            }
+                        }
+                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF2563EB).copy(alpha = 0.12f)) {
+                            Text("OTP Handover", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFF0F172A),
+                        modifier = Modifier.padding(2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("Explore", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.width(2.dp))
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
 private fun QuickRibbonPill(
-    emoji: String,
+    icon: ImageVector,
     label: String,
     onClick: () -> Unit,
     isDark: Boolean,
@@ -618,9 +882,9 @@ private fun QuickRibbonPill(
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text(emoji, fontSize = 14.sp)
+            Icon(icon, null, tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B), modifier = Modifier.size(16.dp))
             Text(
                 label,
                 fontSize = 12.sp,
@@ -633,11 +897,11 @@ private fun QuickRibbonPill(
 
 /**
  * Category Icon Pill — circular icon with gradient background + label.
- * (Checklist #4.3: horizontally scrolling category strip)
+ * Uses Material icons instead of emojis for premium feel.
  */
 @Composable
 private fun CategoryIconPill(
-    emoji: String,
+    icon: ImageVector,
     label: String,
     gradientColors: List<Color>,
     onClick: () -> Unit,
@@ -661,7 +925,7 @@ private fun CategoryIconPill(
                     .background(Brush.linearGradient(gradientColors)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(emoji, fontSize = 26.sp)
+                Icon(icon, null, tint = Color.White, modifier = Modifier.size(24.dp))
             }
         }
         Text(
@@ -674,5 +938,3 @@ private fun CategoryIconPill(
         )
     }
 }
-
-
