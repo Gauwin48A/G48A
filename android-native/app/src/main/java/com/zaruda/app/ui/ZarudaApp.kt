@@ -259,10 +259,6 @@ fun ZarudaApp(
         val themeMode by themeVm.themeMode.collectAsState()
         val onboardingVm: com.zaruda.app.ui.onboarding.OnboardingViewModel = hiltViewModel()
         val onboardingCompleted by onboardingVm.onboardingCompleted.collectAsState()
-        var showOnboarding by rememberSaveable { mutableStateOf(false) }
-        LaunchedEffect(Unit) {
-            showOnboarding = !onboardingVm.onboardingCompleted.value
-        }
         var showSplash by rememberSaveable { mutableStateOf(true) }
         ZarudaTheme(themeMode = themeMode) {
             if (showSplash) {
@@ -271,11 +267,10 @@ fun ZarudaApp(
                 )
                 return@ZarudaTheme
             }
-            if (showOnboarding) {
+            if (!onboardingCompleted) {
                 com.zaruda.app.ui.onboarding.OnboardingScreen(
                     onFinished = {
                         onboardingVm.completeOnboarding()
-                        showOnboarding = false
                     },
                 )
                 return@ZarudaTheme
@@ -519,7 +514,7 @@ fun ZarudaApp(
             }
         }
 
-        val startDestination = if (isAuthenticated) Routes.MAIN_GRAPH else Routes.AUTH_GRAPH
+        val startDestination = Routes.MAIN_GRAPH
         var showingLaunch by remember { mutableStateOf(false) }
 
         if (showingLaunch) {
@@ -741,6 +736,8 @@ fun ZarudaApp(
                             onOpenEditProfile = { navController.navigate(Routes.EDIT_PROFILE) { launchSingleTop = true } },
                             onOpenLanguage = { navController.navigate(Routes.MORE) { launchSingleTop = true } },
                             onOpenHelp = { navController.navigate(Routes.HELP_SUPPORT) { launchSingleTop = true } },
+                            onOpenKyc = { navController.navigate(Routes.KYC) { launchSingleTop = true } },
+                            onOpenReferralTree = { navController.navigate(Routes.REFERRAL_TREE) { launchSingleTop = true } },
                         )
                     }
                 }
@@ -886,6 +883,8 @@ fun ZarudaApp(
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                         onCreatePost = { navController.navigate(Routes.CREATE_POST) { launchSingleTop = true } },
                         onEditPost = { id -> navController.navigate(Routes.editPost(id)) { launchSingleTop = true } },
+                        onOpenSaleHub = { navController.navigate(Routes.SALE_DONE) { launchSingleTop = true } },
+                        onOpenComplaints = { navController.navigate(Routes.COMPLAINTS) { launchSingleTop = true } },
                     )
                 }
             }
@@ -989,15 +988,11 @@ fun ZarudaApp(
                                     }
                                 }
                             },
-                            onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
-                            onOpenHome = {
-                                if (!navController.popBackStack()) {
-                                    navController.navigate(Routes.HOME) {
-                                        popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
-                                        launchSingleTop = true
-                                    }
-                                }
-                            },
+                            onOpenSearch = { q -> navController.navigate(if (q.isNullOrBlank()) Routes.SEARCH else "search?query=$q") { launchSingleTop = true } },
+                            onOpenHome = { navController.navigate(Routes.MY_POSTS) {
+                                popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                                launchSingleTop = true
+                            } },
                             onOpenProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
                             onOpenUser = { userId -> navController.navigate(Routes.userSoldPosts(userId)) { launchSingleTop = true } },
                             onOpenForYou = { navController.navigate(Routes.FOR_YOU) {

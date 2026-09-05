@@ -124,22 +124,6 @@ class TiersViewModel @Inject constructor(
         }
     }
 
-    fun claimTrial() {
-        _state.value = _state.value.copy(subscribeLoading = "trial_claim")
-        viewModelScope.launch {
-            when (val r = repo.claimTrial()) {
-                is ApiResult.Success -> {
-                    _state.value = _state.value.copy(subscribeLoading = null, coinsApplied = 0)
-                    loadSubscriptionData()
-                    loadCoinBalance()
-                }
-                is ApiResult.Failure -> {
-                    _state.value = _state.value.copy(subscribeLoading = null, error = r.error.message)
-                }
-            }
-        }
-    }
-
     // ── Razorpay Checkout ────────────────────────────────────────────────
     private val _checkoutEvent = Channel<RazorpayCheckoutEvent>(Channel.BUFFERED)
     val checkoutEvent: Flow<RazorpayCheckoutEvent> = _checkoutEvent.receiveAsFlow()
@@ -450,44 +434,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                         }
                     }
 
-                    // ── Trial Offer Banner (NEW — not in AAB) ───────────
-                    item {
-                        val isPromoActive = com.zaruda.app.core.FreeLaunchPlan.isActive()
-                        if (isPromoActive) {
-                            Surface(shape = RoundedCornerShape(16.dp), color = ColorTokens.GreenContainer, border = BorderStroke(1.dp, ColorTokens.VerifiedGreen.copy(alpha = 0.3f))) {
-                                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Text("🎉", fontSize = 24.sp)
-                                    Column(Modifier.weight(1f)) {
-                                        Text("Free Launch Offer!", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ColorTokens.GreenText)
-                                        Text("Post & sell FREE until ${com.zaruda.app.core.FreeLaunchPlan.endDateLabel()}!", fontSize = 12.sp, color = ColorTokens.GreenText)
-                                    }
-                                }
-                            }
-                        } else if (state.currentSubscription == null) {
-                            Surface(shape = RoundedCornerShape(16.dp), color = ColorTokens.BlueContainer, border = BorderStroke(1.dp, ColorTokens.BlueText.copy(alpha = 0.3f))) {
-                                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                    Box(Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surface), contentAlignment = Alignment.Center) {
-                                        Text("🎁", fontSize = 20.sp)
-                                    }
-                                    Column(Modifier.weight(1f)) {
-                                        Text("New User Special", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ColorTokens.BlueText)
-                                        Text("Get 1 Week Premium Access for FREE!", fontSize = 12.sp, color = ColorTokens.BlueText)
-                                    }
-                                    Button(
-                                        onClick = { viewModel.claimTrial() },
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.height(36.dp),
-                                        contentPadding = PaddingValues(horizontal = 12.dp)
-                                    ) {
-                                        if (state.subscribeLoading == "trial_claim") CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp))
-                                        else Text("Claim", fontSize = 12.sp)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // ── Current Subscription Banner (NEW — not in AAB) ──
+                    // ── Current Subscription Banner ──────────────────────
                     state.currentSubscription?.let { sub ->
                         item { CurrentPlanBanner(sub) }
                     }

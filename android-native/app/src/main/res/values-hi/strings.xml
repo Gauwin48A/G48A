@@ -307,8 +307,6 @@
   <string name="sell_quick_start">त्वरित शुरुआत</string>
   <string name="plans_title">अपनी योजना चुनें</string>
   <string name="plans_subtitle">अपनी जरूरत की योजना चुनें</string>
-  <string name="plans_trial_title">सभी पेड प्लान पर 7 दिन का मुफ़्त ट्रायल</string>
-  <string name="plans_trial_subtitle">शुरू करने के लिए भुगतान की जरूरत नहीं। कभी भी रद्द करें।</string>
   <string name="plans_popular">लोकप्रिय</string>
   <string name="plans_recommended">अनुशंसित</string>
   <string name="plans_get_started_free">मुफ़्त शुरू करें</string>

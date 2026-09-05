@@ -42,6 +42,7 @@ import com.zaruda.app.core.userFacingMessage
 import com.zaruda.app.data.repository.BoostRepository
 import com.zaruda.app.data.repository.PostsRepository
 import com.zaruda.app.data.repository.RewardsRepository
+import com.zaruda.app.data.repository.SalesRepository
 import com.zaruda.app.domain.model.Post
 import com.zaruda.app.ui.components.AppEmptyState
 import com.zaruda.app.ui.components.AppErrorState
@@ -85,6 +86,9 @@ data class MyPostsState(
     val refreshing: Boolean = false,
     val items: List<Post> = emptyList(),
     val boughtItems: List<Post> = emptyList(),
+    /** Buy/sell transactions the user initiated — pending, in-progress or cancelled (sale status hub). */
+    val salePosts: List<com.zaruda.app.data.remote.dto.SaleInfo> = emptyList(),
+    val saleLoading: Boolean = false,
     val error: String? = null,
     val statusFilter: String? = null,
     val sortBy: String = "date",
@@ -102,6 +106,7 @@ class MyPostsViewModel @Inject constructor(
     private val repo: PostsRepository,
     private val boostRepo: BoostRepository,
     private val rewardsRepo: RewardsRepository,
+    private val salesRepo: SalesRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(MyPostsState())
     val state: StateFlow<MyPostsState> = _state.asStateFlow()
@@ -138,6 +143,28 @@ class MyPostsViewModel @Inject constructor(
                 is ApiResult.Success -> _state.value = _state.value.copy(boughtItems = bought.data)
                 is ApiResult.Failure -> {}
             }
+            loadSaleStatus()
+        }
+    }
+
+    /** Fetch pending / in-progress / cancelled buy-sell transactions for My Home. */
+    private fun loadSaleStatus() {
+        _state.value = _state.value.copy(saleLoading = true)
+        viewModelScope.launch {
+            val pendingR = runCatching { salesRepo.pendingRequests() }.getOrNull()
+            val activeR = runCatching { salesRepo.myActive() }.getOrNull()
+            val historyR = runCatching { salesRepo.myHistory() }.getOrNull()
+            val merged = mutableListOf<com.zaruda.app.data.remote.dto.SaleInfo>()
+            listOf(pendingR, activeR, historyR).forEach { r ->
+                if (r is ApiResult.Success) merged += r.data
+            }
+            // Keep only transactions that are NOT fully completed (those live in Sold/Bought),
+            // so mid-way / cancelled / pending deals stay visible for follow-up & complaints.
+            val interesting = merged
+                .distinctBy { it.id }
+                .filter { it.status?.lowercase() !in setOf("completed", "done", "delivered") }
+                .sortedByDescending { it.updatedAt ?: it.createdAt ?: "" }
+            _state.value = _state.value.copy(saleLoading = false, salePosts = interesting.take(20))
         }
     }
 
@@ -274,6 +301,21 @@ class MyPostsViewModel @Inject constructor(
     }
 }
 
+@Composable
+private fun SaleStatusChip(status: String?) {
+    val s = status?.lowercase()?.replace('_', ' ') ?: "pending"
+    val (bg, fg) = when {
+        s.contains("cancel") || s.contains("reject") || s.contains("fraud") -> Color(0xFFFEE2E2) to Color(0xFFB91C1C)
+        s.contains("active") || s.contains("ship") || s.contains("progress") || s.contains("received") -> Color(0xFFDBEAFE) to Color(0xFF1D4ED8)
+        s.contains("complete") || s.contains("done") || s.contains("delivered") -> Color(0xFFDCFCE7) to Color(0xFF166534)
+        else -> Color(0xFFFEF3C7) to Color(0xFF92400E) // pending / requested
+    }
+    Surface(shape = RoundedCornerShape(20.dp), color = bg) {
+        Text(s.replaceFirstChar { it.uppercase() }, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = fg,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyPostsScreen(
@@ -281,6 +323,8 @@ fun MyPostsScreen(
     onOpenPost: (String) -> Unit,
     onCreatePost: () -> Unit = {},
     onEditPost: (String) -> Unit = {},
+    onOpenSaleHub: () -> Unit = {},
+    onOpenComplaints: () -> Unit = {},
     viewModel: MyPostsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -595,6 +639,64 @@ fun MyPostsScreen(
                             }
                         }
 
+                        // ── Sales & Orders (initiated buy/sell — incl. mid-way & cancelled) ──
+                        if (state.salePosts.isNotEmpty()) {
+                            item(key = "sale_status") {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shadowElevation = 3.dp,
+                                ) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                            Text("📦 Sales & Orders", fontWeight = FontWeight.Bold, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                                            TextButton(onClick = onOpenSaleHub, contentPadding = PaddingValues(0.dp)) {
+                                                Text("View all", fontSize = 12.sp)
+                                            }
+                                        }
+                                        state.salePosts.forEach { sale ->
+                                            Surface(
+                                                onClick = { sale.postId?.let(onOpenPost) },
+                                                shape = RoundedCornerShape(12.dp),
+                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                                modifier = Modifier.fillMaxWidth(),
+                                            ) {
+                                                Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                        Text(sale.postTitle ?: "Listing ${sale.postId ?: ""}", fontWeight = FontWeight.SemiBold, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                                        SaleStatusChip(sale.status)
+                                                    }
+                                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                                        sale.postId?.let { Text("Post: $it", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                                        sale.sellerId?.let { Text("Seller: $it", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                                        sale.buyerId?.let { Text("Buyer: $it", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                                    }
+                                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                        sale.agreedPrice?.let { Text("₹${"%,.0f".format(it)}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
+                                                        sale.createdAt?.take(10)?.let { Text(it, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                                    }
+                                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                                        TextButton(
+                                                            onClick = { sale.postId?.let(onOpenPost) },
+                                                            contentPadding = PaddingValues(horizontal = 8.dp),
+                                                            modifier = Modifier.height(28.dp),
+                                                        ) { Text("View post", fontSize = 11.sp) }
+                                                        OutlinedButton(
+                                                            onClick = onOpenComplaints,
+                                                            contentPadding = PaddingValues(horizontal = 8.dp),
+                                                            modifier = Modifier.height(28.dp),
+                                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                                                        ) { Text("Raise complaint", fontSize = 11.sp) }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         // ── Boost Education Banner ──
                         item {
                             var showBoostInfo by remember { mutableStateOf(true) }
@@ -848,6 +950,9 @@ fun MyPostsScreen(
                                                         // Post ID & Seller ID (compact for grid)
                                                         post.postId?.let { pid ->
                                                             Text("ID: $pid", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp)
+                                                        }
+                                                        post.userId?.let { uid ->
+                                                            Text("UID: $uid", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp)
                                                         }
                                                     }
                                                 }

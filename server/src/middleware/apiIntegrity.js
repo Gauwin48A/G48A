@@ -212,7 +212,10 @@ const antiReplayProtection = (req, res, next) => {
   }
 
   // Timestamp is MANDATORY on all write operations
-  const timestamp = req.headers["x-mhub-timestamp"] || req.body?._timestamp;
+  const timestamp =
+    req.headers["x-mhub-timestamp"] ||
+    req.headers["x-zaruda-timestamp"] ||
+    req.body?._timestamp;
   if (!timestamp) {
     logger.warn(`[API_INTEGRITY] Missing timestamp on write: ${method} ${path}`);
     return res.status(403).json({
@@ -231,7 +234,10 @@ const antiReplayProtection = (req, res, next) => {
   }
 
   // Nonce is MANDATORY with timestamp (prevents replay attacks)
-  const nonce = req.headers["x-mhub-nonce"] || req.body?._nonce;
+  const nonce =
+    req.headers["x-mhub-nonce"] ||
+    req.headers["x-zaruda-nonce"] ||
+    req.body?._nonce;
   if (!nonce) {
     logger.warn(`[API_INTEGRITY] Missing nonce on write: ${method} ${path}`);
     return res.status(403).json({

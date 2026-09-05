@@ -261,8 +261,6 @@
   <string name="sell_start_listing">Publicar ahora</string>
   <string name="plans_title">Elige tu plan</string>
   <string name="plans_subtitle">Selecciona el plan que más te conviene</string>
-  <string name="plans_trial_title">7 días de prueba gratuita en todos los planes de pago</string>
-  <string name="plans_trial_subtitle">No se requiere pago para comenzar. Cancela cuando quieras.</string>
   <string name="plans_get_started_free">Comenzar gratis</string>
   <string name="plans_subscribe_now">Suscribirse ahora</string>
   <string name="plans_free">Gratis</string>

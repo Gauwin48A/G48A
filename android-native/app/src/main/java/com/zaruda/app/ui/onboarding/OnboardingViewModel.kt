@@ -15,7 +15,7 @@ class OnboardingViewModel @Inject constructor(
 ) : ViewModel() {
 
     val onboardingCompleted = prefs.onboardingCompleted
-        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     fun completeOnboarding() {
         viewModelScope.launch {

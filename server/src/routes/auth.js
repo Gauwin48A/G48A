@@ -8,7 +8,7 @@ const deviceBindingHandlers = createDeviceBindingHandlers(authController);
 const authSessionController = require("../controllers/authSessionController");
 const { authenticateToken, optionalAuthenticateToken } = require("../middleware/security");
 const { strictLoginLimiter } = require("../middleware/wafEnforcement");
-const { loginSlowDown } = require("../middleware/rateLimiter");
+const { loginSlowDown, buildStore } = require("../middleware/rateLimiter");
 const { enforceNoVpnForAuth } = require("../middleware/fraudCheck");
 const { enforceAdaptiveMfaLogin } = require("../middleware/adaptiveMfaLogin");
 const { deviceBindingPreLogin, logoutAbuseCheck } = require("../middleware/deviceBinding");
@@ -72,16 +72,18 @@ const maybeBypassAuthRateLimit = (middleware) => (req, res, next) =>
 const signupLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
+  store: buildStore?.('rl:signup:'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many signup attempts. Please try again in 15 minutes." },
 });
 
+// Login Rate Limiter: 5 attempts per 15 minutes
 const LOGIN_LIMIT_WINDOW_MS =
   Number.parseInt(process.env.AUTH_LOGIN_LIMIT_WINDOW_MS, 10) ||
-  24 * 60 * 60 * 1000; // 24 hours
+  15 * 60 * 1000; // 15 minutes
 const LOGIN_LIMIT_MAX =
-  Number.parseInt(process.env.AUTH_LOGIN_LIMIT_MAX, 10) || 10;
+  Number.parseInt(process.env.AUTH_LOGIN_LIMIT_MAX, 10) || 5; // 5 attempts
 
 const resolveDeviceKey = (req) =>
   req.headers["x-device-fingerprint"] ||
@@ -92,6 +94,7 @@ const resolveDeviceKey = (req) =>
 const loginLimiter = rateLimit({
   windowMs: LOGIN_LIMIT_WINDOW_MS,
   max: LOGIN_LIMIT_MAX,
+  store: buildStore?.('rl:login:'),
   skipSuccessfulRequests: false,
   standardHeaders: true,
   legacyHeaders: false,
@@ -102,14 +105,16 @@ const loginLimiter = rateLimit({
   },
   message: {
     error: "Too many login attempts",
-    message: `Too many login attempts. Please try again later.`,
+    message: `Too many login attempts. Please try again in 15 minutes.`,
     retryAfter: Math.round(LOGIN_LIMIT_WINDOW_MS / (60 * 1000)),
   },
 });
 
+// OTP Rate Limiter: 3 requests per 10 minutes
 const otpSendLimiter = rateLimit({
-  windowMs: 10 * 60 * 1000,
-  max: 3,
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 3, // 3 requests
+  store: buildStore?.('rl:otp:send:'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many OTP requests. Please wait 10 minutes." },
@@ -118,6 +123,7 @@ const otpSendLimiter = rateLimit({
 const otpVerifyLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 10,
+  store: buildStore?.('rl:otp:verify:'),
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many OTP attempts. Please wait 10 minutes." },

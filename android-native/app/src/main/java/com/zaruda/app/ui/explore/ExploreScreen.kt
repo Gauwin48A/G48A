@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Compare
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
@@ -104,6 +105,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -201,6 +203,12 @@ data class ExploreState(
     val searchQuery: String = "",
     val searchResults: List<Post> = emptyList(),
     val isSearching: Boolean = false,
+    /** Live type-ahead suggestions (recent queries + brands/subcats/titles from loaded posts) */
+    val searchSuggestions: List<String> = emptyList(),
+    /** Last 10 query strings persisted locally (web-parity recent searches) */
+    val recentQueries: List<String> = emptyList(),
+    /** True once the current query has produced results (controls suggestion visibility) */
+    val hasSearchedQuery: Boolean = false,
     val refreshing: Boolean = false,
     val subcategories: List<String> = emptyList(),
     // Quick filter state
@@ -224,6 +232,7 @@ class ExploreViewModel @Inject constructor(
     private val tiersRepo: com.zaruda.app.data.repository.TiersRepository,
     private val localeManager: com.zaruda.app.core.LocaleManager,
     private val tokenStore: com.zaruda.app.data.local.TokenStore,
+    private val prefs: com.zaruda.app.data.local.AppPreferences,
     private val api: com.zaruda.app.data.remote.ZarudaApi,
     private val cartItemDao: com.zaruda.app.data.local.db.CartItemDao,
     private val wishlistItemDao: com.zaruda.app.data.local.db.WishlistItemDao,
@@ -280,7 +289,12 @@ class ExploreViewModel @Inject constructor(
                 )
             }
         }
-        // 2. Load saved preferences (may affect feed filtering)
+        // 2. Restore recent search queries for the marketplace search bar
+        viewModelScope.launch {
+            val persisted = prefs.getRecentSearches()
+            if (persisted.isNotEmpty()) _state.value = _state.value.copy(recentQueries = persisted)
+        }
+        // 3. Load saved preferences (may affect feed filtering)
         viewModelScope.launch {
             delay(500L)
             loadPreferences()
@@ -765,21 +779,61 @@ class ExploreViewModel @Inject constructor(
         _state.value = _state.value.copy(searchQuery = query)
         searchJob?.cancel()
         if (query.isBlank()) {
-            _state.value = _state.value.copy(searchResults = emptyList(), isSearching = false)
+            _state.value = _state.value.copy(searchResults = emptyList(), isSearching = false, searchSuggestions = emptyList(), hasSearchedQuery = false)
             return
         }
+        // Live type-ahead suggestions: recent queries + brand/subcategory/title tokens from loaded posts
+        val tokens = query.trim().lowercase()
+        val fromPosts = _state.value.posts
+            .flatMap { listOfNotNull(it.brand, it.subcategory, it.subcategoryName, it.categoryName, it.title) }
+            .filter { it.isNotBlank() && it.length >= 3 && it.contains(tokens, ignoreCase = true) }
+            .distinct()
+            .take(5)
+        val fromRecent = _state.value.recentQueries.filter { it.contains(tokens, ignoreCase = true) }
+        val suggestions = (fromRecent + fromPosts).distinct().take(8)
+        _state.value = _state.value.copy(searchSuggestions = suggestions, hasSearchedQuery = false)
+
         searchJob = viewModelScope.launch {
             delay(300)
-            _state.value = _state.value.copy(isSearching = true)
-            val localResults = localSearchResults(query)
-            when (val result = postsRepo.feed(query = query)) {
-                is ApiResult.Success -> {
-                    val merged = (result.data + localResults).distinctBy { it.stableId }
-                    _state.value = _state.value.copy(isSearching = false, searchResults = merged)
-                }
-                is ApiResult.Failure -> _state.value = _state.value.copy(isSearching = false, searchResults = localResults)
-            }
+            performSearch(query)
         }
+    }
+
+    /** Run a search immediately (skips the debounce) — used by IME Search, suggestion taps & recent chips. */
+    fun applySearchSuggestion(query: String) {
+        searchJob?.cancel()
+        _state.value = _state.value.copy(searchQuery = query, hasSearchedQuery = false)
+        viewModelScope.launch { performSearch(query) }
+    }
+
+    private suspend fun performSearch(query: String) {
+        _state.value = _state.value.copy(isSearching = true, searchSuggestions = emptyList())
+        val localResults = localSearchResults(query)
+        when (val result = postsRepo.feed(query = query)) {
+            is ApiResult.Success -> {
+                val merged = (result.data + localResults).distinctBy { it.stableId }
+                _state.value = _state.value.copy(isSearching = false, searchResults = merged, hasSearchedQuery = true)
+                // Persist to recent queries (keep last 10, deduplicate)
+                val trimmed = query.trim()
+                if (trimmed.isNotBlank()) {
+                    val updated = (_state.value.recentQueries.filter { it != trimmed } + trimmed).takeLast(10).reversed()
+                    _state.value = _state.value.copy(recentQueries = updated)
+                    viewModelScope.launch { prefs.saveRecentSearches(updated) }
+                }
+            }
+            is ApiResult.Failure -> _state.value = _state.value.copy(isSearching = false, searchResults = localResults, hasSearchedQuery = true)
+        }
+    }
+
+    fun removeRecentQuery(q: String) {
+        val updated = _state.value.recentQueries.filter { it != q }
+        _state.value = _state.value.copy(recentQueries = updated)
+        viewModelScope.launch { prefs.saveRecentSearches(updated) }
+    }
+
+    fun clearRecentSearches() {
+        _state.value = _state.value.copy(recentQueries = emptyList())
+        viewModelScope.launch { prefs.saveRecentSearches(emptyList()) }
     }
 
     private fun localSearchResults(query: String): List<Post> {
@@ -817,7 +871,7 @@ class ExploreViewModel @Inject constructor(
 
     fun clearSearch() {
         searchJob?.cancel()
-        _state.value = _state.value.copy(searchQuery = "", searchResults = emptyList(), isSearching = false)
+        _state.value = _state.value.copy(searchQuery = "", searchResults = emptyList(), isSearching = false, searchSuggestions = emptyList(), hasSearchedQuery = false)
     }
 
     fun toggleWishlist(postId: String) {
@@ -1307,7 +1361,7 @@ private fun ExploreFloatingTopBar(
 @Composable
 fun ExploreScreen(
     onOpenPost: (String) -> Unit,
-    onOpenSearch: () -> Unit,
+    onOpenSearch: (String) -> Unit = {},
     onOpenCategories: () -> Unit,
     onOpenHome: () -> Unit = {},
     onBack: (() -> Unit)? = null,
@@ -1451,6 +1505,9 @@ fun ExploreScreen(
                 selectedSubcategories = SharedExploreStore.selectedSubcategories,
                 onQueryChange = viewModel::onQueryChange,
                 onClearSearch = viewModel::clearSearch,
+                onApplySuggestion = viewModel::applySearchSuggestion,
+                onRemoveRecent = viewModel::removeRecentQuery,
+                onClearRecents = viewModel::clearRecentSearches,
                 onOpenHome = onOpenHome,
                 onOpenForYou = onOpenForYou,
             )
@@ -2285,7 +2342,7 @@ private fun AllPostsBrowse(
     onOpenCompare: () -> Unit = {},
     onToggleAutoRefresh: () -> Unit = {},
     onLoadMore: () -> Unit,
-    onOpenSearch: () -> Unit,
+    onOpenSearch: (String) -> Unit = {},
     onOpenFilters: () -> Unit = {},
     onOpenPrefs: () -> Unit = {},
     onSelectSubcategory: (String) -> Unit = {},
@@ -2297,6 +2354,9 @@ private fun AllPostsBrowse(
     selectedSubcategories: Set<String> = emptySet(),
     onQueryChange: (String) -> Unit = {},
     onClearSearch: () -> Unit = {},
+    onApplySuggestion: (String) -> Unit = {},
+    onRemoveRecent: (String) -> Unit = {},
+    onClearRecents: () -> Unit = {},
     onOpenHome: () -> Unit = {},
     onOpenForYou: () -> Unit = {},
     listState: LazyListState = rememberLazyListState(),
@@ -2312,6 +2372,8 @@ private fun AllPostsBrowse(
         "premium_first" to "Premium first",
     )
     var isGridView by remember { mutableStateOf(false) }
+    var searchFocused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
     val browseHaptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val shouldLoadMore by remember {
         derivedStateOf {
@@ -2434,9 +2496,16 @@ private fun AllPostsBrowse(
                                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                                 ),
-                                modifier = Modifier.weight(1f).height(46.dp),
+                                modifier = Modifier.weight(1f).height(46.dp).onFocusChanged { searchFocused = it.isFocused },
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                keyboardActions = KeyboardActions(onSearch = { }),
+                                keyboardActions = KeyboardActions(
+                                    onSearch = {
+                                        if (state.searchQuery.isNotBlank()) {
+                                            onApplySuggestion(state.searchQuery)
+                                            focusManager.clearFocus()
+                                        }
+                                    },
+                                ),
                             )
                             BadgedBox(badge = { if (state.hasActiveFilters) Badge(containerColor = Color(0xFFF59E0B)) }) {
                                 FilledIconButton(
@@ -2450,9 +2519,75 @@ private fun AllPostsBrowse(
                             }
                         }
 
-                        // Quick Navigation Bar: My Home & For You — only shown on global browse
-                        // (hidden inside specific categories so category focus is preserved)
-                        if (state.ecosystemKey.isNullOrBlank() && !state.forYouMode && state.searchQuery.isBlank()) {
+                        // Live type-ahead suggestions while typing
+                        AnimatedVisibility(visible = state.searchQuery.isNotBlank() && state.searchSuggestions.isNotEmpty()) {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                                shadowElevation = 6.dp,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp),
+                            ) {
+                                Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                                    state.searchSuggestions.forEach { suggestion ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().clickable { onApplySuggestion(suggestion) }.padding(horizontal = 14.dp, vertical = 10.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        ) {
+                                            Icon(Icons.AutoMirrored.Filled.TrendingUp, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                                            Text(suggestion, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                                        }
+                                        HorizontalDivider(Modifier.padding(horizontal = 14.dp))
+                                    }
+                                }
+                            }
+                        }
+
+                        // Recent searches chips (focused & empty query)
+                        AnimatedVisibility(
+                            visible = searchFocused && state.searchQuery.isBlank() && state.recentQueries.isNotEmpty(),
+                        ) {
+                            Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp)) {
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.History, null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Recent searches", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f))
+                                    Text(
+                                        "Clear",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.clickable { onClearRecents() },
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    items(state.recentQueries, key = { "rq_$it" }) { q ->
+                                        Surface(
+                                            onClick = { onApplySuggestion(q) },
+                                            shape = RoundedCornerShape(20.dp),
+                                            color = MaterialTheme.colorScheme.surfaceVariant,
+                                        ) {
+                                            Row(Modifier.padding(start = 10.dp, end = 4.dp, top = 5.dp, bottom = 5.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Text(q, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = "Remove",
+                                                    modifier = Modifier.size(14.dp).clickable { onRemoveRecent(q) },
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Quick Navigation Bar: My Home & For You — shown on the marketplace
+                        // browse for every category (hidden only while searching or on For You)
+                        if (!state.forYouMode && state.searchQuery.isBlank()) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -2552,6 +2687,26 @@ private fun AllPostsBrowse(
                     }
                 }
             } else {
+                // Results header: count + shortcut into the full search page
+                item(key = "search_results_header") {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            "${state.searchResults.size} result${if (state.searchResults.size != 1) "s" else ""} for \"${state.searchQuery}\"",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { onOpenSearch(state.searchQuery) }) {
+                            Text("View all results", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
                 items(state.searchResults, key = { it.stableId }) { post ->
                     AllPostCard(post = post, onClick = { onOpenPost(post.stableId) }, isWishlisted = wishlisted.contains(post.stableId), onToggleWishlist = { onToggleWishlist(post.stableId) }, isCompared = state.compareItems.contains(post.stableId), onToggleCompare = { onToggleCompare(post.stableId) }, isInCart = state.cartItems.contains(post.stableId), onToggleCart = { onToggleCart(post.stableId) }, onInterested = { onInterested(post.stableId, post.displayTitle) }, onUserClick = { post.userId?.let(onOpenUser) }, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp).animateItem())
                 }
@@ -2735,7 +2890,7 @@ private fun AllPostsBrowse(
 
 
         if (!state.forYouMode) {
-            item(key = "banner") { GreatDealsBanner(onShopNow = onOpenSearch) }
+            item(key = "banner") { GreatDealsBanner(onShopNow = { onOpenSearch("") }) }
         }
 
         if (state.loadingPosts && state.posts.isEmpty()) {

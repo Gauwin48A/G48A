@@ -379,7 +379,7 @@ fun ChannelDetailScreen(channelId: String, onBack: () -> Unit, onOpenPost: (Stri
                                     OutlinedButton(onClick = {
                                         val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                             type = "text/plain"
-                                            putExtra(android.content.Intent.EXTRA_TEXT, "Check out ${ch.displayName} on Zaruda! https://zaruda.app/channels/$channelId")
+                                            putExtra(android.content.Intent.EXTRA_TEXT, "Check out ${ch.displayName} on the marketplace! https://zaruda.app/channels/$channelId")
                                         }
                                         channelContext.startActivity(android.content.Intent.createChooser(shareIntent, "Share"))
                                     }, shape = RoundedCornerShape(12.dp), modifier = Modifier.height(44.dp)) {

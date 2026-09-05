@@ -890,14 +890,54 @@ fun RewardsScreen(
                                             HeroChip("✨ ${user.membershipPlan?.replaceFirstChar { it.uppercase() } ?: "Premium"} Plan")
                                         }
                                     }
-                                    // Member plan badge row
-                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = "🪙 $userCoins Coins • Marketplace Credits",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = Color.White,
-                                            fontWeight = FontWeight.Bold
-                                        )
+                                    // Stats & Tier Progress Row
+                                    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Column {
+                                            Text(
+                                                text = "🪙 $userCoins Coins",
+                                                style = MaterialTheme.typography.titleLarge,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Black
+                                            )
+                                            Text(
+                                                text = "Marketplace Credits",
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = Color.White.copy(alpha = 0.8f)
+                                            )
+                                        }
+                                        
+                                        // Tiered Progress Ring Canvas
+                                        val xpCurrent = user.xpCurrent ?: 0
+                                        val xpRequired = user.xpRequired ?: 100
+                                        val progress = if (xpRequired > 0) (xpCurrent.toFloat() / xpRequired.toFloat()).coerceIn(0f, 1f) else 1f
+                                        val nextTier = when (user.tier?.lowercase()) {
+                                            "bronze" -> "Silver"
+                                            "silver" -> "Gold"
+                                            "gold" -> "Platinum"
+                                            else -> "Max"
+                                        }
+                                        
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                            Column(horizontalAlignment = Alignment.End) {
+                                                Text("Next: $nextTier", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                                Text("$xpCurrent / $xpRequired XP", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
+                                            }
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(48.dp)) {
+                                                androidx.compose.foundation.Canvas(modifier = Modifier.size(48.dp)) {
+                                                    drawArc(
+                                                        color = Color.White.copy(alpha = 0.2f),
+                                                        startAngle = 0f, sweepAngle = 360f,
+                                                        useCenter = false, style = androidx.compose.ui.graphics.drawscope.Stroke(4.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                                    )
+                                                    drawArc(
+                                                        color = Color(0xFFFCD34D), // Gold/Amber accent
+                                                        startAngle = -90f, sweepAngle = progress * 360f,
+                                                        useCenter = false, style = androidx.compose.ui.graphics.drawscope.Stroke(4.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+                                                    )
+                                                }
+                                                Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFFCD34D), modifier = Modifier.size(20.dp))
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1248,7 +1288,7 @@ fun RewardsScreen(
                                     }
                                     Text("Share this code with friends to earn rewards!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                                     // Share buttons row
-                                    val shareText = "🛍️ Join Zaruda — India's Safe & Verified Marketplace! Use my invite code ${user.referralCode ?: "JOINME"} to unlock ₹100 Escrow Bonus on your first deal: https://zaruda.app/invite/${user.referralCode ?: "JOINME"}"
+                                    val shareText = "🛍️ Join the marketplace! Use my invite code ${user.referralCode ?: "JOINME"} to unlock ₹100 bonus on your first deal: https://zaruda.app/invite/${user.referralCode ?: "JOINME"}"
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),

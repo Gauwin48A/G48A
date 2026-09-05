@@ -7,8 +7,10 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,14 +24,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -47,56 +52,57 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 data class OnboardingPage(
-    val icon: ImageVector,
+    val badge: String,
     val title: String,
     val description: String,
-    val gradientStart: Color,
-    val gradientEnd: Color,
+    val bgImageUrl: String,
+    val icon: ImageVector,
+    val highlights: List<String>,
 )
 
 val onboardingPages = listOf(
     OnboardingPage(
-        icon = Icons.Default.Storefront,
+        badge = "HYPERLOCAL MARKETPLACE",
         title = "Buy & Sell Locally",
-        description = "Discover amazing deals from sellers in your neighbourhood. List your items in seconds and reach thousands of buyers.",
-        gradientStart = Color(0xFF1E40AF),
-        gradientEnd = Color(0xFF3B82F6),
+        description = "Connect directly with verified buyers and sellers in your city. Post ads in seconds and trade without middlemen.",
+        bgImageUrl = "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=1200&q=80",
+        icon = Icons.Default.Storefront,
+        highlights = listOf("⚡ Instant 30s Ad Listing", "📍 Verified City Neighbors", "💬 In-App Direct Chat"),
     ),
     OnboardingPage(
+        badge = "SMART DISCOVERY & PRICING",
+        title = "Discover Real Deals",
+        description = "Instant market valuation insights, trending electronics, and seamless search across 12+ verified categories.",
+        bgImageUrl = "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80",
         icon = Icons.Default.Explore,
-        title = "Smart Discovery",
-        description = "Personalised recommendations, trending categories, and powerful search to find exactly what you need — fast.",
-        gradientStart = Color(0xFF7C3AED),
-        gradientEnd = Color(0xFFA78BFA),
+        highlights = listOf("📊 Fair Market Valuation", "🔍 Instant Lens Search", "🔔 Live Price Drop Alerts"),
     ),
     OnboardingPage(
-        icon = Icons.Default.Shield,
-        title = "Trusted & Secure",
-        description = "KYC-verified sellers, secure payments, and buyer protection. Shop with confidence every time.",
-        gradientStart = Color(0xFF059669),
-        gradientEnd = Color(0xFF34D399),
+        badge = "100% VERIFIED & SECURE",
+        title = "Safe Direct Trading",
+        description = "Every transaction backed by Aadhaar-verified badges and verified direct deals from local sellers.",
+        bgImageUrl = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+        icon = Icons.Default.Security,
+        highlights = listOf("🛡️ Verified Deals Only", "👤 Aadhaar Verified Sellers", "🤝 Zero Spam Guarantee"),
     ),
 )
-
-/**
- * Extra drift (fraction of a page's scroll displacement) applied to the decorative
- * background blob so it lags the foreground content while swiping — 0.3x parallax.
- */
-private const val PARALLAX_FACTOR = 0.3f
 
 private val sampleCategories = listOf("📱 Electronics", "🚗 Vehicles", "🏠 Properties", "👗 Fashion", "💼 Jobs", "🛠️ Services")
 
@@ -107,237 +113,287 @@ fun OnboardingScreen(
 ) {
     val pagerState = rememberPagerState(pageCount = { onboardingPages.size })
     val currentPage = pagerState.currentPage
-    val page = onboardingPages[currentPage]
     val isLastPage = currentPage == onboardingPages.lastIndex
     var selectedInterests: Set<String> by remember { mutableStateOf(setOf("Electronics", "Vehicles")) }
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
 
-    // Story-bar advance tick — fires on every slide change (button tap or swipe).
     LaunchedEffect(currentPage) {
         if (currentPage > 0) {
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
     }
 
-    // Smoothly blend the background gradient while the user swipes between slides.
-    val animatedStart by animateColorAsState(
-        targetValue = page.gradientStart,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow),
-        label = "gradStart",
-    )
-    val animatedEnd by animateColorAsState(
-        targetValue = page.gradientEnd,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow),
-        label = "gradEnd",
-    )
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(animatedStart, animatedEnd))),
+            .background(Color(0xFF0B0F19)),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            // Top story-style segmented progress bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp, bottom = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                onboardingPages.forEachIndexed { index, _ ->
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(
-                                if (index <= currentPage) Color.White else Color.White.copy(alpha = 0.3f),
-                            ),
-                    )
-                }
-            }
-
-            // Skip button top-right
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                if (!isLastPage) {
-                    TextButton(onClick = onFinished) {
-                        Text(
-                            text = "Skip",
-                            color = Color.White.copy(alpha = 0.85f),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                        )
-                    }
-                } else {
-                    Spacer(Modifier.height(36.dp))
-                }
-            }
-
-            // ── Swipeable pager (pages share the outer animated gradient) ──
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-            ) { index ->
-                OnboardingPagerPage(
-                    page = onboardingPages[index],
-                    pageIndex = index,
-                    isLastPage = index == onboardingPages.lastIndex,
-                    pagerState = pagerState,
-                    selectedInterests = selectedInterests,
-                    onToggleInterest = { cat ->
-                        val name = cat.substringAfter(" ")
-                        selectedInterests = if (name in selectedInterests) {
-                            selectedInterests - name
-                        } else {
-                            selectedInterests + name
-                        }
-                    },
+        // ── Full-Bleed Background Pager ──
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+        ) { index ->
+            val page = onboardingPages[index]
+            Box(modifier = Modifier.fillMaxSize()) {
+                AsyncImage(
+                    model = page.bgImageUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
                 )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Action button
-            Button(
-                onClick = {
-                    if (isLastPage) {
-                        onFinished()
-                    } else {
-                        scope.launch { pagerState.animateScrollToPage(currentPage + 1) }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = page.gradientStart,
-                ),
-            ) {
-                Text(
-                    text = if (isLastPage) "Explore Verified Marketplace →" else "Continue →",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
+                // Cinematic Vignette Gradient Overlay
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color(0xFF0B0F19).copy(alpha = 0.55f),
+                                    Color(0xFF0B0F19).copy(alpha = 0.35f),
+                                    Color(0xFF0B0F19).copy(alpha = 0.85f),
+                                    Color(0xFF0B0F19),
+                                )
+                            )
+                        )
                 )
             }
         }
-    }
-}
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
-@Composable
-private fun OnboardingPagerPage(
-    page: OnboardingPage,
-    pageIndex: Int,
-    isLastPage: Boolean,
-    pagerState: PagerState,
-    selectedInterests: Set<String>,
-    onToggleInterest: (String) -> Unit,
-) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Decorative parallax blob — lags THIS page while swiping for depth.
-        Box(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .graphicsLayer {
-                    val distance = pagerState.getOffsetDistanceInPages(pageIndex)
-                    translationX = distance * PARALLAX_FACTOR * size.width
-                }
-                .size(280.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.10f)),
-        )
-
+        // ── Foreground Content Layout ──
         Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 40.dp, bottom = 28.dp, start = 20.dp, end = 20.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Spacer(modifier = Modifier.weight(0.12f))
-
-            // Icon in a frosted glass circle
-            Box(
-                modifier = Modifier
-                    .size(110.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center,
+            // Top Bar: Story Progress Indicators & Skip Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Icon(
-                    imageVector = page.icon,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(52.dp),
-                )
+                // Segmented story progress bar
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    onboardingPages.forEachIndexed { index, _ ->
+                        val isActive = index == currentPage
+                        val isPassed = index < currentPage
+                        val indicatorColor by animateColorAsState(
+                            targetValue = if (isActive) Color(0xFF3B82F6) else if (isPassed) Color.White else Color.White.copy(alpha = 0.3f),
+                            label = "indicatorColor",
+                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(indicatorColor),
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // Skip Pill
+                if (!isLastPage) {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFF131B2E).copy(alpha = 0.75f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                        modifier = Modifier.clickable { onFinished() },
+                    ) {
+                        Text(
+                            text = "Skip",
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        )
+                    }
+                } else {
+                    Spacer(Modifier.width(48.dp))
+                }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
-
-            Text(
-                text = page.title,
-                color = Color.White,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = page.description,
-                color = Color.White.copy(alpha = 0.9f),
-                fontSize = 15.sp,
-                textAlign = TextAlign.Center,
-                lineHeight = 22.sp,
-            )
-
-            if (isLastPage) {
-                Spacer(modifier = Modifier.height(18.dp))
-                Text(
-                    text = "Pick categories you love:",
-                    color = Color.White.copy(alpha = 0.95f),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth(),
+            // Bottom Frosted Glass Sheet Card
+            val currentPageData = onboardingPages[currentPage]
+            Surface(
+                shape = RoundedCornerShape(32.dp),
+                color = Color(0xFF131B2E).copy(alpha = 0.92f),
+                border = BorderStroke(1.5.dp, Color(0xFF3B82F6).copy(alpha = 0.3f)),
+                shadowElevation = 24.dp,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    sampleCategories.forEach { cat ->
-                        val name = cat.substringAfter(" ")
-                        val isSelected = name in selectedInterests
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) Color.White else Color.White.copy(alpha = 0.2f),
-                            modifier = Modifier.clickable { onToggleInterest(cat) },
+                    // Badge Row with Icon
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF2563EB).copy(alpha = 0.3f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = currentPageData.icon,
+                                contentDescription = null,
+                                tint = Color(0xFF60A5FA),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                        Text(
+                            text = currentPageData.badge,
+                            color = Color(0xFF93C5FD),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp,
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text(
+                        text = currentPageData.title,
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black,
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = currentPageData.description,
+                        color = Color.White.copy(alpha = 0.75f),
+                        fontSize = 13.sp,
+                        lineHeight = 19.sp,
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    if (!isLastPage) {
+                        // Highlight features pills
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            currentPageData.highlights.forEach { highlight ->
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color.White.copy(alpha = 0.06f),
+                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Text(
+                                            text = highlight,
+                                            color = Color.White.copy(alpha = 0.9f),
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Category Selection Grid on Last Page
+                        Text(
+                            text = "Choose categories you want to explore:",
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            sampleCategories.forEach { cat ->
+                                val name = cat.substringAfter(" ")
+                                val isSelected = name in selectedInterests
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = if (isSelected) Color(0xFF2563EB) else Color.White.copy(alpha = 0.08f),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        if (isSelected) Color(0xFF60A5FA) else Color.White.copy(alpha = 0.15f),
+                                    ),
+                                    modifier = Modifier.clickable {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        selectedInterests = if (isSelected) selectedInterests - name else selectedInterests + name
+                                    },
+                                ) {
+                                    Text(
+                                        text = cat,
+                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.85f),
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                                    )
+                                }
+                            }
+                        }
+                        InterestCounterChip(selectedCount = selectedInterests.size)
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Primary Action Button
+                    Button(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            if (isLastPage) {
+                                onFinished()
+                            } else {
+                                scope.launch { pagerState.animateScrollToPage(currentPage + 1) }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .shadow(12.dp, RoundedCornerShape(16.dp), ambientColor = Color(0xFF2563EB).copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2563EB),
+                            contentColor = Color.White,
+                        ),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(
-                                text = cat,
-                                color = if (isSelected) page.gradientStart else Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                text = if (isLastPage) "Explore Verified Marketplace" else "Continue",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp,
+                            )
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
                             )
                         }
                     }
                 }
-                InterestCounterChip(selectedCount = selectedInterests.size)
             }
-
-            Spacer(modifier = Modifier.weight(0.06f))
         }
     }
 }
@@ -348,8 +404,8 @@ private fun InterestCounterChip(selectedCount: Int) {
     var popScale by remember { mutableStateOf(1f) }
     LaunchedEffect(selectedCount) {
         if (selectedCount > 0) {
-            popScale = 1.18f
-            delay(150)
+            popScale = 1.15f
+            delay(120)
             popScale = 1f
         }
     }
@@ -361,25 +417,37 @@ private fun InterestCounterChip(selectedCount: Int) {
 
     AnimatedVisibility(
         visible = selectedCount > 0,
-        enter = scaleIn(initialScale = 0.6f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + fadeIn(),
-        modifier = Modifier.padding(top = 14.dp),
+        enter = scaleIn(initialScale = 0.7f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + fadeIn(),
+        modifier = Modifier.padding(top = 10.dp),
     ) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = Color.White.copy(alpha = 0.22f),
+            shape = RoundedCornerShape(14.dp),
+            color = Color(0xFF2563EB).copy(alpha = 0.2f),
+            border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.35f)),
             modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale },
         ) {
-            Text(
-                text = if (selectedCount == 1) {
-                    "1 category selected • 1,420 verified listings waiting for you"
-                } else {
-                    "$selectedCount categories selected • 1,420 verified listings waiting for you"
-                },
-                color = Color.White,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
-            )
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = Color(0xFF60A5FA),
+                    modifier = Modifier.size(14.dp),
+                )
+                Text(
+                    text = if (selectedCount == 1) {
+                        "1 Category • 1,420+ Verified Listings"
+                    } else {
+                        "$selectedCount Categories • 4,850+ Verified Listings"
+                    },
+                    color = Color(0xFF93C5FD),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
         }
     }
 }

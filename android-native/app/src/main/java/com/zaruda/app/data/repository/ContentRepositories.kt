@@ -545,11 +545,6 @@ class TiersRepository @Inject constructor(private val api: ZarudaApi) {
         api.createRazorpayOrder(RazorpayOrderRequest(amount = 0.0, tierId = req.tierId)); Unit
     }
 
-    /** Claim the free trial via POST /api/subscriptions/claim-trial */
-    suspend fun claimTrial(): ApiResult<ClaimTrialResponse> = safeApiCall {
-        api.claimTrial()
-    }
-
     suspend fun cancelSubscription(id: String): ApiResult<Unit> = safeApiCall {
         // Cancel not available in new API; return success
         Unit

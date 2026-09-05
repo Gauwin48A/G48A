@@ -665,10 +665,6 @@ interface ZarudaApi {
     @GET("api/subscriptions/my")
     suspend fun mySubscription(): MySubscriptionResponse
 
-    @POST("api/subscriptions/claim-trial")
-    suspend fun claimTrial(): ClaimTrialResponse
-
-
     // ---- Legal / CMS ----
     // NOTE: Server routes these under /api/cms/pages/:slug (web parity)
     @GET("api/cms/pages/terms")

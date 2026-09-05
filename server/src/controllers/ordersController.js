@@ -10,6 +10,7 @@ async function ensureOrdersSchema() {
   try {
     await runQuery(`
       CREATE SEQUENCE IF NOT EXISTS order_number_seq START 1001;
+      ALTER TABLE orders ALTER COLUMN product_id DROP NOT NULL;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number VARCHAR(50) UNIQUE;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS post_id INTEGER;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS seller_id INTEGER;
@@ -17,6 +18,7 @@ async function ensureOrdersSchema() {
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS gst_on_fee DECIMAL(12,2) DEFAULT 0;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS seller_payout DECIMAL(12,2) DEFAULT 0;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS escrow_status VARCHAR(20) DEFAULT 'NONE';
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) DEFAULT 'UPI';
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS handover_otp VARCHAR(6);
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_confirmed_at TIMESTAMP;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_name VARCHAR(150);
@@ -167,7 +169,7 @@ exports.create = async (req, res) => {
 
       // Reserve the post so other buyers cannot checkout simultaneously
       await runQuery(
-        `UPDATE posts SET status = 'reserved', updated_at = NOW() WHERE post_id::text = $1`,
+        `UPDATE posts SET status = 'sale_pending', updated_at = NOW() WHERE post_id::text = $1`,
         [resolvedPostId]
       );
     } else {

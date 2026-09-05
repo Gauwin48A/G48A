@@ -1109,8 +1109,6 @@
     <string name="plans_subscribe_now">Subscribe Now</string>
     <string name="plans_subtitle">Select the plan that fits your needs</string>
     <string name="plans_title">Choose Your Plan</string>
-    <string name="plans_trial_subtitle">No payment required to start. Cancel anytime.</string>
-    <string name="plans_trial_title">7-day free trial on all paid plans</string>
     <string name="plans_upgrade">Upgrade</string>
     <string name="post_age_label">Age (months)</string>
     <string name="post_audio_description">Audio Description</string>

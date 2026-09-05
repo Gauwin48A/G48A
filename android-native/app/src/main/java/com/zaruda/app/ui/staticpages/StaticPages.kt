@@ -258,7 +258,7 @@ private val faqs = listOf(
     FaqItem("How do Rewards and Coins work?", "Earn coins through daily check-ins, spins, engagement and referral milestones. Redeem them in the Rewards store for discounts and perks.", "Rewards"),
     FaqItem("How do I report a post or user?", "Open the post and tap Report, or block a user from their profile. Our safety team reviews every report.", "Safety"),
     FaqItem("What should I do if a deal goes wrong?", "File a complaint from More → Complaints with the order or listing details. Our team mediates between buyer and seller. In fraud cases, payments are held and accounts may be frozen until the case is reviewed.", "Safety"),
-    FaqItem("How do I contact support?", "Email support@zarudatech.com or grievance@zarudatech.com, or use More → Feedback for suggestions and More → Complaints for disputes. We respond within 24–48 hours on business days.", "Support"),
+    FaqItem("How do I contact support?", "Use More → Feedback for suggestions and More → Complaints for disputes. Our team responds within 24–48 hours on business days.", "Support"),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -315,7 +315,7 @@ class PostDetailViewModel @Inject constructor(
                         val mockPost = com.zaruda.app.domain.model.Post(
                             id = postId,
                             postId = postId,
-                            title = "Post #$postId",
+                            title = "Listing",
                             description = "This listing could not be loaded right now. Please check your connection and try again.",
                             status = "active",
                             viewCount = 0,

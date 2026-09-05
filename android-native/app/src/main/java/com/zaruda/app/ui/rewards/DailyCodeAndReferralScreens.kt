@@ -67,6 +67,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.text.drawText
 import java.util.Calendar
 
 data class DailyCodeState(
@@ -333,138 +337,94 @@ fun ReferralTreeScreen(onBack: () -> Unit, viewModel: ReferralTreeViewModel = hi
                     Text("Share your referral code to grow your network!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 }
             }
-            else -> Column(Modifier.fillMaxSize().padding(padding)) {
-                // ── Direct / Indirect Tabs ──
-                val tabs = listOf("Direct", "Indirect")
-                TabRow(
-                    selectedTabIndex = state.activeTab,
-                    containerColor = Color.Transparent,
-                    contentColor = MaterialTheme.colorScheme.primary,
+            else -> Column(Modifier.fillMaxSize().padding(padding).background(Color(0xFFF8FAFC))) {
+                // Summary header card
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF3B82F6)),
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
                 ) {
-                    tabs.forEachIndexed { index, title ->
-                        val count = if (index == 0) state.totalDirect else state.totalIndirect
-                        Tab(
-                            selected = state.activeTab == index,
-                            onClick = { viewModel.setActiveTab(index) },
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text("$title", fontWeight = if (state.activeTab == index) FontWeight.Bold else FontWeight.Normal, fontSize = 14.sp)
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = if (state.activeTab == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                    ) {
-                                        Text(
-                                            "$count",
-                                            fontSize = 11.sp,
-                                            color = if (state.activeTab == index) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            fontWeight = FontWeight.SemiBold,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                        )
-                                    }
-                                }
-                            },
-                        )
+                    Column(Modifier.padding(20.dp)) {
+                        Text("Your Referral Network", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
+                        Text("${state.totalReferrals} Members", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("${state.totalDirect} Direct • ${state.totalIndirect} Indirect", fontSize = 11.sp, color = Color.White.copy(alpha = 0.65f))
                     }
                 }
 
-                val currentNodes = if (state.activeTab == 0) state.directNodes else state.indirectNodes
-                val isDirectTab = state.activeTab == 0
-                val accentColor = if (isDirectTab) Color(0xFF10B981) else Color(0xFF3B82F6)
-                val accentBg = if (isDirectTab) Color(0xFFD1FAE5) else Color(0xFFDBEAFE)
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                // Hierarchical Node Graph
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                        .verticalScroll(rememberScrollState())
+                        .horizontalScroll(rememberScrollState())
                 ) {
-                    // Summary header card
-                    item {
-                        Card(
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = accentColor),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Column(Modifier.padding(20.dp)) {
-                                Text(
-                                    if (isDirectTab) "Direct Referrals" else "Indirect Referrals",
-                                    fontSize = 13.sp,
-                                    color = Color.White.copy(alpha = 0.8f),
-                                )
-                                Text(
-                                    "${if (isDirectTab) state.totalDirect else state.totalIndirect}",
-                                    fontSize = 32.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                )
-                                if (isDirectTab && state.totalIndirect > 0) {
-                                    Text(
-                                        "${state.totalIndirect} also from their network",
-                                        fontSize = 11.sp,
-                                        color = Color.White.copy(alpha = 0.65f),
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+                    val primaryColor = Color(0xFF3B82F6)
+                    val secondaryColor = Color(0xFFDBEAFE)
+                    val textColor = Color(0xFF0F172A)
 
-                    if (currentNodes.isEmpty()) {
-                        item {
-                            Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                                Text(
-                                    if (isDirectTab) "No direct referrals yet" else "No indirect referrals yet",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
+                    androidx.compose.foundation.Canvas(modifier = Modifier.size(600.dp, 600.dp).padding(32.dp)) {
+                        val nodeRadius = 24.dp.toPx()
+                        val levelHeight = 120.dp.toPx()
+                        
+                        // Draw lines first so they are behind nodes
+                        val rootCenter = androidx.compose.ui.geometry.Offset(size.width / 2, nodeRadius)
+                        
+                        // Calculate positions
+                        val directY = rootCenter.y + levelHeight
+                        val indirectY = directY + levelHeight
+                        
+                        val directs = state.directNodes
+                        val indirects = state.indirectNodes
+                        
+                        val directSpacing = if (directs.size > 1) size.width / directs.size else size.width
+                        val directCenters = directs.mapIndexed { index, _ -> 
+                            androidx.compose.ui.geometry.Offset((index + 0.5f) * directSpacing, directY)
                         }
-                    } else {
-                        items(currentNodes, key = { it.id }) { node ->
-                            Card(
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        Modifier.size(40.dp).clip(CircleShape).background(accentColor.copy(alpha = 0.15f)),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        Text(
-                                            node.name.take(1).uppercase(),
-                                            color = accentColor,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 16.sp,
-                                        )
-                                    }
-                                    Spacer(Modifier.width(12.dp))
-                                    Column(Modifier.weight(1f)) {
-                                        Text(node.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                                        Text(
-                                            "Level ${node.depth} • ${node.joinDate?.take(10) ?: "Joined"}",
-                                            fontSize = 11.sp,
-                                            color = Color(0xFF64748B),
-                                        )
-                                    }
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = accentBg,
-                                    ) {
-                                        val reward = when (node.depth) {
-                                            1 -> 50
-                                            2 -> 25
-                                            3 -> 10
-                                            4 -> 5
-                                            else -> 2
-                                        }
-                                        Text(
-                                            "+$reward",
-                                            fontSize = 11.sp,
-                                            color = accentColor,
-                                            fontWeight = FontWeight.SemiBold,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                        )
-                                    }
-                                }
-                            }
+                        
+                        val indirectSpacing = if (indirects.size > 1) size.width / indirects.size else size.width
+                        val indirectCenters = indirects.mapIndexed { index, _ -> 
+                            androidx.compose.ui.geometry.Offset((index + 0.5f) * indirectSpacing, indirectY)
+                        }
+
+                        // Draw lines: Root -> Directs
+                        directCenters.forEach { center ->
+                            drawLine(color = primaryColor.copy(alpha = 0.3f), start = rootCenter, end = center, strokeWidth = 4f)
+                        }
+                        
+                        // Draw lines: Directs -> Indirects (Simulated, connecting to nearest direct)
+                        indirectCenters.forEach { indirectCenter ->
+                            val closestDirect = directCenters.minByOrNull { kotlin.math.abs(it.x - indirectCenter.x) } ?: rootCenter
+                            drawLine(color = primaryColor.copy(alpha = 0.15f), start = closestDirect, end = indirectCenter, strokeWidth = 2f)
+                        }
+
+                        // Draw Nodes function
+                        fun drawNode(center: androidx.compose.ui.geometry.Offset, name: String, color: Color) {
+                            drawCircle(color = color, radius = nodeRadius, center = center)
+                            drawCircle(color = Color.White, radius = nodeRadius * 0.9f, center = center)
+                            
+                            val textLayoutResult = textMeasurer.measure(name.take(1).uppercase(), androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color))
+                            val textOffset = androidx.compose.ui.geometry.Offset(center.x - textLayoutResult.size.width / 2, center.y - textLayoutResult.size.height / 2)
+                            
+                            drawText(textMeasurer, name.take(1).uppercase(), textOffset, androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color))
+                            val nameLayout = textMeasurer.measure(name, androidx.compose.ui.text.TextStyle(fontSize = 12.sp, color = textColor))
+                            drawText(textMeasurer, name, androidx.compose.ui.geometry.Offset(center.x - nameLayout.size.width / 2, center.y + nodeRadius + 8.dp.toPx()), androidx.compose.ui.text.TextStyle(fontSize = 12.sp, color = textColor))
+                        }
+
+                        // Draw Root Node
+                        drawNode(rootCenter, "You", primaryColor)
+                        
+                        // Draw Direct Nodes
+                        directCenters.forEachIndexed { index, center ->
+                            drawNode(center, directs[index].name, primaryColor)
+                        }
+                        
+                        // Draw Indirect Nodes
+                        indirectCenters.forEachIndexed { index, center ->
+                            drawNode(center, indirects[index].name, Color(0xFF10B981))
                         }
                     }
                 }

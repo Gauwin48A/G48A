@@ -381,8 +381,6 @@ Share with your friends and earn rewards.
     <!-- Plans / Tier Selection -->
     <string name="plans_title">Choose Your Plan</string>
     <string name="plans_subtitle">Select the plan that fits your needs</string>
-    <string name="plans_trial_title">7-day free trial on all paid plans</string>
-    <string name="plans_trial_subtitle">No payment required to start. Cancel anytime.</string>
     <string name="plans_popular">POPULAR</string>
     <string name="plans_recommended">RECOMMENDED</string>
     <string name="plans_get_started_free">Get Started Free</string>

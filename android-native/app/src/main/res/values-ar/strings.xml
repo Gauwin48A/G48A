@@ -1207,8 +1207,6 @@
     <string name="plans_pro">Pro</string>
     <string name="plans_profile_badge">Badge on profile</string>
     <string name="plans_subtitle">Select the plan that fits your needs</string>
-    <string name="plans_trial_subtitle">No payment required to start. Cancel anytime.</string>
-    <string name="plans_trial_title">7-day free trial on all paid plans</string>
     <string name="plans_upgrade">Upgrade</string>
     <string name="post_audio_record_prompt">Record audio description (max %ds)</string>
     <string name="post_condition_like_new">Like New</string>

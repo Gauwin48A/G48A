@@ -82,102 +82,134 @@ fun AnimatedSplashScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF3B82F6))
-                )
-            ),
+            .background(Color(0xFF0B0F19)),
         contentAlignment = Alignment.Center,
     ) {
+        // ── Scenic Alpine Backdrop (Matching Home Screen) ──
+        coil.compose.AsyncImage(
+            model = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+            contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        // Dark vignette overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF0B0F19).copy(alpha = 0.45f),
+                            Color(0xFF0B0F19).copy(alpha = 0.88f),
+                            Color(0xFF0B0F19),
+                        )
+                    )
+                )
+        )
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            // Glowing logo
+            // Glowing Ambient Emblem
             Box(contentAlignment = Alignment.Center) {
+                // Radial Sapphire Aura
                 Box(
                     modifier = Modifier
-                        .size(160.dp)
+                        .size(180.dp)
                         .scale(glowScale * glowAlpha)
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(
-                                listOf(Color(0xFF3B82F6).copy(alpha = 0.3f), Color(0xFF3B82F6).copy(alpha = 0f))
+                                listOf(Color(0xFF2563EB).copy(alpha = 0.45f), Color(0xFF2563EB).copy(alpha = 0f))
                             )
                         )
                 )
+                // Prism Shield Monogram
                 Box(
                     modifier = Modifier
-                        .size(120.dp)
+                        .size(124.dp)
                         .scale(scaleAnim.value)
-                        .shadow(24.dp, CircleShape, ambientColor = Color(0xFF3B82F6).copy(alpha = 0.5f))
-                        .clip(CircleShape)
-                        .background(Brush.linearGradient(listOf(Color(0xFF1E40AF), Color(0xFF3B82F6), Color(0xFF60A5FA)))),
+                        .shadow(28.dp, RoundedCornerShape(32.dp), ambientColor = Color(0xFF2563EB).copy(alpha = 0.6f))
+                        .clip(RoundedCornerShape(32.dp))
+                        .background(
+                            Brush.linearGradient(
+                                listOf(Color(0xFF1E3A8A), Color(0xFF2563EB), Color(0xFF3B82F6))
+                            )
+                        )
+                        .border(1.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(32.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = "Z",
-                            fontSize = 62.sp,
+                            fontSize = 68.sp,
                             fontWeight = FontWeight.Black,
                             color = Color.White,
                         )
                         Text(
                             text = "✦",
-                            fontSize = 24.sp,
+                            fontSize = 26.sp,
                             color = Color(0xFFF59E0B),
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(top = 2.dp, end = 2.dp)
+                                .padding(top = 4.dp, end = 4.dp)
                         )
                     }
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(32.dp))
 
+            // Editorial Brand Header
             Text(
-                text = "ZARUDA",
+                text = "Z A R U D A",
                 color = Color.White,
                 fontSize = 32.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 4.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 6.sp,
             )
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(10.dp))
 
             AnimatedVisibility(
                 visible = taglineVisible,
-                enter = fadeIn(tween(600)) + scaleIn(initialScale = 0.8f, animationSpec = tween(600)),
+                enter = fadeIn(tween(600)) + scaleIn(initialScale = 0.85f, animationSpec = tween(600)),
             ) {
-                Text("India's Safe & Verified Marketplace", color = Color.White.copy(alpha = 0.95f), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.5.sp)
+                Text(
+                    text = "Marketplace • Deals & Direct Sellers",
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 0.5.sp,
+                )
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(16.dp))
 
             AnimatedVisibility(
                 visible = badgeVisible,
-                enter = fadeIn(tween(500)) + scaleIn(initialScale = 0.5f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)),
+                enter = fadeIn(tween(500)) + scaleIn(initialScale = 0.6f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)),
             ) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = Color.White.copy(alpha = 0.15f),
-                    modifier = Modifier.border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(20.dp)),
+                    color = Color.White.copy(alpha = 0.12f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text("\uD83D\uDEE1\uFE0F", fontSize = 14.sp)
+                        Text("🛡️", fontSize = 13.sp)
                         Text("Verified Local Deals", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                        Text("\u00B7", color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
-                        Text("KYC Verified", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("•", color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
+                        Text("Aadhaar Verified", color = Color(0xFF60A5FA), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(36.dp))
 
             AnimatedVisibility(visible = contentVisible, enter = fadeIn()) {
                 LoadingDots()
@@ -188,39 +220,22 @@ fun AnimatedSplashScreen(
             visible = contentVisible,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 38.dp),
+                .padding(bottom = 36.dp),
             enter = fadeIn(tween(800)),
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // National security micro-pill — RBI-compliant escrow trust signal.
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFFF59E0B).copy(alpha = 0.12f),
-                    modifier = Modifier.border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.35f), RoundedCornerShape(20.dp)),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
-                    ) {
-                        Text("\uD83C\uDFDB\uFE0F", fontSize = 10.sp)
-                        Text(
-                            "Secure In-App Payments",
-                            color = Color(0xFFFCD34D),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = 0.3.sp,
-                        )
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                Text("🇮🇳 Made with \u2764\uFE0F in India", color = Color.White.copy(alpha = 0.6f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                Text(
+                    text = "🇮🇳 Made with ❤️ for India",
+                    color = Color.White.copy(alpha = 0.65f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
 
         Text(
             text = "v1.2.0",
-            color = Color.White.copy(alpha = 0.5f),
+            color = Color.White.copy(alpha = 0.4f),
             fontSize = 10.sp,
             modifier = Modifier
                 .align(Alignment.BottomCenter)

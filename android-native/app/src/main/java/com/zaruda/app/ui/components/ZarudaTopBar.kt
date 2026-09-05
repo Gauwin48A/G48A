@@ -51,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -301,11 +302,14 @@ fun ZarudaTopBar(
                             leadingIcon = { Icon(Icons.Default.BookmarkAdd, null, modifier = Modifier.size(18.dp)) },
                             onClick = { showOverflow = false; onWishlist() },
                         )
+                        // Label reflects the APPLIED theme (not the mode enum) so SYSTEM mode
+                        // shows the correct action: tap to switch to the other theme.
+                        val isDarkApplied = MaterialTheme.colorScheme.background.luminance() < 0.5f
                         DropdownMenuItem(
-                            text = { Text(if (currentThemeMode == ThemeMode.DARK) "Light Mode" else "Dark Mode") },
+                            text = { Text(if (isDarkApplied) "Light Mode" else "Dark Mode") },
                             leadingIcon = {
                                 Icon(
-                                    if (currentThemeMode == ThemeMode.DARK) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                                    if (isDarkApplied) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
                                     null,
                                     modifier = Modifier.size(18.dp),
                                 )

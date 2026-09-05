@@ -78,36 +78,61 @@ if (typeof suspiciousCleanupTimer.unref === 'function') {
     suspiciousCleanupTimer.unref();
 }
 
-// General API rate limiter
+// General API rate limiter (100 requests / minute / user or IP)
+const API_LIMIT_WINDOW_MS =
+    Number.parseInt(process.env.API_RATE_LIMIT_WINDOW_MS, 10) || 60 * 1000; // 1 minute
+const API_LIMIT_MAX =
+    Number.parseInt(process.env.API_RATE_LIMIT_MAX, 10) || 100; // 100 requests / minute
+
 const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 2000, // Increased to support view tracking bursts
+    windowMs: API_LIMIT_WINDOW_MS,
+    max: API_LIMIT_MAX,
     store: buildStore('rl:api:'),
     message: {
         error: 'Too many requests',
-        message: 'You have exceeded the rate limit. Please try again later.',
-        retryAfter: 15
+        message: 'You have exceeded the rate limit of 100 requests per minute. Please try again shortly.',
+        retryAfter: Math.ceil(API_LIMIT_WINDOW_MS / 1000)
     },
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => {
-        return rateLimit.ipKeyGenerator(resolveClientIp(req));
+        const userId = req.user?.user_id || req.user?.userId || req.user?.id;
+        return userId ? `user:${userId}` : `ip:${rateLimit.ipKeyGenerator(resolveClientIp(req))}`;
     },
     skip: (req) => {
-        // Skip rate limiting for health checks
         return req.path === '/health' || req.path === '/api/health';
+    }
+});
+
+// Stricter limiter for public/unauthenticated endpoints (30 requests / minute)
+const PUBLIC_API_LIMIT_MAX =
+    Number.parseInt(process.env.PUBLIC_API_RATE_LIMIT_MAX, 10) || 30;
+
+const publicApiLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: PUBLIC_API_LIMIT_MAX, // 30 requests / minute per IP
+    store: buildStore('rl:public:'),
+    message: {
+        error: 'Too many requests',
+        message: 'Public rate limit reached (30 req/min). Please slow down or authenticate.',
+        retryAfter: 60
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+        return `pub:${rateLimit.ipKeyGenerator(resolveClientIp(req))}`;
     }
 });
 
 // Strict limiter for authentication endpoints
 const authLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 10, // 10 attempts per hour
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts per 15 min
     store: buildStore('rl:auth:'),
     message: {
         error: 'Too many login attempts',
-        message: 'Account temporarily locked. Please try again in an hour.',
-        retryAfter: 60
+        message: 'Too many authentication attempts. Please try again in 15 minutes.',
+        retryAfter: 15 * 60
     },
     standardHeaders: true,
     legacyHeaders: false
@@ -315,6 +340,7 @@ const webhookLimiter = rateLimit({
 
 module.exports = {
     apiLimiter,
+    publicApiLimiter,
     authLimiter,
     signupLimiter,
     postLimiter,
@@ -327,5 +353,6 @@ module.exports = {
     offerLimiter,
     rewardRedeemLimiter,
     adminLimiter,
-    webhookLimiter
+    webhookLimiter,
+    buildStore,
 };

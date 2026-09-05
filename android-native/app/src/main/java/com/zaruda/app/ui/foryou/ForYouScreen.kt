@@ -28,7 +28,7 @@ fun ForYouScreen(
 ) {
     ExploreScreen(
         onOpenPost = onOpenPost,
-        onOpenSearch = onOpenSearch,
+        onOpenSearch = { onOpenSearch() },
         onOpenHome = onOpenHome,
         onOpenProfile = onOpenProfile,
         onOpenForYou = onOpenForYou,

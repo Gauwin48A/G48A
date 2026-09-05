@@ -1,28 +1,36 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
+﻿<vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="120dp"
     android:height="120dp"
     android:viewportWidth="120"
     android:viewportHeight="120">
-    <!-- Outer circle background -->
+    <!-- Ambient Sapphire Glow Disc -->
     <path
-        android:fillColor="#1E40AF"
-        android:pathData="M60,60m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
-    <!-- Inner gradient accent circle -->
+        android:fillColor="#1E3A8A"
+        android:fillAlpha="0.45"
+        android:pathData="M60,60m-52,0a52,52 0,1 1,104 0a52,52 0,1 1,-104 0" />
+    <!-- Royal Navy Shield Container -->
+    <path
+        android:fillColor="#1D4ED8"
+        android:pathData="M60,20 C80,20 94,31 94,54 C94,80 60,98 60,98 C60,98 26,80 26,54 C26,31 40,20 60,20 Z" />
+    <!-- Inner Highlight Rim -->
     <path
         android:fillColor="#3B82F6"
-        android:fillAlpha="0.35"
-        android:pathData="M60,60m-36,0a36,36 0,1 1,72 0a36,36 0,1 1,-72 0" />
-    <!-- Modern Geometric "Z" Monogram for ZARUDA -->
+        android:fillAlpha="0.6"
+        android:pathData="M60,23 C77,23 90,33 90,54 C90,76 60,92 60,92 C60,92 30,76 30,54 C30,33 43,23 60,23 Z" />
+    <!-- Geometric Z Monogram Pure White -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M38,42 L76,42 L76,49 L50,71 L76,71 L76,78 L38,78 L38,71 L64,49 L38,49 Z" />
-    <!-- Golden Trust Spark / Verified Accent on top right -->
+        android:pathData="M42,40 L78,40 L78,47 L54,67 L78,67 L78,74 L42,74 L42,67 L66,47 L42,47 Z" />
+    <!-- Depth Translucent Facet -->
+    <path
+        android:fillColor="#93C5FD"
+        android:fillAlpha="0.7"
+        android:pathData="M54,54 L68,54 L61,61 Z" />
+    <!-- Golden Trust Spark ✦ -->
     <path
         android:fillColor="#F59E0B"
-        android:pathData="M78,38 L84,44 L78,50 L72,44 Z" />
-    <!-- Subtle shield base curve in center -->
+        android:pathData="M80,20 Q80,27 87,27 Q80,27 80,34 Q80,27 73,27 Q80,27 80,20 Z" />
     <path
-        android:fillColor="#60A5FA"
-        android:fillAlpha="0.4"
-        android:pathData="M52,58 L68,58 L60,67 Z" />
+        android:fillColor="#FEF08A"
+        android:pathData="M80,23 Q80,27 84,27 Q80,27 80,31 Q80,27 76,27 Q80,27 80,23 Z" />
 </vector>

@@ -1133,8 +1133,6 @@
     <string name="plans_promoted_posts">Promoted posts</string>
     <string name="plans_recommended">RECOMMENDED</string>
     <string name="plans_subtitle">Select the plan that fits your needs</string>
-    <string name="plans_trial_subtitle">No payment required to start. Cancel anytime.</string>
-    <string name="plans_trial_title">7-day free trial on all paid plans</string>
     <string name="plans_upgrade">Upgrade</string>
     <string name="post_age_label">Age (months)</string>
     <string name="post_audio_description">Audio Description</string>
