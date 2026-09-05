@@ -371,7 +371,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                         put("amount", (event.amount * 100).toLong())
                         put("currency", event.currency)
                         put("order_id", event.orderId)
-                        put("name", "Zaruda Marketplace")
+                        put("name", "Marketplace")
                         put("description", "Plan: ${event.tierId}")
                         put("theme", JSONObject().apply { put("color", "#3B82F6") })
                         put("prefill", JSONObject().apply {
@@ -425,7 +425,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Premium Gateway", onBack)
+            // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
 
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
@@ -443,7 +443,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                             Text("Membership Plans", fontWeight = FontWeight.ExtraBold, fontSize = 26.sp, color = ColorTokens.TextHeading)
                             Spacer(Modifier.height(6.dp))
                             Text(
-                                "Unlock the full potential of Zaruda with a flexible plan that fits your selling needs.",
+                                "Unlock the full potential of the platform with a flexible plan that fits your selling needs.",
                                 fontSize = 14.sp, color = ColorTokens.TextSecondary,
                                 textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 12.dp)
                             )

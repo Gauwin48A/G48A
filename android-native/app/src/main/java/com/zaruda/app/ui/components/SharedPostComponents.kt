@@ -56,7 +56,7 @@ fun ShareLinkBottomSheet(
 ) {
     val context = LocalContext.current
     val postUrl = "https://zaruda.app/post/$postId"
-    val shareText = "Check out \"$title\" on Zaruda — India's Safe & Verified Marketplace with 100% Escrow Protection! 🛡️✨\n\n👉 View listing: $postUrl"
+    val shareText = "Check out \"$title\" — a verified local marketplace deal 🛡️✨\n\n👉 View listing: $postUrl"
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -271,7 +271,7 @@ fun BuyerInterestModal(
                 val chips = listOf(
                     "👋 Is this still available?",
                     "🏷️ Would you accept 10% off?",
-                    "🛡️ Ready to buy via Escrow",
+                    "🛡️ Ready to buy via Platform",
                     "🚚 Can you courier via Porter/Dunzo?",
                     "📍 Can we meet today for inspection?",
                 )

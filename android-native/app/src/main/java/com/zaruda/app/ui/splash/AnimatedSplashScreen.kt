@@ -170,7 +170,7 @@ fun AnimatedSplashScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text("\uD83D\uDEE1\uFE0F", fontSize = 14.sp)
-                        Text("100% Escrow Protected", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Verified Local Deals", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         Text("\u00B7", color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
                         Text("KYC Verified", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
@@ -205,7 +205,7 @@ fun AnimatedSplashScreen(
                     ) {
                         Text("\uD83C\uDFDB\uFE0F", fontSize = 10.sp)
                         Text(
-                            "RBI-Compliant Escrow Architecture",
+                            "Secure In-App Payments",
                             color = Color(0xFFFCD34D),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,

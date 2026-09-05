@@ -24,6 +24,7 @@ fun ForYouScreen(
     onOpenKyc: () -> Unit = {},
     currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onToggleTheme: () -> Unit = {},
+    showOwnTopBar: Boolean = true,
 ) {
     ExploreScreen(
         onOpenPost = onOpenPost,
@@ -43,5 +44,6 @@ fun ForYouScreen(
         currentThemeMode = currentThemeMode,
         onToggleTheme = onToggleTheme,
         forYouMode = true,
+        showOwnTopBar = showOwnTopBar,
     )
 }

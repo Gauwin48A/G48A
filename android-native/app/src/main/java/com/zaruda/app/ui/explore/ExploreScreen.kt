@@ -1,6 +1,12 @@
 package com.zaruda.app.ui.explore
 import com.zaruda.app.ui.theme.ColorTokens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +29,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.font.FontFamily
+import coil.request.ImageRequest
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -47,6 +63,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
@@ -61,6 +78,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
@@ -147,11 +165,8 @@ import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -551,6 +566,10 @@ class ExploreViewModel @Inject constructor(
     fun retry() {
         _state.value = _state.value.copy(errorMessage = null)
         loadPosts(reset = true)
+    }
+
+    fun dismissError() {
+        _state.value = _state.value.copy(errorMessage = null)
     }
 
     private fun applyQuickFilter(posts: List<Post>): List<Post> {
@@ -1013,6 +1032,277 @@ private fun categoryEmoji(name: String): String {
     }
 }
 
+/* ── Explore / Category Hero Backdrop (Full-Bleed Scenic Rapido Standard) ────────── */
+
+@Composable
+private fun ExploreHeroBackdrop(categoryKey: String?) {
+    val context = LocalContext.current
+    val normalizedKey = categoryKey?.lowercase()?.trim()
+
+    val imageUrl = when {
+        normalizedKey == "electronics" -> "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200&auto=format&fit=crop&q=85"
+        normalizedKey == "vehicles" -> "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&auto=format&fit=crop&q=85"
+        normalizedKey == "fashion" -> "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&auto=format&fit=crop&q=85"
+        normalizedKey == "lifestyle" || normalizedKey == "furniture" || normalizedKey == "home" -> "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200&auto=format&fit=crop&q=85"
+        else -> "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&auto=format&fit=crop&q=85"
+    }
+
+    val title = when {
+        normalizedKey == "electronics" -> "Electronics"
+        normalizedKey == "vehicles" -> "Vehicles"
+        normalizedKey == "fashion" -> "Fashion"
+        normalizedKey == "lifestyle" -> "Lifestyle"
+        normalizedKey == "others" || normalizedKey == "other" -> "Others"
+        !categoryKey.isNullOrBlank() -> categoryKey.replaceFirstChar { it.uppercase() }
+        else -> "Marketplace"
+    }
+
+    val isElectronics = normalizedKey == "electronics"
+    val subtitle = when {
+        isElectronics -> "Verified electronics • Secure in-app buy"
+        !categoryKey.isNullOrBlank() -> "Verified ${categoryKey.lowercase()} • Direct from local sellers"
+        else -> "Direct deals from verified local sellers"
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(270.dp),
+    ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(imageUrl)
+                .crossfade(true)
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        // Dark vignette scrim overlay for text legibility
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.60f),
+                            Color.Black.copy(alpha = 0.25f),
+                            Color.Black.copy(alpha = 0.55f),
+                            Color.Black.copy(alpha = 0.90f),
+                        )
+                    )
+                )
+        )
+
+        // Hero Title + Escrow/Direct Deals Trust Pill (generously padded below floating bar)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 92.dp, start = 16.dp, end = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = title,
+                    fontFamily = FontFamily.Serif,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    letterSpacing = 0.5.sp,
+                )
+                Text(
+                    text = "✦",
+                    fontSize = 20.sp,
+                    color = Color(0xFFF59E0B),
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color.White.copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+            ) {
+                Text(
+                    text = if (isElectronics) "SECURE IN-APP BUY" else "VERIFIED DIRECT DEALS",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp,
+                    color = Color.White,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp),
+                )
+            }
+
+            Spacer(Modifier.height(6.dp))
+
+            Text(
+                text = subtitle,
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+/* ── Floating Glassmorphic Top Capsule (Rapido Standard Layer 3) ──────────── */
+
+@Composable
+private fun ExploreFloatingTopBar(
+    title: String,
+    categoryEmoji: String,
+    cartCount: Int,
+    onBack: () -> Unit,
+    onCart: () -> Unit,
+    onWishlist: () -> Unit,
+    isScrolled: Boolean = false,
+) {
+    val isDark = ColorTokens.isDarkTheme()
+    val barBg by animateColorAsState(
+        targetValue = if (isScrolled) {
+            if (isDark) Color(0xFF0F172A).copy(alpha = 0.98f) else Color.White.copy(alpha = 0.98f)
+        } else {
+            Color.Transparent
+        },
+        label = "barBg",
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (isScrolled) MaterialTheme.colorScheme.onSurface else Color.White,
+        label = "contentColor",
+    )
+    val buttonBg by animateColorAsState(
+        targetValue = if (isScrolled) {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+        } else {
+            Color.Black.copy(alpha = 0.35f)
+        },
+        label = "buttonBg",
+    )
+    val buttonBorderColor by animateColorAsState(
+        targetValue = if (isScrolled) {
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+        } else {
+            Color.White.copy(alpha = 0.30f)
+        },
+        label = "buttonBorderColor",
+    )
+
+    Surface(
+        color = barBg,
+        shadowElevation = if (isScrolled) 4.dp else 0.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(WindowInsets.statusBars.asPaddingValues())
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            // Back Button
+            Surface(
+                shape = CircleShape,
+                color = buttonBg,
+                border = BorderStroke(1.dp, buttonBorderColor),
+                modifier = Modifier.size(40.dp),
+                onClick = onBack,
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = contentColor,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+
+            // Center Title Pill — smoothly animates in only when scrolled past hero
+            AnimatedVisibility(
+                visible = isScrolled,
+                enter = fadeIn() + scaleIn(initialScale = 0.88f),
+                exit = fadeOut() + scaleOut(targetScale = 0.88f),
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = buttonBg,
+                    border = BorderStroke(1.dp, buttonBorderColor),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(categoryEmoji, fontSize = 13.sp)
+                        Text(
+                            text = "$title ✦",
+                            color = contentColor,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                        )
+                    }
+                }
+            }
+
+            // Action Buttons: Wishlist & Cart
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = buttonBg,
+                    border = BorderStroke(1.dp, buttonBorderColor),
+                    modifier = Modifier.size(40.dp),
+                    onClick = onWishlist,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Outlined.BookmarkBorder,
+                            contentDescription = "Wishlist",
+                            tint = contentColor,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = CircleShape,
+                    color = buttonBg,
+                    border = BorderStroke(1.dp, buttonBorderColor),
+                    modifier = Modifier.size(40.dp),
+                    onClick = onCart,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        BadgedBox(badge = {
+                            if (cartCount > 0) {
+                                Badge(containerColor = Color(0xFFEF4444)) {
+                                    Text("$cartCount", fontSize = 10.sp, color = Color.White)
+                                }
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Outlined.ShoppingCart,
+                                contentDescription = "Cart",
+                                tint = contentColor,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ExploreScreen(
@@ -1020,6 +1310,7 @@ fun ExploreScreen(
     onOpenSearch: () -> Unit,
     onOpenCategories: () -> Unit,
     onOpenHome: () -> Unit = {},
+    onBack: (() -> Unit)? = null,
     onOpenProfile: () -> Unit = {},
     onOpenForYou: () -> Unit = {},
     onOpenCompare: () -> Unit = {},
@@ -1036,6 +1327,13 @@ fun ExploreScreen(
     currentThemeMode: ThemeMode = ThemeMode.SYSTEM,
     onToggleTheme: () -> Unit = {},
     forYouMode: Boolean = false,
+    /**
+     * When ExploreScreen is hosted inside a MainShell that already renders the global
+     * ZarudaTopBar (Marketplace / For You tabs), its own in-Scaffold top bar must be
+     * hidden — otherwise two identical top bars stack on screen. Category-scoped hosts
+     * (MainShell showTopBar = false) keep the internal bar as the sole header.
+     */
+    showOwnTopBar: Boolean = true,
     viewModel: ExploreViewModel = hiltViewModel(),
 ) {
     // Location ViewModel — shares LocationSetupManager singleton with MainShell
@@ -1084,356 +1382,222 @@ fun ExploreScreen(
     }
     LaunchedEffect(ecosystemKey) { viewModel.setEcosystem(ecosystemKey) }
 
-    Scaffold(
-        topBar = {
-            com.zaruda.app.ui.components.ZarudaTopBar(
-                onSearch = onOpenSearch,
-                onWishlist = onOpenWishlist,
-                onRecentlyViewed = onOpenRecentlyViewed,
-                onToggleTheme = onToggleTheme,
-                onNotifications = onOpenNotifications,
-                onProfile = onOpenProfile,
-                onCart = onOpenCart,
-                onFilter = { showFilterSheet = true },
-                activeFilterCount = if (state.hasActiveFilters) 1 else 0,
-                onLocationRefresh = { locationVm.detectLocation(force = true) },
-                isLocationDetecting = isLocationDetecting,
-                currentThemeMode = currentThemeMode,
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        // ── Layer 1: Curved Sheet Scrolling Content ──
+        // The hero wallpaper is the FIRST item inside the LazyColumn (not a fixed
+        // backdrop layer), so it scrolls up and away with the content while the
+        val listState = rememberLazyListState()
+        val isScrolled by remember {
+            derivedStateOf {
+                listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 60
+            }
+        }
+
+        // ── Layer 1: Curved Sheet Scrolling Content ──
+        PullToRefreshBox(
+            isRefreshing = state.refreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            AllPostsBrowse(
+                state = state,
+                wishlisted = wishlistedSet,
+                ecosystemSubcategories = ecosystemSubcategories,
+                listState = listState,
+                onOpenPost = { id ->
+                    if (state.restricted) {
+                        showRestrictionDialog = true
+                    } else {
+                        viewModel.recordViewed(id)
+                        onOpenPost(id)
+                    }
+                },
+                onToggleWishlist = viewModel::toggleWishlist,
+                onSetSort = viewModel::setSortBy,
+                onSetQuickFilter = viewModel::setQuickFilter,
+                onToggleCompare = viewModel::toggleCompare,
+                onToggleCart = viewModel::toggleCart,
+                onOpenCompare = onOpenCompare,
+                onToggleAutoRefresh = viewModel::toggleAutoRefresh,
+                onLoadMore = viewModel::loadMore,
+                onOpenSearch = onOpenSearch,
+                onOpenFilters = {
+                    draftCondition = state.filterCondition
+                    draftSubcategory = state.filterSubcategory
+                    draftPriceRange = state.filterMinPrice..state.filterMaxPrice
+                    showFilterSheet = true
+                },
+                onOpenPrefs = { showForYouPrefsSheet = true },
+                onSelectSubcategory = { sub ->
+                    if (sub.isBlank()) {
+                        viewModel.setFilterSubcategory(null)
+                    } else {
+                        viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
+                    }
+                },
+                onSetSubcategories = { subs -> SharedExploreStore.updateSelectedSubcategories(subs.toSet()) },
+                onInterested = { postId, postTitle ->
+                    interestPostId = postId
+                    interestPostTitle = postTitle
+                    showInterestModal = true
+                },
+                onOpenProfile = onOpenProfile,
+                onOpenUser = onOpenUser,
+                allSubcategories = allSubcategories,
+                selectedSubcategories = SharedExploreStore.selectedSubcategories,
+                onQueryChange = viewModel::onQueryChange,
+                onClearSearch = viewModel::clearSearch,
+                onOpenHome = onOpenHome,
+                onOpenForYou = onOpenForYou,
             )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            // Search bar + Filter button — always visible below TopAppBar
-            Row(
+        }
+
+        // ── Layer 3: Pinned Floating Glassmorphic Top Bar ──
+        if (showOwnTopBar) {
+            val displayTitle = when {
+                !ecosystemKey.isNullOrBlank() -> ecosystemKey.replaceFirstChar { it.uppercase() }
+                state.forYouMode -> "For You"
+                else -> "Marketplace"
+            }
+            val displayEmoji = when {
+                !ecosystemKey.isNullOrBlank() -> categoryEmoji(ecosystemKey)
+                state.forYouMode -> "✨"
+                else -> "🛍️"
+            }
+
+            ExploreFloatingTopBar(
+                title = displayTitle,
+                categoryEmoji = displayEmoji,
+                cartCount = state.cartItems.size,
+                onBack = onBack ?: onOpenHome,
+                onCart = onOpenCart,
+                onWishlist = onOpenWishlist,
+                isScrolled = isScrolled,
+            )
+        }
+
+        // Plan expiry / expired banner (pinned below floating bar)
+        if (state.showPlanExpiryBanner) {
+            val bannerIsDark = ColorTokens.isDarkTheme()
+            val bannerColor = if (state.planExpired) {
+                if (bannerIsDark) Color(0xFFFCA5A5) else Color(0xFFDC2626)
+            } else {
+                if (bannerIsDark) Color(0xFFFDE68A) else Color(0xFFF59E0B)
+            }
+            val bannerBg = if (state.planExpired) if (bannerIsDark) Color(0xFF450A0A) else Color(0xFFFEF2F2) else if (bannerIsDark) Color(0xFF2D1F00) else Color(0xFFFFFBEB)
+            Surface(
                 modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(WindowInsets.statusBars.asPaddingValues())
+                    .padding(top = 56.dp)
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = bannerBg,
+                shadowElevation = 6.dp,
+                border = BorderStroke(1.dp, bannerColor.copy(alpha = 0.3f)),
             ) {
-                // Search bar — inline text input with live search
-                OutlinedTextField(
-                    value = state.searchQuery,
-                    onValueChange = { viewModel.onQueryChange(it) },
-                    placeholder = { Text(stringResource(R.string.explore_search_placeholder)) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                    trailingIcon = {
-                        if (state.searchQuery.isNotBlank()) {
-                            IconButton(onClick = { viewModel.clearSearch() }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear search")
-                            }
-                        }
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    ),
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { /* handled live by onQueryChange */ }),
-                )
-                // Filter button with active badge
-                BadgedBox(badge = { if (state.hasActiveFilters) Badge(containerColor = Color(0xFFF59E0B)) }) {
-                    FilledIconButton(
-                        onClick = {
-                            draftCondition = state.filterCondition
-                            draftSubcategory = state.filterSubcategory
-                            showFilterSheet = true
-                        },
-                        modifier = Modifier.size(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                    ) {
-                        Icon(Icons.Default.Tune, contentDescription = "Filters", tint = MaterialTheme.colorScheme.primary)
-                    }
-                }
-            }
-
-            // ─── Quick Actions: My Home & For You (always visible, outside scroll) ───
-            if (!state.forYouMode && state.searchQuery.isBlank()) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        // My Home button
-                        Surface(
-                            onClick = onOpenHome,
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF10B981).copy(alpha = 0.12f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.3f)),
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(vertical = 10.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(
-                                    Icons.Default.Home,
-                                    contentDescription = null,
-                                    tint = Color(0xFF10B981),
-                                    modifier = Modifier.size(18.dp),
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    "🏠 My Home",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF10B981),
-                                )
-                            }
-                        }
-                        // For You button
-                        Surface(
-                            onClick = onOpenForYou,
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF8B5CF6).copy(alpha = 0.12f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.3f)),
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(vertical = 10.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(
-                                    Icons.Default.AutoAwesome,
-                                    contentDescription = null,
-                                    tint = Color(0xFF8B5CF6),
-                                    modifier = Modifier.size(18.dp),
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    "✨ For You",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF8B5CF6),
-                                )
-                            }
-                    }
-                }
-            }
-            }
-
-            // ── App Limited Banner ──
-            if (state.restricted) {
-                Surface(
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "App Access Limited",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Text(
-                                text = "Purchase a plan and complete KYC verification to unlock full access.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
-                            )
-
-                        }
-                    }
-                }
-            }
-
-            Box(Modifier.fillMaxSize()) {
-
-            PullToRefreshBox(
-                isRefreshing = state.refreshing,
-                onRefresh = { viewModel.refresh() },
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                AllPostsBrowse(
-                    state = state,
-                    wishlisted = wishlistedSet,
-                    ecosystemSubcategories = ecosystemSubcategories,
-                    onOpenPost = { id ->
-                        if (state.restricted) {
-                            showRestrictionDialog = true
-                        } else {
-                            viewModel.recordViewed(id)
-                            onOpenPost(id)
-                        }
-                    },
-                    onToggleWishlist = viewModel::toggleWishlist,
-                    onSetSort = viewModel::setSortBy,
-                    onSetQuickFilter = viewModel::setQuickFilter,
-                    onToggleCompare = viewModel::toggleCompare,
-                    onToggleCart = viewModel::toggleCart,
-                    onOpenCompare = onOpenCompare,
-                    onToggleAutoRefresh = viewModel::toggleAutoRefresh,
-                    onLoadMore = viewModel::loadMore,
-                    onOpenSearch = onOpenSearch,    onOpenFilters = {
-        draftCondition = state.filterCondition
-        draftSubcategory = state.filterSubcategory
-        draftPriceRange = state.filterMinPrice..state.filterMaxPrice
-        showFilterSheet = true
-    },
-    onOpenPrefs = { showForYouPrefsSheet = true },
-    onSelectSubcategory = { sub ->
-        if (sub.isBlank()) {
-            // Clear subcategory filter
-            viewModel.setFilterSubcategory(null)
-        } else {
-            // Toggle: deselect if same, select if different
-            viewModel.setFilterSubcategory(if (state.filterSubcategory == sub) null else sub)
-        }
-    },
-    onSetSubcategories = { subs -> SharedExploreStore.updateSelectedSubcategories(subs.toSet()) },
-    onInterested = { postId, postTitle ->
-        interestPostId = postId
-        interestPostTitle = postTitle
-        showInterestModal = true
-    },
-    onOpenProfile = onOpenProfile,
-    onOpenUser = onOpenUser,
-    allSubcategories = allSubcategories,
-    selectedSubcategories = SharedExploreStore.selectedSubcategories,
-)
-            }
-
-            // Plan expiry / expired banner
-            if (state.showPlanExpiryBanner) {
-                val bannerIsDark = ColorTokens.isDarkTheme()
-                val bannerColor = if (state.planExpired) {
-                    if (bannerIsDark) Color(0xFFFCA5A5) else Color(0xFFDC2626)
-                } else {
-                    if (bannerIsDark) Color(0xFFFDE68A) else Color(0xFFF59E0B)
-                }
-                val bannerBg = if (state.planExpired) if (bannerIsDark) Color(0xFF450A0A) else Color(0xFFFEF2F2) else if (bannerIsDark) Color(0xFF2D1F00) else Color(0xFFFFFBEB)
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = bannerBg,
-                    shadowElevation = 6.dp,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, bannerColor.copy(alpha = 0.3f)),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Text(if (state.planExpired) "⚠️" else "🔔", fontSize = 18.sp)
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                if (state.planExpired) "Your plan has expired" else "Plan expiring soon",
-                                fontWeight = FontWeight.Bold, fontSize = 13.sp, color = bannerColor,
-                            )
-                            Text(
-                                if (state.planExpired) "Renew your plan to post listings & access seller features."
-                                else "Your plan expires on ${state.planExpiryDate}. Renew now to avoid interruption.",
-                                fontSize = 11.sp, color = bannerColor.copy(alpha = 0.8f), lineHeight = 15.sp,
-                            )
-                        }
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.End) {
-                            Surface(shape = RoundedCornerShape(8.dp), color = bannerColor) {
-                                Text("Renew", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
-                            }
-                            IconButton(onClick = viewModel::dismissPlanBanner, modifier = Modifier.size(20.dp)) {
-                                Icon(Icons.Default.Close, null, tint = bannerColor.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
-                            }
-                        }
-                    }
-                }
-            }
-            // Error banner
-            state.errorMessage?.let { err ->
-                val isAuthError = err.contains("sign in", ignoreCase = true) || err.contains("authentication", ignoreCase = true)
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.errorContainer,
-                    shadowElevation = 4.dp,
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(err, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.weight(1f))
-                        if (isAuthError) {
-                            TextButton(onClick = onOpenProfile) {
-                                Text("Sign In", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
-                            }
-                        } else {
-                            TextButton(onClick = { viewModel.retry() }) {
-                                Text("Retry", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                }
-            }
-            if (state.compareItems.isNotEmpty()) {
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shadowElevation = 8.dp,
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
+                    Text(if (state.planExpired) "⚠️" else "🔔", fontSize = 18.sp)
+                    Column(Modifier.weight(1f)) {
                         Text(
-                            "${state.compareItems.size} item${if (state.compareItems.size > 1) "s" else ""} selected",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            if (state.planExpired) "Your plan has expired" else "Plan expiring soon",
+                            fontWeight = FontWeight.Bold, fontSize = 13.sp, color = bannerColor,
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(onClick = viewModel::clearCompare) { Text("Clear") }
-                            Button(
-                                onClick = { viewModel.openCompare(onOpenCompare) },
-                                enabled = state.compareItems.size >= 2,
-                            ) { Text("Compare (${state.compareItems.size})") }
+                        Text(
+                            if (state.planExpired) "Renew your plan to post listings & access seller features."
+                            else "Your plan expires on ${state.planExpiryDate}. Renew now to avoid interruption.",
+                            fontSize = 11.sp, color = bannerColor.copy(alpha = 0.8f), lineHeight = 15.sp,
+                        )
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.End) {
+                        Surface(shape = RoundedCornerShape(8.dp), color = bannerColor) {
+                            Text("Renew", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp))
+                        }
+                        IconButton(onClick = viewModel::dismissPlanBanner, modifier = Modifier.size(20.dp)) {
+                            Icon(Icons.Default.Close, null, tint = bannerColor.copy(alpha = 0.6f), modifier = Modifier.size(16.dp))
                         }
                     }
                 }
             }
         }
-        } // close inner Box
-    } // close Column
+
+        // Error banner
+        val err = state.errorMessage
+        if (err != null) {
+            val isAuthError = err.contains("sign in", ignoreCase = true) || err.contains("authentication", ignoreCase = true)
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(WindowInsets.statusBars.asPaddingValues())
+                    .padding(top = 56.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.errorContainer,
+                shadowElevation = 4.dp,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(err, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.weight(1f))
+                    if (isAuthError) {
+                        TextButton(onClick = onOpenProfile) {
+                            Text("Sign In", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        IconButton(onClick = viewModel::dismissError, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        // Compare floating bar
+        if (state.compareItems.isNotEmpty()) {
+            Surface(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shadowElevation = 8.dp,
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        "${state.compareItems.size} item${if (state.compareItems.size > 1) "s" else ""} selected",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = viewModel::clearCompare) { Text("Clear") }
+                        Button(
+                            onClick = { viewModel.openCompare(onOpenCompare) },
+                            enabled = state.compareItems.size >= 2,
+                        ) { Text("Compare (${state.compareItems.size})") }
+                    }
+                }
+            }
+        }
+    }
 
     // Filter bottom sheet
     if (showFilterSheet) {
@@ -2131,6 +2295,11 @@ private fun AllPostsBrowse(
     onOpenUser: (String) -> Unit = {},
     allSubcategories: List<Pair<String, String>> = emptyList(),
     selectedSubcategories: Set<String> = emptySet(),
+    onQueryChange: (String) -> Unit = {},
+    onClearSearch: () -> Unit = {},
+    onOpenHome: () -> Unit = {},
+    onOpenForYou: () -> Unit = {},
+    listState: LazyListState = rememberLazyListState(),
 ) {
     val sortOptions = listOf(
         "newest" to "Newest",
@@ -2143,7 +2312,7 @@ private fun AllPostsBrowse(
         "premium_first" to "Premium first",
     )
     var isGridView by remember { mutableStateOf(false) }
-    val listState = rememberLazyListState()
+    val browseHaptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val shouldLoadMore by remember {
         derivedStateOf {
             val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: return@derivedStateOf false
@@ -2166,7 +2335,209 @@ private fun AllPostsBrowse(
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(bottom = if (state.compareItems.size >= 2) 150.dp else 100.dp),
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
         ) {
+            // ── Hero wallpaper — scrolls WITH the content (top of list) ──
+            item(key = "hero_banner") {
+                ExploreHeroBackdrop(categoryKey = state.ecosystemKey)
+            }
+
+            // ── Layer 2: 32dp Floating Curved Sheet Header ──
+            item(key = "curved_sheet_header") {
+                Surface(
+                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                    color = MaterialTheme.colorScheme.background,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.fillMaxWidth().offset(y = (-24).dp),
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, bottom = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        // 100% Escrow Protection Guarantee Ribbon (ONLY for Electronics / Category 1)
+                        if (state.ecosystemKey?.lowercase() == "electronics") {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 2.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFF059669).copy(alpha = 0.08f),
+                                border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.25f)),
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Shield,
+                                        contentDescription = null,
+                                        tint = Color(0xFF059669),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Verified Local Marketplace",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 12.sp,
+                                            color = Color(0xFF059669),
+                                        )
+                                        Text(
+                                            text = "Direct deals from verified local sellers • Inspect before you pay",
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        val searchCategoryName = when {
+                            state.ecosystemKey?.lowercase() == "electronics" -> "Electronics"
+                            state.ecosystemKey?.lowercase() == "vehicles" -> "Vehicles"
+                            state.ecosystemKey?.lowercase() == "fashion" -> "Fashion"
+                            state.ecosystemKey?.lowercase() == "others" || state.ecosystemKey?.lowercase() == "other" -> "Others"
+                            !state.ecosystemKey.isNullOrBlank() -> state.ecosystemKey?.replaceFirstChar { it.uppercase() }
+                            else -> null
+                        }
+                        val searchPlaceholder = if (searchCategoryName != null) {
+                            "Search in $searchCategoryName..."
+                        } else {
+                            stringResource(R.string.explore_search_placeholder)
+                        }
+
+                        // Search Bar + Filter Button (inside curved sheet)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            OutlinedTextField(
+                                value = state.searchQuery,
+                                onValueChange = onQueryChange,
+                                placeholder = { Text(searchPlaceholder, fontSize = 13.sp) },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                                trailingIcon = {
+                                    if (state.searchQuery.isNotBlank()) {
+                                        IconButton(onClick = onClearSearch) {
+                                            Icon(Icons.Default.Close, contentDescription = "Clear search")
+                                        }
+                                    }
+                                },
+                                singleLine = true,
+                                shape = RoundedCornerShape(22.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                ),
+                                modifier = Modifier.weight(1f).height(46.dp),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                keyboardActions = KeyboardActions(onSearch = { }),
+                            )
+                            BadgedBox(badge = { if (state.hasActiveFilters) Badge(containerColor = Color(0xFFF59E0B)) }) {
+                                FilledIconButton(
+                                    onClick = onOpenFilters,
+                                    modifier = Modifier.size(46.dp),
+                                    shape = RoundedCornerShape(22.dp),
+                                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                                ) {
+                                    Icon(Icons.Default.Tune, contentDescription = "Filters", tint = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                        }
+
+                        // Quick Navigation Bar: My Home & For You — only shown on global browse
+                        // (hidden inside specific categories so category focus is preserved)
+                        if (state.ecosystemKey.isNullOrBlank() && !state.forYouMode && state.searchQuery.isBlank()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Surface(
+                                    onClick = onOpenHome,
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = Color(0xFF10B981).copy(alpha = 0.10f),
+                                    border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.25f)),
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxSize(),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Icon(Icons.Default.Home, null, tint = Color(0xFF10B981), modifier = Modifier.size(15.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("My Home", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF10B981))
+                                    }
+                                }
+                                Surface(
+                                    onClick = onOpenForYou,
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = Color(0xFF8B5CF6).copy(alpha = 0.10f),
+                                    border = BorderStroke(1.dp, Color(0xFF8B5CF6).copy(alpha = 0.25f)),
+                                    modifier = Modifier.weight(1f).height(36.dp),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxSize(),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Icon(Icons.Default.AutoAwesome, null, tint = Color(0xFF8B5CF6), modifier = Modifier.size(15.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("For You", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF8B5CF6))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // App Limited Banner (if restricted)
+            if (state.restricted) {
+                item(key = "restricted_banner") {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 4.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "App Access Limited",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Text(
+                                    text = "Purchase a plan and complete KYC verification to unlock full access.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         if (state.searchQuery.isNotBlank()) {
             if (state.isSearching) {
                 item(key = "search_loading") {
@@ -2242,11 +2613,10 @@ private fun AllPostsBrowse(
             }
         }
 
-        // Sticky sort + subcategory chips (don't scroll away)
-        stickyHeader(key = "sticky_filters") {
+        // Sort + subcategory filter chips inside curved sheet
+        item(key = "filters_section") {
             Surface(
                 color = MaterialTheme.colorScheme.background,
-                shadowElevation = 2.dp,
             ) {
                 Column {
                     if (state.forYouMode) {
@@ -2268,92 +2638,95 @@ private fun AllPostsBrowse(
                             selectedSubcategories = selectedSubcategories,
                         )
                     } else {
-                        // Row 1: Sort options (horizontal scroll)
-                        val sortScrollState = rememberScrollState()
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(sortScrollState)
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            sortOptions.forEach { (key, label) ->
-                                val selected = state.sortBy == key
-                                FilterChip(
-                                    selected = selected,
-                                    onClick = { onSetSort(key) },
-                                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                                    leadingIcon = if (selected) {
-                                        { Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
-                                    } else null,
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    ),
-                                    shape = RoundedCornerShape(20.dp),
-                                )
-                            }
-                            // Grid/List view toggle
-                            IconButton(
-                                onClick = { isGridView = !isGridView },
-                                modifier = Modifier.size(34.dp),
-                            ) {
-                                Icon(
-                                    if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
-                                    contentDescription = "Toggle layout",
-                                    modifier = Modifier.size(19.dp),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                )
-                            }
-                        }
-
-                        // Row 2: Subcategory filter chips (scoped to active category)
+                        // Row 1: Subcategory filter pills (prominent when category is active)
                         if (ecosystemSubcategories.isNotEmpty()) {
                             val subScrollState = rememberScrollState()
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .horizontalScroll(subScrollState)
-                                    .padding(start = 12.dp, end = 12.dp, bottom = 6.dp),
+                                    .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 if (state.filterSubcategory != null) {
-                                    FilterChip(
-                                        selected = false,
-                                        onClick = { onSelectSubcategory(state.filterSubcategory ?: "") },
-                                        label = { Text("\u2715 Clear", style = MaterialTheme.typography.labelSmall) },
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
-                                            labelColor = MaterialTheme.colorScheme.onErrorContainer,
-                                        ),
+                                    Surface(
                                         shape = RoundedCornerShape(20.dp),
-                                    )
+                                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                                        modifier = Modifier.clickable { onSelectSubcategory(state.filterSubcategory ?: "") },
+                                    ) {
+                                        Text(
+                                            "✕ Clear",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onErrorContainer,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        )
+                                    }
                                 }
                                 ecosystemSubcategories.forEach { sub ->
                                     val selected = state.filterSubcategory?.equals(sub, ignoreCase = true) == true
-                                    FilterChip(
-                                        selected = selected,
-                                        onClick = { onSelectSubcategory(sub) },
-                                        label = { Text(sub, style = MaterialTheme.typography.labelSmall) },
-                                        leadingIcon = if (selected) {
-                                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(14.dp)) }
-                                        } else null,
-                                        colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.secondary,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onSecondary,
-                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        ),
+                                    Surface(
                                         shape = RoundedCornerShape(20.dp),
-                                    )
+                                        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                        border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                                        modifier = Modifier.clickable { onSelectSubcategory(sub) },
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                        ) {
+                                            Text(subcategoryEmoji(sub), fontSize = 12.sp)
+                                            Text(
+                                                text = sub,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
 
+                        // Row 2: Sort options (horizontal scroll)
+                        val sortScrollState = rememberScrollState()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(sortScrollState)
+                                .padding(horizontal = 12.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            sortOptions.forEach { (key, label) ->
+                                val selected = state.sortBy == key
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+                                    border = if (selected) null else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                                    modifier = Modifier.clickable { onSetSort(key) },
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        if (selected) {
+                                            Icon(Icons.Default.Check, null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                                        }
+                                        Text(
+                                            label,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -2378,6 +2751,96 @@ private fun AllPostsBrowse(
                 }
             }
         } else {
+            // Posts header bar with List/Grid toggle at top-right corner
+            item(key = "posts_view_header") {
+                val postCount = if (state.forYouMode) forYouFilteredPosts.size else state.posts.size
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = if (state.forYouMode) "For You ($postCount)" else "$postCount items",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 2.dp,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                        ),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (!isGridView) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                                modifier = Modifier.clickable {
+                                    browseHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                    isGridView = false
+                                },
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.ViewList,
+                                        contentDescription = "List view",
+                                        modifier = Modifier.size(14.dp),
+                                        tint = if (!isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        "List",
+                                        fontSize = 11.sp,
+                                        fontWeight = if (!isGridView) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (!isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (isGridView) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
+                                modifier = Modifier.clickable {
+                                    browseHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                    isGridView = true
+                                },
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        Icons.Default.GridView,
+                                        contentDescription = "Grid view",
+                                        modifier = Modifier.size(14.dp),
+                                        tint = if (isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        "Grid",
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isGridView) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if (isGridView) {
                 // 2-column grid view (web parity) — ForYou also filters here
                 val gridPosts = if (state.forYouMode) forYouFilteredPosts else state.posts
@@ -2426,59 +2889,103 @@ private fun AllPostsBrowse(
                         row.forEach { post ->
                             Card(
                                 onClick = { onOpenPost(post.stableId) },
-                                shape = RoundedCornerShape(14.dp),
+                                shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.weight(1f),
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                                 elevation = CardDefaults.cardElevation(2.dp),
                             ) {
                                 Column {
-                                    Box(Modifier.fillMaxWidth().height(130.dp)) {
+                                    Box(Modifier.fillMaxWidth().height(145.dp)) {
                                         if (post.primaryImage != null) {
-                                            AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)))
+                                            AsyncImage(
+                                                model = post.primaryImage,
+                                                contentDescription = null,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                                            )
                                         } else {
                                             Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                                                 Icon(Icons.Outlined.ImageNotSupported, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(28.dp))
                                             }
                                         }
-                                        // Wishlist save overlay (top-right) — animated bounce
-                                        val isWished = wishlisted.contains(post.stableId)
-                                        val wishScale by androidx.compose.animation.core.animateFloatAsState(
-                                            targetValue = if (isWished) 1.3f else 1f,
-                                            animationSpec = androidx.compose.animation.core.spring(
-                                                dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-                                                stiffness = androidx.compose.animation.core.Spring.StiffnessLow,
-                                            ),
-                                            label = "wishScale",
-                                        )
-                                        val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-                                        Icon(
-                                            if (isWished) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
-                                            contentDescription = null,
-                                            tint = if (isWished) Color(0xFF6366F1) else androidx.compose.ui.graphics.Color.White,
+
+                                        // Subtle gradient scrim at bottom
+                                        Box(
                                             modifier = Modifier
-                                                .align(Alignment.TopEnd)
-                                                .padding(8.dp)
-                                                .size(20.dp)
-                                                .graphicsLayer { scaleX = wishScale; scaleY = wishScale }
-                                                .clickable {
-                                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                                                    onToggleWishlist(post.stableId)
-                                                },
+                                                .fillMaxWidth()
+                                                .height(50.dp)
+                                                .align(Alignment.BottomCenter)
+                                                .background(
+                                                    Brush.verticalGradient(
+                                                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f))
+                                                    )
+                                                )
                                         )
-                                    }
-                                    Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                        Text(post.displayTitle, maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                                        post.price?.let { Text("₹${"%,.0f".format(it)}", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.primary) }
-                                        post.location?.let { loc ->
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(10.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                Text(loc, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+
+                                        // Price badge overlay (bottom-left)
+                                        post.price?.let { price ->
+                                            Surface(
+                                                shape = RoundedCornerShape(6.dp),
+                                                color = Color.Black.copy(alpha = 0.75f),
+                                                border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.35f)),
+                                                modifier = Modifier.align(Alignment.BottomStart).padding(6.dp),
+                                            ) {
+                                                Text(
+                                                    "₹${"%,.0f".format(price)}",
+                                                    color = Color.White,
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                )
                                             }
                                         }
-                                        post.viewCount?.let { v ->
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(Icons.Default.Visibility, null, modifier = Modifier.size(10.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                Text(" $v views", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                                        // Wishlist save overlay (top-right) — glassmorphic circle
+                                        val isWished = wishlisted.contains(post.stableId)
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = Color.Black.copy(alpha = 0.45f),
+                                            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(6.dp)
+                                                .size(28.dp),
+                                            onClick = { onToggleWishlist(post.stableId) },
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                                Icon(
+                                                    imageVector = if (isWished) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                                                    contentDescription = null,
+                                                    tint = if (isWished) Color(0xFFEF4444) else Color.White,
+                                                    modifier = Modifier.size(14.dp),
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                        Text(
+                                            text = post.displayTitle,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Surface(shape = RoundedCornerShape(3.dp), color = Color(0xFF059669).copy(alpha = 0.12f)) {
+                                                Text("✔ Verified", fontSize = 8.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669), modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp))
+                                            }
+                                            post.location?.let { loc ->
+                                                Text(
+                                                    text = loc,
+                                                    fontSize = 10.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis,
+                                                    modifier = Modifier.weight(1f)
+                                                )
                                             }
                                         }
                                     }
@@ -2624,52 +3131,7 @@ private fun AllPostsBrowse(
         }
     }
 
-    // ── Floating View Mode Switcher (Airbnb / District Standard) ─────────────
-    val browseHaptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-    Surface(
-        modifier = Modifier
-            .align(Alignment.BottomCenter)
-            .padding(bottom = if (state.compareItems.size >= 2) 80.dp else 16.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 8.dp,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = if (!isGridView) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                modifier = Modifier.clickable {
-                    browseHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    isGridView = false
-                },
-            ) {
-                Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.AutoMirrored.Filled.ViewList, null, modifier = Modifier.size(14.dp), tint = if (!isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.width(5.dp))
-                    Text("List", fontSize = 12.sp, fontWeight = if (!isGridView) FontWeight.Bold else FontWeight.Medium, color = if (!isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = if (isGridView) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                modifier = Modifier.clickable {
-                    browseHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    isGridView = true
-                },
-            ) {
-                Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.GridView, null, modifier = Modifier.size(14.dp), tint = if (isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.width(5.dp))
-                    Text("Grid", fontSize = 12.sp, fontWeight = if (isGridView) FontWeight.Bold else FontWeight.Medium, color = if (isGridView) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
+
     // Scroll-to-top FAB — appears when scrolled past 5 items
     if (showScrollToTop) {
         val coroutineScope = rememberCoroutineScope()
@@ -3038,318 +3500,325 @@ fun AllPostCard(
     val context = LocalContext.current
     var showPostMenu by remember { mutableStateOf(false) }
 
+    val isElectronics = post.category?.lowercase()?.contains("electron") == true
+
     Card(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = modifier.fillMaxWidth(),
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            // Author row — tap the name/avatar to open the seller's sold-posts trust page
-            val sellerClickable = onUserClick != null && !post.userId.isNullOrBlank()
-            Row(
-                modifier = if (sellerClickable) Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { onUserClick?.invoke() } else Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // ── Top: High-Fidelity Hero Image with Overlays ──
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(185.dp)
             ) {
-                val initial = (post.userName?.firstOrNull() ?: post.sellerName?.firstOrNull() ?: 'M').uppercaseChar().toString()
-                Box(
-                    modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(initial, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 16.sp)
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = post.userName ?: post.sellerName ?: "Community member",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (sellerClickable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    )
-                    if (sellerClickable) {
-                        Text(
-                            text = stringResource(R.string.explore_view_seller_sales),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            text = post.location ?: "Zaruda network",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        post.createdAt?.take(10)?.let { date ->
-                            Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                            Text(date, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    // Seller rating stars — derived from likeCount as proxy
-                    val likeRating = (post.likeCount ?: 0).coerceIn(0, 200)
-                    if (likeRating > 0) {
-                        val stars = ((likeRating / 40.0) + 3.0).coerceIn(3.0, 5.0)
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                            repeat(5) { star ->
-                                Text(if (star < stars.toInt()) "★" else "☆", fontSize = 10.sp, color = if (star < stars.toInt()) Color(0xFFF59E0B) else Color(0xFFCBD5E1))
-                            }
-                            Text("${"%,.1f".format(stars)}", fontSize = 10.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.Medium)
-                        }
-                    }
-                }
-                // 3-dot menu (top right corner)
-                var showPostMenu by remember { mutableStateOf(false) }
-                Box {
-                    IconButton(onClick = { showPostMenu = true }, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                    }
-                    androidx.compose.material3.DropdownMenu(expanded = showPostMenu, onDismissRequest = { showPostMenu = false }) {
-                        androidx.compose.material3.DropdownMenuItem(
-                            text = { Text(if (isCompared) "Remove from Compare" else "Compare") },
-                            leadingIcon = { Icon(Icons.Default.Compare, null, modifier = Modifier.size(18.dp)) },
-                            onClick = { showPostMenu = false; onToggleCompare() },
-                        )
-                        androidx.compose.material3.DropdownMenuItem(
-                            text = { Text(if (isWishlisted) "Remove from Wishlist" else "Add to Wishlist") },
-                            leadingIcon = { Icon(if (isWishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, null, modifier = Modifier.size(18.dp)) },
-                            onClick = { showPostMenu = false; onToggleWishlist() },
-                        )
-                        androidx.compose.material3.DropdownMenuItem(
-                            text = { Text("Share") },
-                            leadingIcon = { Icon(Icons.Outlined.Share, null, modifier = Modifier.size(18.dp)) },
-                            onClick = {
-                                showPostMenu = false
-                                val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayTitle} on Zaruda!") }
-                                context.startActivity(Intent.createChooser(shareIntent, "Share via"))
-                            },
-                        )
-                        androidx.compose.material3.DropdownMenuItem(
-                            text = { Text(if (isInCart) "Remove from Cart" else "Add to Cart") },
-                            leadingIcon = { Icon(if (isInCart) Icons.Default.RemoveShoppingCart else Icons.Outlined.ShoppingCart, null, modifier = Modifier.size(18.dp), tint = if (isInCart) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant) },
-                            onClick = { showPostMenu = false; onToggleCart() },
-                        )
-                        if (isOwner) {
-                            androidx.compose.material3.DropdownMenuItem(
-                                text = { Text("Promote") },
-                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.TrendingUp, null, modifier = Modifier.size(18.dp), tint = Color(0xFFF59E0B)) },
-                                onClick = { showPostMenu = false; onPromote() },
-                            )
-                        }
-                        androidx.compose.material3.DropdownMenuItem(
-                            text = { Text("Report") },
-                            leadingIcon = { Icon(Icons.Outlined.Flag, null, modifier = Modifier.size(18.dp)) },
-                            onClick = { showPostMenu = false },
-                        )
-                    }
-                }
-            }
-
-            // Title
-            Text(
-                text = post.displayTitle,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-
-            // Category + subcategory tags
-            if (!post.category.isNullOrBlank()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF3B82F6).copy(alpha = 0.15f)) {
-                        Text(post.category, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF3B82F6), modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
-                    }
-                    post.subcategory?.let { sub ->
-                        Surface(shape = RoundedCornerShape(12.dp), color = Color(0xFF10B981).copy(alpha = 0.15f)) {
-                            Text(sub, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF10B981), modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp))
-                        }
-                    }
-                }
-            }
-
-            // Description
-            if (!post.description.isNullOrBlank()) {
-                Column {
-                    Text(
-                        text = post.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = if (showFullDescription) Int.MAX_VALUE else 3,
-                        overflow = if (showFullDescription) TextOverflow.Visible else TextOverflow.Ellipsis,
-                    )
-                    if (post.description.length > 120) {
-                        Text(
-                            text = if (showFullDescription) "Show less" else "Read more",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.clickable { showFullDescription = !showFullDescription }.padding(top = 4.dp),
-                        )
-                    }
-                }
-            }
-
-            // Image with promo badges, price, HOT, condition overlays
-            if (post.primaryImage != null) {
-                Box(Modifier.fillMaxWidth().height(220.dp)) {
+                if (post.primaryImage != null) {
                     AsyncImage(
                         model = post.primaryImage,
                         contentDescription = post.displayTitle,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)),
                     )
-                    // Price badge — bottom-left
-                    post.price?.let { price ->
-                        Surface(
-                            Modifier.align(Alignment.BottomStart).padding(8.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF1E293B).copy(alpha = 0.85f),
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Outlined.ImageNotSupported,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            modifier = Modifier.size(36.dp),
+                        )
+                    }
+                }
+
+                // Bottom gradient scrim for high contrast with price and condition
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.70f))
+                            )
+                        )
+                )
+
+                // Price badge (bottom-left)
+                post.price?.let { price ->
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.Black.copy(alpha = 0.75f),
+                        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.35f)),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            Column(Modifier.padding(horizontal = 10.dp, vertical = 4.dp)) {
-                                Text("₹${"%,.0f".format(price)}", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, color = Color.White)
-                                val origPrice = post.originalPrice
-                                if (origPrice != null && origPrice > price && origPrice > 0) {
-                                    val pct = ((origPrice - price) / origPrice * 100).toInt()
-                                    Text("₹${"%,.0f".format(origPrice)}  -$pct%", fontSize = 10.sp, color = Color(0xFFFBBF24), textDecoration = TextDecoration.LineThrough)
-                                }
+                            Text(
+                                "₹${"%,.0f".format(price)}",
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 15.sp,
+                                color = Color.White
+                            )
+                            val origPrice = post.originalPrice
+                            if (origPrice != null && origPrice > price && origPrice > 0) {
+                                val pct = ((origPrice - price) / origPrice * 100).toInt()
+                                Text(
+                                    "₹${"%,.0f".format(origPrice)}",
+                                    fontSize = 10.sp,
+                                    color = Color.White.copy(alpha = 0.65f),
+                                    textDecoration = TextDecoration.LineThrough
+                                )
+                                Text(
+                                    "-$pct%",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF34D399)
+                                )
                             }
                         }
                     }
-                    // HOT badge — top-right for high-view items
-                    val viewCount = post.viewCount ?: 0
-                    if (viewCount > 50) {
-                        Surface(
-                            Modifier.align(Alignment.TopEnd).padding(8.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFFEF4444),
-                        ) {
+                }
+
+                // Condition badge (bottom-right)
+                post.condition?.let { cond ->
+                    val (condColor, condLabel) = when (cond.lowercase()) {
+                        "new" -> Color(0xFF10B981) to "NEW"
+                        "like new", "like_new" -> Color(0xFF3B82F6) to "LIKE NEW"
+                        "good" -> Color(0xFFF59E0B) to "GOOD"
+                        "fair" -> Color(0xFFEA580C) to "FAIR"
+                        else -> Color(0xFF6366F1) to cond.uppercase().take(8)
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = condColor,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                    ) {
+                        Text(
+                            condLabel,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                // Top-right action: Heart Wishlist bookmark
+                Surface(
+                    shape = CircleShape,
+                    color = Color.Black.copy(alpha = 0.45f),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                        .size(36.dp),
+                    onClick = onToggleWishlist,
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            imageVector = if (isWishlisted) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = "Wishlist",
+                            tint = if (isWishlisted) Color(0xFFEF4444) else Color.White,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+
+                // Top-left badges: Tier/Promo/Hot
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (post.isPromoted == true || (post.boostLevel ?: 0) > 0) {
+                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF59E0B)) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(3.dp),
                             ) {
-                                Text("🔥", fontSize = 10.sp)
-                                Text("HOT", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                                Text("🔥", fontSize = 9.sp)
+                                Text(
+                                    post.promoLabel?.ifBlank { "PROMOTED" } ?: "PROMOTED",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White
+                                )
                             }
                         }
                     }
-                    // Top-left badges column: Promo badge stacked above condition
-                    Column(
-                        Modifier.align(Alignment.TopStart).padding(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        // Tier badge (Premium/Silver/Standard)
-                        val tierLabel = when {
-                            post.isPremium == true || (post.tierPriority ?: 0) >= 3
-                                || post.tier?.lowercase() == "premium" -> "PREMIUM" to Color(0xFFF59E0B)
-                            post.tier?.lowercase() == "silver" -> "SILVER" to Color(0xFF94A3B8)
-                            else -> null
-                        }
-                        tierLabel?.let { (label, color) ->
-                            Surface(shape = RoundedCornerShape(6.dp), color = color) {
-                                Row(
-                                    Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                                ) {
-                                    Text("👑", fontSize = 8.sp)
-                                    Text(label, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
-                                }
-                            }
-                        }
-                                                PromoBadgeRow(
-                            boostLevel = post.boostLevel,
-                            promoLabel = post.promoLabel,
-                            isPromoted = post.isPromoted,
-                            expiresAt = post.expiresAt,
-                        )
-                        // Condition badge
-                        post.condition?.let { cond ->
-                            val (condColor, condLabel) = when (cond.lowercase()) {
-                                "new" -> Color(0xFF10B981) to "NEW"
-                                "like new", "like_new" -> Color(0xFF3B82F6) to "LIKE NEW"
-                                "good" -> Color(0xFFF59E0B) to "GOOD"
-                                "fair" -> Color(0xFFEA580C) to "FAIR"
-                                else -> Color(0xFF6366F1) to cond.uppercase().take(8)
-                            }
-                            Surface(shape = RoundedCornerShape(6.dp), color = condColor) {
-                                Text(condLabel, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                            }
-                        }
-                        // Negotiable badge
-                        if (post.isNegotiable == true || post.pricingType?.lowercase()?.contains("negoti") == true) {
-                            Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669)) {
-                                Text("✋ NEGOTIABLE", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                            }
+                    val viewCount = post.viewCount ?: 0
+                    if (viewCount > 50) {
+                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFEF4444)) {
+                            Text("HOT", fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                         }
                     }
                 }
             }
 
-            // Engagement bar: pill-style (web parity)
-            @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
-            androidx.compose.foundation.layout.FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+            // ── Body: Crisp editorial content below the photo ──
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                // Like pill
-                Surface(shape = RoundedCornerShape(20.dp), color = if (localLiked) Color(0xFFEF4444).copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.clickable { localLiked = !localLiked }) {
-                    Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(if (localLiked) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder, null, tint = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                        Text(if (localLiked) "Liked" else "Like", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (localLiked) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant)
+                // Title + 3-dot menu row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = post.displayTitle,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = { showPostMenu = true }, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                     }
                 }
-                // Interested pill (web parity: FaHandHoldingHeart "Interested" button)
-                Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF059669).copy(alpha = 0.12f), modifier = Modifier.clickable { onInterested() }) {
-                    Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Star, null, tint = Color(0xFF059669), modifier = Modifier.size(14.dp))
-                        Text("Interested", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF059669))
-                    }
-                }
-                // Compare pill (web parity: CompareIcon "Compare" dropdown item)
-                Surface(shape = RoundedCornerShape(20.dp), color = if (isCompared) Color(0xFF6366F1).copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.clickable { onToggleCompare() }) {
-                    Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Compare, null, tint = if (isCompared) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                        Text(if (isCompared) "In Compare" else "Compare", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (isCompared) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                // Share pill
-                Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.clickable {
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayTitle} on Zaruda!") }
-                    context.startActivity(Intent.createChooser(shareIntent, "Share via"))
-                }) {
-                    Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Share, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                        Text("Share", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                // Save pill
-                Surface(shape = RoundedCornerShape(20.dp), color = if (isWishlisted) Color(0xFF6366F1).copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.clickable { onToggleWishlist() }) {
-                    Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(if (isWishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, null, tint = if (isWishlisted) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                        Text(if (isWishlisted) "Saved" else "Save", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = if (isWishlisted) Color(0xFF6366F1) else MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                // Views pill
-                post.viewCount?.takeIf { it > 0 }?.let { v ->
-                    Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-                        Row(Modifier.padding(horizontal = 10.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(14.dp))
-                            Text("$v", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                // Category & subcategory tags
+                if (!post.category.isNullOrBlank()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF3B82F6).copy(alpha = 0.12f)) {
+                            Text(post.category, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB), modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                        }
+                        post.subcategory?.let { sub ->
+                            Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFF10B981).copy(alpha = 0.12f)) {
+                                Text(sub, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFF059669), modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                            }
+                        }
+                        if (post.isNegotiable == true || post.pricingType?.lowercase()?.contains("negoti") == true) {
+                            Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFF59E0B).copy(alpha = 0.12f)) {
+                                Text("Negotiable", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color(0xFFD97706), modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                            }
                         }
                     }
                 }
-                Spacer(Modifier.weight(1f))
-                // View Details CTA
-                Surface(shape = RoundedCornerShape(20.dp), color = Color(0xFF6366F1).copy(alpha = 0.1f), modifier = Modifier.clickable(onClick = onClick)) {
-                    Row(Modifier.padding(horizontal = 12.dp, vertical = 5.dp), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Visibility, null, tint = Color(0xFF6366F1), modifier = Modifier.size(14.dp))
-                        Text("View Details", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF6366F1))
+
+                // Seller row: avatar, name, verified tag, location & date
+                val sellerClickable = onUserClick != null && !post.userId.isNullOrBlank()
+                Row(
+                    modifier = if (sellerClickable) Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { onUserClick?.invoke() } else Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val initial = (post.userName?.firstOrNull() ?: post.sellerName?.firstOrNull() ?: 'S').uppercaseChar().toString()
+                    Box(
+                        modifier = Modifier.size(28.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(initial, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp)
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = post.userName ?: post.sellerName ?: "Verified Seller",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            // Subtle green Verified check badge
+                            Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF059669).copy(alpha = 0.12f)) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                ) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(10.dp))
+                                    Text("Verified", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                                }
+                            }
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = post.location ?: "Local network",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            post.createdAt?.take(10)?.let { date ->
+                                Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 9.sp)
+                                Text(date, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+
+                // Tactile Action Row: Make Offer + Details/Escrow CTA
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Surface(
+                        onClick = onInterested,
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                        modifier = Modifier.weight(1f).height(38.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(Icons.Outlined.LocalOffer, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Make Offer", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+
+                    Surface(
+                        onClick = onClick,
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isElectronics) Color(0xFF059669) else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1.2f).height(38.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (isElectronics) {
+                                Icon(Icons.Default.Shield, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Buy with Platform", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            } else {
+                                Icon(Icons.Default.Visibility, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("View Details", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
                     }
                 }
             }
@@ -3379,7 +3848,7 @@ AlertDialog(
                     }
                     Surface(onClick = {
                         showPostMenu = false
-                        val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out " + post.displayTitle + " on Zaruda!") }
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out this listing: " + post.displayTitle) }
                         context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                     }, shape = RoundedCornerShape(12.dp)) {
                         Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

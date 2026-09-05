@@ -406,115 +406,135 @@ fun CartScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Shopping Cart", fontWeight = FontWeight.Bold)
-                        if (state.items.isNotEmpty()) {
-                            Text(
-                                "${state.items.size} item${if (state.items.size != 1) "s" else ""}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                // ── Layer 1: Scenic Hero Backdrop ──
+                item(key = "cart_hero") {
+                    CartHeroBackdrop()
+                }
+
+                // ── Layer 2: 32dp Floating Curved Sheet Header ──
+                item(key = "curved_sheet_header") {
+                    Surface(
+                        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                        color = MaterialTheme.colorScheme.background,
+                        shadowElevation = 8.dp,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 14.dp, bottom = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            // Centered tactile drag handle (40.dp x 4.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 40.dp, height = 4.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f))
                             )
+
+                            Spacer(Modifier.height(10.dp))
+
                         }
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
-        Box(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            Column(Modifier.fillMaxSize()) {
+                }
+
                 when {
-                    state.loading -> ListShimmer(count = 4, modifier = Modifier.fillMaxSize().padding(top = 8.dp))
-
-                    state.items.isEmpty() && state.savedForLater.isEmpty() -> Box(
-                        Modifier
-                            .fillMaxSize()
-                            .padding(vertical = 64.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        AppEmptyState(
-                            icon = Icons.Default.ShoppingCart,
-                            title = "Your shortlist is empty",
-                            subtitle = "Save items you're interested in from any category",
-                        )
+                    state.loading -> {
+                        item(key = "loading") {
+                            ListShimmer(count = 4, modifier = Modifier.fillMaxWidth().padding(16.dp))
+                        }
                     }
-
+                    state.items.isEmpty() && state.savedForLater.isEmpty() -> {
+                        item(key = "empty_cart") {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 64.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                AppEmptyState(
+                                    icon = Icons.Default.ShoppingCart,
+                                    title = "Your shortlist is empty",
+                                    subtitle = "Save items you're interested in from any category",
+                                )
+                            }
+                        }
+                    }
                     else -> {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            // Cart items section
-                            if (state.items.isNotEmpty()) {
-                                item(key = "free_delivery_meter") {
-                                    val freeDeliveryThreshold = 1500.0
-                                    val progress = (state.total / freeDeliveryThreshold).coerceIn(0.0, 1.0).toFloat()
-                                    val remaining = (freeDeliveryThreshold - state.total).coerceAtLeast(0.0)
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = if (remaining == 0.0) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
-                                        border = BorderStroke(1.dp, if (remaining == 0.0) Color(0xFF22C55E) else MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
-                                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-                                    ) {
-                                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                Text(if (remaining == 0.0) "🎉" else "🚚", fontSize = 16.sp)
-                                                Text(
-                                                    text = if (remaining == 0.0) "You unlocked FREE Escrow Insured Delivery!" else "Add ₹${"%,.0f".format(remaining)} more for Free Escrow Delivery",
-                                                    fontSize = 12.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = if (remaining == 0.0) Color(0xFF15803D) else MaterialTheme.colorScheme.onSurface
-                                                )
-                                            }
-                                            LinearProgressIndicator(
-                                                progress = { progress },
-                                                modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
-                                                color = if (remaining == 0.0) Color(0xFF22C55E) else MaterialTheme.colorScheme.primary,
-                                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        if (state.items.isNotEmpty()) {
+                            item(key = "free_delivery_meter") {
+                                val freeDeliveryThreshold = 1500.0
+                                val progress = (state.total / freeDeliveryThreshold).coerceIn(0.0, 1.0).toFloat()
+                                val remaining = (freeDeliveryThreshold - state.total).coerceAtLeast(0.0)
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (remaining == 0.0) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                                    border = BorderStroke(1.dp, if (remaining == 0.0) Color(0xFF22C55E) else MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp)
+                                ) {
+                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Text(if (remaining == 0.0) "🎉" else "🚚", fontSize = 16.sp)
+                                            Text(
+                                                text = if (remaining == 0.0) "You unlocked FREE Insured Delivery!" else "Add ₹${"%,.0f".format(remaining)} more for Free Insured Delivery",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (remaining == 0.0) Color(0xFF15803D) else MaterialTheme.colorScheme.onSurface
                                             )
                                         }
+                                        LinearProgressIndicator(
+                                            progress = { progress },
+                                            modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)),
+                                            color = if (remaining == 0.0) Color(0xFF22C55E) else MaterialTheme.colorScheme.primary,
+                                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                        )
                                     }
                                 }
-                                
-                                item(key = "cart_header") {
+                            }
+
+                            item(key = "cart_header") {
+                                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
                                     SectionLabelWithCount("Saved Items", state.items.size)
                                 }
-                                items(state.items, key = { it.stableId }) { item ->
+                            }
+
+                            items(state.items, key = { it.stableId }) { item ->
+                                Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp)) {
                                     ShortlistItemCard(
                                         item = item,
                                         onRemove = { viewModel.removeWithUndo(item.postId ?: "") },
                                         onSaveForLater = { viewModel.saveForLater(item.postId ?: "") },
-                                        onBuyWithPlatform = if (item.isElectronics) {
-                                            { viewModel.confirmBuy(item) }
-                                        } else null,
+                                        onBuyWithPlatform = {
+                                            if (onCheckout != null) onCheckout()
+                                            else if (item.isElectronics) viewModel.confirmBuy(item)
+                                        },
                                     )
                                 }
                             }
+                        }
 
-                            // Saved for later section
-                            if (state.savedForLater.isNotEmpty()) {
-                                item(key = "sfl_header") {
-                                    Spacer(Modifier.height(4.dp))
+                        if (state.savedForLater.isNotEmpty()) {
+                            item(key = "sfl_header") {
+                                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
                                     SectionLabelWithCount("Saved for Later", state.savedForLater.size)
                                 }
-                                items(state.savedForLater, key = { "sfl_${it.stableId}" }) { item ->
+                            }
+                            items(state.savedForLater, key = { "sfl_${it.stableId}" }) { item ->
+                                Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp)) {
                                     SavedForLaterCard(
                                         item = item,
                                         onMoveToCart = { viewModel.moveToCart(item.postId ?: "") },
@@ -523,87 +543,92 @@ fun CartScreen(
                                 }
                             }
                         }
+                    }
+                }
+            }
 
-                        // Contact seller prompt or Electronics Escrow Purchase at bottom
-                        if (state.items.isNotEmpty()) {
-                            val hasElectronics = state.items.any {
-                                it.category?.lowercase()?.contains("electronic") == true || categoryKey?.lowercase()?.contains("electronic") == true
+            // Pinned Sticky Bottom Checkout Bar
+            if (state.items.isNotEmpty()) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 6.dp,
+                    shadowElevation = 12.dp,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                    shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column {
+                                Text(
+                                    "Total Payable",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                Text(
+                                    "₹%,.0f".format(state.total),
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
                             }
                             Surface(
-                                color = MaterialTheme.colorScheme.surface,
-                                tonalElevation = 3.dp,
-                                shadowElevation = 8.dp,
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFF059669).copy(alpha = 0.1f),
                             ) {
-                                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    if (onCheckout != null && state.items.isNotEmpty()) {
-                                        Button(
-                                            onClick = onCheckout,
-                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                            shape = RoundedCornerShape(12.dp),
-                                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                                        ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                Icon(Icons.Filled.ShoppingCartCheckout, null, tint = Color.White)
-                                                Text("Proceed to Checkout (₹%,.0f)".format(state.total), fontWeight = FontWeight.Bold, color = Color.White)
-                                            }
-                                        }
-                                    }
-                                    if (hasElectronics) {
-                                        // Electronics Category: In-App Escrow Fraud Protection
-                                        Button(
-                                            onClick = {
-                                                // Pick the first electronics item that has a seller to request a platform purchase.
-                                                val target = state.items.firstOrNull { it.isElectronics && (it.sellerId != null) }
-                                                if (target != null) viewModel.confirmBuy(target)
-                                                else viewModel.setError("This listing can't start a platform purchase right now.")
-                                            },
-                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                                            shape = RoundedCornerShape(12.dp),
-                                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                                        ) {
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                Icon(Icons.Filled.VerifiedUser, null, tint = Color.White)
-                                                Text("Buy with Platform Escrow Protection (2.5% Fee)", fontWeight = FontWeight.Bold, color = Color.White)
-                                            }
-                                        }
-                                        Text(
-                                            "🛡️ Funds held securely in Escrow until you inspect & confirm device delivery.",
-                                            fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    } else {
-                                        // General Categories: Direct Contact
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        ) {
-                                            Icon(
-                                                Icons.AutoMirrored.Filled.CompareArrows, null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(20.dp),
-                                            )
-                                            Text(
-                                                "Interested in an item? Contact the seller directly via Call or WhatsApp to arrange meetup.",
-                                                fontSize = 13.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                lineHeight = 18.sp,
-                                                modifier = Modifier.weight(1f),
-                                            )
-                                        }
-                                    }
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                ) {
+                                    Text("🛡️", fontSize = 11.sp)
+                                    Text("100% Insured", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
                                 }
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                if (onCheckout != null) onCheckout()
+                                else {
+                                    val target = state.items.firstOrNull { it.isElectronics && (it.sellerId != null) }
+                                    if (target != null) viewModel.confirmBuy(target)
+                                    else viewModel.setError("Unable to checkout at this time.")
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.fillMaxWidth().height(50.dp),
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Icon(Icons.Filled.Security, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                Text("🛡️ Proceed to Checkout", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.White)
                             }
                         }
                     }
                 }
             }
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
         }
+
+        // Layer 3: Pinned Floating Glassmorphic Top Bar
+        CartFloatingTopBar(
+            itemCount = state.items.size,
+            onBack = onBack,
+        )
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp),
+        )
     }
 
     // ── Electronics purchase confirm dialog ────────────────────────────────
@@ -612,7 +637,7 @@ fun CartScreen(
         AlertDialog(
             onDismissRequest = { if (!state.buying) viewModel.dismissBuy() },
             icon = { Text("🛡️", fontSize = 30.sp) },
-            title = { Text("Buy with Platform Protection", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+            title = { Text("Buy with Platform", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
@@ -621,10 +646,9 @@ fun CartScreen(
                         fontSize = 15.sp,
                     )
                     Text(
-                        "• You pay securely inside the app — funds are held in escrow.\n" +
-                        "• The seller ships, you confirm receipt, then the money is released.\n" +
-                        "• Platform fee: 2.5% (inclusive of GST), deducted at settlement.\n" +
-                        "• If the item never arrives or is wrong, raise a dispute and get your money back.",
+                        "• You pay securely inside the app.\n" +
+                        "• The seller ships, you confirm receipt, then the payment is released.\n" +
+                        "• If the item never arrives or isn't as described, raise a dispute and get your money back.",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 19.sp,
@@ -671,7 +695,7 @@ fun CartScreen(
             title = { Text("Purchase request sent!", fontWeight = FontWeight.Bold, fontSize = 17.sp) },
             text = {
                 Text(
-                    "$message\n\nOnce the seller approves, you'll pay securely inside the app and the funds stay in escrow until you confirm delivery.",
+                    "$message\n\nOnce the seller approves, you'll pay securely inside the app.",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -808,7 +832,7 @@ private fun ShortlistItemCard(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                     modifier = Modifier.padding(vertical = 4.dp),
                 )
-                // Electronics only → in-app escrow purchase button (per post)
+                // Electronics only → in-app platform purchase button (per post)
                 if (item.isElectronics && onBuyWithPlatform != null) {
                     Button(
                         onClick = onBuyWithPlatform,
@@ -819,7 +843,7 @@ private fun ShortlistItemCard(
                     ) {
                         Icon(Icons.Filled.VerifiedUser, null, tint = Color.White, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(5.dp))
-                        Text("Buy with Platform (2.5% fee)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Buy with Platform", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
 
@@ -941,4 +965,156 @@ private fun SavedForLaterCard(item: CartItem, onMoveToCart: () -> Unit, onRemove
         }
     }
 }
+
+@Composable
+private fun CartHeroBackdrop() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(260.dp)
+    ) {
+        AsyncImage(
+            model = "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&w=1200&q=80",
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF0F172A).copy(alpha = 0.40f),
+                            Color(0xFF0F172A).copy(alpha = 0.85f),
+                        )
+                    )
+                )
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(horizontal = 20.dp, vertical = 24.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFF059669).copy(alpha = 0.35f),
+                border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.6f)),
+                modifier = Modifier.padding(bottom = 6.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF22C55E)))
+                    Text(
+                        text = "SECURE IN-APP BUY",
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
+            Text(
+                text = "Shopping Cart 🛍️",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+            Text(
+                text = "Pay safely inside the app • released after you confirm delivery",
+                color = Color(0xFF94A3B8),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CartFloatingTopBar(
+    itemCount: Int,
+    onBack: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = Color(0xFF0F172A).copy(alpha = 0.85f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+        shadowElevation = 8.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.size(34.dp)
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White.copy(alpha = 0.12f),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "🛍️ Cart",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                    )
+                    if (itemCount > 0) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF10B981),
+                            modifier = Modifier.size(18.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = "$itemCount",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFF059669).copy(alpha = 0.3f),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text("🛡️", fontSize = 12.sp)
+                    Text("In-App Buy", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
 

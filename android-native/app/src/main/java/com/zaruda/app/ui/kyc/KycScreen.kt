@@ -236,7 +236,7 @@ fun KycScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Your identity documents are encrypted and used solely for Zaruda Escrow compliance as per RBI PSS guidelines. Never shared with third parties.",
+                            text = "Your identity documents are encrypted and used solely for account verification. Never shared with third parties.",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -444,7 +444,7 @@ private fun UploadSlot(label: String, uri: Uri?, onPick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "🛡️ Watermarked: FOR ZARUDA ESCROW VERIFICATION ONLY",
+                    text = "🛡️ Watermarked: FOR VERIFICATION ONLY",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF64748B)

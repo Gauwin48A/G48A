@@ -707,22 +707,7 @@ fun RewardsScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(stringResource(R.string.rewards_hero_title), fontWeight = FontWeight.Bold)
-                        Text(stringResource(R.string.rewards_hero_subtitle), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.load(refresh = true) }) {
-                        Icon(Icons.Outlined.EmojiEvents, contentDescription = "Refresh")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
-        },
+        // Top bar is the shared marketplace-style bar rendered by MainShell.
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         if (state.requiresAuth) {
@@ -1335,6 +1320,33 @@ fun RewardsScreen(
                                             Text("Share", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                         }
                                     }
+                                }
+                            }
+                        }
+
+                        // ─── Scratch Card Gamification ───
+                        if (selectedTab == 1) item {
+                            var isScratched by remember { mutableStateOf(false) }
+                            AccentTopCard(listOf(Color(0xFFFFD700), Color(0xFFF59E0B)), if (darkTheme) Color(0xFF2D210E) else Color(0xFFFFFBEB)) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text("DAILY SCRATCH CARD", style = MaterialTheme.typography.labelSmall, color = Color(0xFFD97706), letterSpacing = 1.5.sp, fontWeight = FontWeight.Bold)
+                                        Surface(shape = RoundedCornerShape(999.dp), color = Color(0xFFF59E0B).copy(alpha = 0.15f)) {
+                                            Text(if (isScratched) "✨ Claimed!" else "🎁 1 Scratch Available", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFFD97706), fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                    ScratchCardCanvas(
+                                        rewardText = "150 Coins!",
+                                        isScratchable = !isScratched,
+                                        onRevealed = {
+                                            isScratched = true
+                                            spinWinAmount = 150
+                                            spinWinLabel = "Daily Scratch Card"
+                                            showSpinWinModal = true
+                                            // Ideally call a viewModel function to claim
+                                        },
+                                        modifier = Modifier.fillMaxWidth().height(140.dp)
+                                    )
                                 }
                             }
                         }
@@ -2368,10 +2380,30 @@ fun SpinWheelCanvas(
 @Composable
 fun ScratchCardCanvas(
     rewardText: String = "₹50",
+    isScratchable: Boolean = true,
+    onRevealed: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val scratchedPoints = remember { mutableStateListOf<Offset>() }
     val isRevealed = scratchedPoints.size > 30
+
+    // Trigger onRevealed exactly once when the threshold is crossed
+    LaunchedEffect(isRevealed) {
+        if (isRevealed) {
+            onRevealed()
+        }
+    }
+
+    // Reset if it becomes scratchable again
+    LaunchedEffect(isScratchable) {
+        if (!isScratchable && !isRevealed) {
+            // Already claimed or can't scratch
+        } else if (isScratchable && isRevealed) {
+            // Reset for a new card
+            scratchedPoints.clear()
+        }
+    }
+
     val haptic = LocalHapticFeedback.current
     LaunchedEffect(isRevealed) { 
         if (isRevealed) haptic.performHapticFeedback(HapticFeedbackType.LongPress) 
@@ -2393,7 +2425,7 @@ fun ScratchCardCanvas(
                 Text(rewardText, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
                 if (isRevealed) {
                     Text(
-                        text = "🎉 Coins Credited to Zaruda Wallet!",
+                        text = "🎉 Coins Credited to Your Wallet!",
                         color = Color(0xFFFFD700),
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,

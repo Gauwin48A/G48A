@@ -217,7 +217,7 @@ fun RatingsScreen(
                                 
                                 val factors = listOf(
                                     "🆔" to "Aadhaar / PAN KYC Verified",
-                                    "🛡️" to "100% Escrow Protection Rate",
+                                    "🛡️" to "100% Secure Transaction Rate",
                                     "⭐" to "Zero Active Dispute Reports",
                                     "⚡" to "Lightning Response Rate (< 1 hr)"
                                 )

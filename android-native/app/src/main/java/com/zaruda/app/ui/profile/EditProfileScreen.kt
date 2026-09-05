@@ -160,12 +160,28 @@ fun EditProfileScreen(
     // ── Image Picker ──
     var showImagePickerSheet by remember { mutableStateOf(false) }
     var imagePickerTarget by remember { mutableStateOf("") }
+    
+    var localAvatarUri by remember { mutableStateOf<Uri?>(null) }
+    var localCoverUri by remember { mutableStateOf<Uri?>(null) }
+    
     val avatarPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
-    ) { uri -> uri?.let { onUploadAvatar(it) }; showImagePickerSheet = false }
+    ) { uri -> 
+        uri?.let { 
+            localAvatarUri = it
+            onUploadAvatar(it) 
+        }
+        showImagePickerSheet = false 
+    }
     val coverPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
-    ) { uri -> uri?.let { onUploadCover(it) }; showImagePickerSheet = false }
+    ) { uri -> 
+        uri?.let { 
+            localCoverUri = it
+            onUploadCover(it) 
+        }
+        showImagePickerSheet = false 
+    }
 
     // ── Image Picker Sheet ──
     if (showImagePickerSheet) {

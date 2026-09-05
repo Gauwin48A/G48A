@@ -229,7 +229,7 @@ fun PayoutScreen(
 
     Box(Modifier.fillMaxSize().background(payoutBgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            PayoutTopBar("Payout Account", onBack)
+            // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
 
             if (state.loading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -264,7 +264,7 @@ fun PayoutScreen(
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     Text(
-                                        "When a buyer pays in-app, funds are held securely in escrow until the sale is confirmed, then paid out to the UPI ID or bank account you link here.",
+                                        "When a buyer pays in-app, the payment is held securely until the sale is confirmed, then paid out to the UPI ID or bank account you link here.",
                                         fontSize = 12.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         lineHeight = 17.sp,

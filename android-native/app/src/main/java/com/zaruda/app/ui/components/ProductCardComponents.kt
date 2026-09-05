@@ -38,7 +38,7 @@ fun EscrowBadge(modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Icon(Icons.Default.Lock, null, tint = Color.White, modifier = Modifier.size(12.dp))
-                Text("Escrow", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("In-App Buy", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

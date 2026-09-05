@@ -1086,7 +1086,7 @@ fun HomeScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Zaruda",
+                            text = "Marketplace",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.primary,
@@ -2118,7 +2118,7 @@ fun ListPostCard(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669).copy(alpha = 0.12f)) {
-                        Text("🛡️ 100% Escrow", style = MaterialTheme.typography.labelSmall, color = Color(0xFF059669), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        Text("🛡️ In-App Buy", style = MaterialTheme.typography.labelSmall, color = Color(0xFF059669), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                     }
                     Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF3B82F6).copy(alpha = 0.10f)) {
                         Text("⚡ Replies in ~15m", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
@@ -2299,7 +2299,7 @@ fun GridPostCard(
                 ) {
                     Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF059669).copy(alpha = 0.10f)) {
                         Text(
-                            "🛡️ Escrow",
+                            "🛡️ In-App Buy",
                             style = MaterialTheme.typography.labelSmall,
                             color = Color(0xFF059669),
                             fontWeight = FontWeight.Bold,

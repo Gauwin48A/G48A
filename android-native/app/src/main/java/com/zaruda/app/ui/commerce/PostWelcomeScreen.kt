@@ -69,7 +69,7 @@ import javax.inject.Inject
 fun PostWelcomeScreen(onBack: () -> Unit, onStartPost: () -> Unit) {
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar(stringResource(R.string.sell_title), onBack)
+            // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
             Column(
                 Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,

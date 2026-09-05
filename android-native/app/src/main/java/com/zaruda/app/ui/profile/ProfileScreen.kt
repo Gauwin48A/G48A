@@ -616,7 +616,7 @@ class ProfileViewModel @Inject constructor(
             userId = "demo_user",
             fullName = "Demo User",
             phone = "+91-9876543210",
-            email = "demo@zaruda.app",
+            email = "demo@example.com",
             bio = "This is a demo account for preview purposes.",
             username = "demo_user",
             currentPlan = "premium",
@@ -1142,7 +1142,7 @@ fun ProfileScreen(
                                         color = Color.White.copy(alpha = 0.75f),
                                     )
 
-                                    // NEW: Trust Ribbon
+                                    // Trust Ribbon
                                     Surface(
                                         shape = RoundedCornerShape(20.dp),
                                         color = Color(0xFF059669).copy(alpha = 0.12f),
@@ -1156,7 +1156,7 @@ fun ProfileScreen(
                                         ) {
                                             Icon(Icons.Filled.Verified, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(14.dp))
                                             Text(
-                                                text = "Verified Zaruda Member • 100% Escrow Protected",
+                                                text = "Verified Member • Aadhaar Verified & Secure",
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                                 color = Color(0xFF059669)
@@ -1164,7 +1164,7 @@ fun ProfileScreen(
                                         }
                                     }
 
-                                    // NEW: Marketplace Activity Quick Metrics Bar
+                                    // Marketplace Activity Quick Metrics Bar
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -1176,8 +1176,8 @@ fun ProfileScreen(
                                             Text("Active Listings", color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp)
                                         }
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text("🛡️ ${state.salesCount}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                            Text("Escrow Deals", color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp)
+                                            Text("🤝 ${state.salesCount}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                            Text("Completed Deals", color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp)
                                         }
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             val scoreText = state.trustScore?.trustScore?.toInt()?.toString() ?: if (state.ratingValue != "—") state.ratingValue else "98"
@@ -1571,7 +1571,7 @@ fun ProfileScreen(
                                         onClick = {
                                             val sendIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                                                 type = "text/plain"
-                                                putExtra(android.content.Intent.EXTRA_TEXT, "Check out ${user?.displayName ?: "User"}'s profile on Zaruda!")
+                                                putExtra(android.content.Intent.EXTRA_TEXT, "Check out ${user?.displayName ?: "User"}'s profile on the app!")
                                             }
                                             val shareIntent = android.content.Intent.createChooser(sendIntent, "Share Profile")
                                             ctx.startActivity(shareIntent)

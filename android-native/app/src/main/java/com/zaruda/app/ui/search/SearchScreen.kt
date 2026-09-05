@@ -10,6 +10,12 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -362,84 +368,90 @@ fun SearchScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    OutlinedTextField(
-                        value = state.query,
-                        onValueChange = viewModel::onQueryChange,
-                        singleLine = true,
-                        placeholder = {
-                            AnimatedContent(
-                                targetState = placeholderHints[currentHintIndex],
-                                transitionSpec = {
-                                    (slideInVertically { height -> height } + fadeIn()).togetherWith(
-                                        slideOutVertically { height -> -height } + fadeOut()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        SearchHeroBackdrop()
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(modifier = Modifier.height(110.dp))
+            
+            Surface(
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Column(modifier = Modifier.fillMaxSize().padding(top = 12.dp)) {
+                    // Category-Scoped Trust Ribbon
+                    val isCategoryOne = state.selectedCategory?.let { cat ->
+                        cat == "1" || cat.lowercase().contains("electronic") || cat.lowercase().contains("gadget") || cat.lowercase().contains("mobile")
+                    } == true || (state.query.isNotBlank() && listOf("iphone", "ps5", "phone", "laptop", "macbook", "samsung", "camera", "tv", "gadget", "electronics").any { state.query.lowercase().contains(it) })
+
+                    if (isCategoryOne) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF059669).copy(alpha = 0.08f),
+                            border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.25f)),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Icon(Icons.Filled.Shield, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(18.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Verified Local Sellers",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF059669),
                                     )
-                                },
-                                label = "searchHint",
-                            ) { hint ->
-                                Text(hint, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
-                        },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        trailingIcon = {
-                            if (state.query.isNotBlank()) {
-                                IconButton(onClick = { viewModel.onQueryChange("") }) {
-                                    Icon(Icons.Default.Close, "Clear")
-                                }
-                            } else {
-                                IconButton(onClick = {
-                                    val intent = android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Search for items...")
-                                        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                                    }
-                                    try { voiceLauncher.launch(intent) } catch (_: Exception) { }
-                                }) {
-                                    Icon(Icons.Filled.Mic, "Voice search", tint = MaterialTheme.colorScheme.primary)
+                                    Text(
+                                        text = "Inspect the item before you pay",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                             }
-                        },
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { if (state.query.isNotBlank()) viewModel.search(state.query) }),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        ),
-                        modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
-                    )
-                },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) } },
-                actions = {
-                    // Save search button
-                    if (state.query.isNotBlank() && state.searched) {
-                        IconButton(onClick = { viewModel.saveSearch() }) {
-                            Icon(Icons.Default.BookmarkAdd, "Save search", tint = MaterialTheme.colorScheme.primary)
                         }
-                    }
-                    IconButton(onClick = { showFilters = !showFilters }) {
-                        Box {
-                            Icon(Icons.Default.FilterList, null, tint = if (activeFilterCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                            if (activeFilterCount > 0) {
-                                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.align(Alignment.TopEnd).size(16.dp)) {
-                                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                                        Text("$activeFilterCount", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary, fontSize = 9.sp)
-                                    }
+                    } else {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF2563EB).copy(alpha = 0.08f),
+                            border = BorderStroke(1.dp, Color(0xFF2563EB).copy(alpha = 0.25f)),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Icon(Icons.Filled.Verified, contentDescription = null, tint = Color(0xFF2563EB), modifier = Modifier.size(18.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Verified Marketplace Search",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF2563EB),
+                                    )
+                                    Text(
+                                        text = "Direct verified sellers & inspected listings across all categories",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
                                 }
                             }
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
-        },
-        floatingActionButton = { BackToTopButton(listState, scope) },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+
             // Autocomplete suggestions dropdown
             AnimatedVisibility(visible = state.suggestions.isNotEmpty() && !state.searched) {
                 Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 4.dp) {
@@ -879,89 +891,418 @@ fun SearchScreen(
                     }
                 }
             }
+        } // inner Column
+        } // Surface
+        } // outer Column
+
+        // ── Layer 3: Pinned Floating Glassmorphic Top Bar ──
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(WindowInsets.statusBars.asPaddingValues())
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xFF0F172A).copy(alpha = 0.85f),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+            shadowElevation = 8.dp,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color.White) }
+                
+                OutlinedTextField(
+                    value = state.query,
+                    onValueChange = viewModel::onQueryChange,
+                    singleLine = true,
+                    placeholder = {
+                        AnimatedContent(
+                            targetState = placeholderHints[currentHintIndex],
+                            transitionSpec = {
+                                (slideInVertically { height -> height } + fadeIn()).togetherWith(
+                                    slideOutVertically { height -> -height } + fadeOut()
+                                )
+                            },
+                            label = "searchHint",
+                        ) { hint ->
+                            Text(hint, maxLines = 1, overflow = TextOverflow.Ellipsis, color = Color.White.copy(alpha = 0.7f))
+                        }
+                    },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.White.copy(alpha = 0.7f)) },
+                    trailingIcon = {
+                        if (state.query.isNotBlank()) {
+                            IconButton(onClick = { viewModel.onQueryChange("") }) {
+                                Icon(Icons.Default.Close, "Clear", tint = Color.White)
+                            }
+                        } else {
+                            IconButton(onClick = {
+                                val intent = android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Search for items...")
+                                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                                }
+                                try { voiceLauncher.launch(intent) } catch (_: Exception) { }
+                            }) {
+                                Icon(Icons.Filled.Mic, "Voice search", tint = Color(0xFF10B981))
+                            }
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { if (state.query.isNotBlank()) viewModel.search(state.query) }),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White.copy(alpha = 0.15f),
+                        unfocusedContainerColor = Color.White.copy(alpha = 0.1f),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = Color.White,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent
+                    ),
+                    modifier = Modifier.weight(1f).height(50.dp).focusRequester(focusRequester),
+                )
+
+                if (state.query.isNotBlank() && state.searched) {
+                    IconButton(onClick = { viewModel.saveSearch() }) {
+                        Icon(Icons.Default.BookmarkAdd, "Save search", tint = Color(0xFF10B981))
+                    }
+                }
+                IconButton(onClick = { showFilters = !showFilters }) {
+                    Box {
+                        Icon(Icons.Default.FilterList, null, tint = if (activeFilterCount > 0) Color(0xFF10B981) else Color.White)
+                        if (activeFilterCount > 0) {
+                            Surface(shape = CircleShape, color = Color(0xFF10B981), modifier = Modifier.align(Alignment.TopEnd).size(16.dp)) {
+                                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                    Text("$activeFilterCount", style = MaterialTheme.typography.labelSmall, color = Color.White, fontSize = 9.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
+    } // Box
+}
+
+@Composable
+fun SearchHeroBackdrop() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(260.dp)
+    ) {
+        coil.compose.AsyncImage(
+            model = "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200&q=80",
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF0F172A).copy(alpha = 0.40f),
+                            Color(0xFF0F172A).copy(alpha = 0.85f),
+                        )
+                    )
+                )
+        )
     }
 }
 
 @Composable
-private fun SearchResultCard(post: Post, onClick: () -> Unit, onZoom: (String) -> Unit, onShare: () -> Unit, onInterested: () -> Unit) {
+private fun SearchResultCard(
+    post: Post,
+    onClick: () -> Unit,
+    onZoom: (String) -> Unit,
+    onShare: () -> Unit,
+    onInterested: () -> Unit
+) {
     var wishlisted by remember { mutableStateOf(false) }
-    var liked by remember { mutableStateOf(false) }
+    val isElectronics = post.categoryId == "1" || 
+        (post.category?.lowercase()?.contains("electronic") == true) || 
+        (post.categoryName?.lowercase()?.contains("electronic") == true) ||
+        (post.category?.lowercase()?.contains("mobile") == true) ||
+        (post.categoryName?.lowercase()?.contains("mobile") == true) ||
+        (post.category?.lowercase()?.contains("gadget") == true) ||
+        (post.categoryName?.lowercase()?.contains("gadget") == true)
 
     Card(
         onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column {
-            // Full image with overlays
-            Box(Modifier.fillMaxWidth().height(180.dp).background(MaterialTheme.colorScheme.surfaceVariant)) {
+            // ── Top Hero Image with Scrim & Badges ──
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(185.dp)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
                 post.primaryImage?.let { img ->
-                    AsyncImage(model = img, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clickable { onZoom(img) })
-                } ?: Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.ImageNotSupported, null, modifier = Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    AsyncImage(
+                        model = img,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { onZoom(img) }
+                    )
+                } ?: Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.ImageNotSupported,
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
                 }
-                Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.4f)), startY = 100f)))
+
+                // Dark gradient scrim at bottom of image
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.65f)),
+                                startY = 180f
+                            )
+                        )
+                )
+
+                // Overlaid Price Pill (Bottom-Left)
                 post.price?.let { p ->
-                    Text("₹${"%,.0f".format(p)}", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 16.sp, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color.Black.copy(alpha = 0.65f),
+                        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.3f)),
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(10.dp),
+                    ) {
+                        Text(
+                            text = "₹${"%,.0f".format(p)}",
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        )
+                    }
                 }
+
+                // Wishlist Button (Top-Right)
                 IconButton(
                     onClick = { wishlisted = !wishlisted },
-                    modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(32.dp).background(Color.Black.copy(alpha = 0.25f), CircleShape),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(36.dp)
+                        .background(Color.Black.copy(alpha = 0.45f), CircleShape),
                 ) {
-                    Icon(if (wishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, null, tint = if (wishlisted) MaterialTheme.colorScheme.primary else Color.White, modifier = Modifier.size(16.dp))
+                    Icon(
+                        imageVector = if (wishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+                        contentDescription = "Save",
+                        tint = if (wishlisted) Color(0xFF10B981) else Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
-                PromoBadgeRow(modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
+
+                // Top-Left Promotional / Condition Badges
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (post.isPromoted == true || (post.boostLevel ?: 0) > 0) {
+                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFF59E0B)) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            ) {
+                                Text("🔥", fontSize = 9.sp)
+                                Text(
+                                    post.promoLabel?.ifBlank { "PROMOTED" } ?: "PROMOTED",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                    post.condition?.let { cond ->
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (cond.lowercase() == "new") Color(0xFF10B981).copy(alpha = 0.85f) else Color.Black.copy(alpha = 0.55f),
+                        ) {
+                            Text(
+                                text = cond.replaceFirstChar { it.uppercase() },
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
             }
 
-            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                // Seller header
-                val sellerName = post.sellerName ?: post.userName
-                if (sellerName != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(20.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
-                            Text(sellerName.take(1).uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            // ── Card Body Content ──
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                // Title
+                Text(
+                    text = post.displayTitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                // Category & Subcategory tags
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (!post.category.isNullOrBlank()) {
+                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF3B82F6).copy(alpha = 0.12f)) {
+                            Text(post.category, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2563EB), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                         }
-                        Spacer(Modifier.width(4.dp))
-                        Text(sellerName, fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                        if (post.sellerName != null) Icon(Icons.Default.VerifiedUser, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(12.dp))
+                    }
+                    post.subcategory?.let { sub ->
+                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF10B981).copy(alpha = 0.12f)) {
+                            Text(sub, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = Color(0xFF059669), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
+                    }
+                    if (post.isNegotiable == true || post.pricingType?.lowercase()?.contains("negoti") == true) {
+                        Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFF59E0B).copy(alpha = 0.12f)) {
+                            Text("Negotiable", fontSize = 10.sp, fontWeight = FontWeight.Medium, color = Color(0xFFD97706), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
                     }
                 }
 
-                Text(post.displayTitle, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, fontSize = 14.sp)
-
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    post.condition?.let { cond ->
-                        Surface(shape = RoundedCornerShape(4.dp), color = if (cond.lowercase() == "new") Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant) {
-                            Text(cond.replaceFirstChar { c -> c.uppercase() }, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = if (cond.lowercase() == "new") Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp))
-                        }
+                // Seller Row: Avatar, Name, Verified Badge & Location
+                val sellerName = post.userName ?: post.sellerName ?: "Verified Seller"
+                val initial = sellerName.firstOrNull()?.uppercaseChar()?.toString() ?: "S"
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(initial, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
                     }
-                    post.brand?.let { b ->
-                        Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-                            Text(b, fontSize = 10.sp, modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = sellerName,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF059669).copy(alpha = 0.12f)) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                            ) {
+                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(9.dp))
+                                Text("Verified", fontSize = 8.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                            }
                         }
                     }
                     post.location?.let { loc ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(11.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(loc, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
+                        Text(
+                            text = loc,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
 
-                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                PostActionRow(
-                    postId = post.stableId,
-                    viewCount = post.viewCount ?: 0,
-                    isLiked = liked,
-                    isWishlisted = wishlisted,
-                    onLike = { liked = !liked },
-                    onWishlist = { wishlisted = !wishlisted },
-                    onInterested = onInterested,
-                    onShare = onShare,
-                )
+                // ── Tactile Action Row: Make Offer + Details/Escrow CTA ──
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Surface(
+                        onClick = onInterested,
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(38.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(Icons.Outlined.LocalOffer, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Make Offer", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+
+                    Surface(
+                        onClick = onClick,
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isElectronics) Color(0xFF059669) else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .weight(1.2f)
+                            .height(38.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (isElectronics) {
+                                Icon(Icons.Default.Shield, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("Buy with Platform", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            } else {
+                                Icon(Icons.Default.Visibility, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("View Details", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            }
+                        }
+                    }
+                }
             }
         }
     }

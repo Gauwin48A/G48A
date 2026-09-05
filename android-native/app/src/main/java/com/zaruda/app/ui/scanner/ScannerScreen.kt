@@ -315,7 +315,7 @@ private fun ScannerContent(
                     .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
                 Text(
-                    "🔍 Align Zaruda Item QR or Delivery Handover Code within frame",
+                    "🔍 Align Item QR or Delivery Handover Code within frame",
                     color = Color.White,
                     fontSize = 14.sp,
                     textAlign = TextAlign.Center
@@ -639,7 +639,7 @@ private fun PermissionDeniedScreen(
         Spacer(Modifier.height(12.dp))
         Text(
             if (showRationale)
-                "Zaruda needs camera access to scan QR codes and barcodes. Please grant the permission."
+                "The app needs camera access to scan QR codes and barcodes. Please grant the permission."
             else
                 "Camera permission was denied. Please enable it in your device Settings to use the scanner.",
             color = Color.White.copy(alpha = 0.7f),

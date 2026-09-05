@@ -488,42 +488,8 @@ fun MyPostsScreen(
     }
 
     // ── Main Scaffold ──
+    // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
     Scaffold(
-        topBar = {
-            if (state.bulkMode) {
-                TopAppBar(
-                    title = { Text("${state.selectedIds.size} selected", fontWeight = FontWeight.Bold) },
-                    navigationIcon = { IconButton(onClick = { viewModel.toggleBulkMode() }) { Icon(Icons.Default.Close, null) } },
-                    actions = {
-                        TextButton(onClick = { viewModel.selectAll() }) { Text("All") }
-                        IconButton(onClick = { viewModel.bulkMarkSold() }) { Icon(Icons.Default.CheckCircle, "Mark Sold", tint = Color(0xFF22C55E)) }
-                        IconButton(onClick = { if (state.selectedIds.isNotEmpty()) showBulkDeleteDialog = true }) { Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error) }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                )
-            } else {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(stringResource(R.string.my_posts_title), fontWeight = FontWeight.ExtraBold)
-                            Text("Your marketplace listings", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    },
-                    navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) } },
-                    actions = {
-                        IconButton(onClick = { isGridView = !isGridView }) {
-                            Icon(
-                                if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
-                                contentDescription = "Toggle layout",
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                        IconButton(onClick = { viewModel.toggleBulkMode() }) { Icon(Icons.Default.Checklist, "Select") }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-                )
-            }
-        },
         floatingActionButton = {
             ExtendedFloatingActionButton(onClick = onCreatePost, icon = { Icon(Icons.Default.Add, null) }, text = { Text("New Listing") })
         },
@@ -555,6 +521,37 @@ fun MyPostsScreen(
                         contentPadding = PaddingValues(bottom = 88.dp),
                         verticalArrangement = Arrangement.spacedBy(0.dp),
                     ) {
+                        // ── Actions toolbar (was the TopAppBar) ──
+                        item {
+                            if (state.bulkMode) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).padding(horizontal = 12.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    IconButton(onClick = { viewModel.toggleBulkMode() }) { Icon(Icons.Default.Close, null) }
+                                    Text("${state.selectedIds.size} selected", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                                    TextButton(onClick = { viewModel.selectAll() }) { Text("All") }
+                                    IconButton(onClick = { viewModel.bulkMarkSold() }) { Icon(Icons.Default.CheckCircle, "Mark Sold", tint = Color(0xFF22C55E)) }
+                                    IconButton(onClick = { if (state.selectedIds.isNotEmpty()) showBulkDeleteDialog = true }) { Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error) }
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.End,
+                                ) {
+                                    IconButton(onClick = { isGridView = !isGridView }) {
+                                        Icon(
+                                            if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                                            contentDescription = "Toggle layout",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                    IconButton(onClick = { viewModel.toggleBulkMode() }) { Icon(Icons.Default.Checklist, "Select") }
+                                }
+                            }
+                        }
+
                         // ── Hero Stats Section ──
                         item {
                             Column {
@@ -720,7 +717,7 @@ fun MyPostsScreen(
                                                 "📸 Tap + to create your first listing",
                                                 "🪙 Earn coins daily \u2192 check-in & spin",
                                                 "⚡ Boost listings with coins for more buyers",
-                                                "🔒 In-app escrow protects Electronics deals",
+                                                "🔒 In-app buy available for Electronics deals",
                                             ).forEach { tip ->
                                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                     Text("\u2022", fontSize = 14.sp, color = Color(0xFF0284C7))
@@ -1025,7 +1022,7 @@ fun MyPostsScreen(
                 PostActionItem(icon = Icons.Default.Share, label = "Share Listing", subtitle = "Send to friends & social media") {
                     showPostActionsSheet = false; actionPost = null
                     val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                        type = "text/plain"; putExtra(android.content.Intent.EXTRA_TEXT, "Check out my listing: ${p.displayTitle} on Zaruda!")
+                        type = "text/plain"; putExtra(android.content.Intent.EXTRA_TEXT, "Check out my listing: ${p.displayTitle} on the app!")
                     }
                     context.startActivity(android.content.Intent.createChooser(shareIntent, "Share via"))
                 }

@@ -252,7 +252,7 @@ fun MoreScreen(
                     ) {
                         Icon(Icons.AutoMirrored.Outlined.Login, null, tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Log In to Zaruda", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("Log In", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }
@@ -264,7 +264,7 @@ fun MoreScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = "Zaruda Marketplace v1.0.0",
+                        text = "Marketplace v1.0.0",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),

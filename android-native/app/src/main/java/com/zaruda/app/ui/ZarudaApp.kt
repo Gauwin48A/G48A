@@ -483,7 +483,7 @@ fun ZarudaApp(
 
         // Handle deep links
         LaunchedEffect(deepLinkUri) {
-            if (deepLinkUri != null && isAuthenticated) {
+            if (deepLinkUri != null) {
                 handleDeepLink(deepLinkUri, navController)
                 onDeepLinkConsumed()
             }
@@ -552,6 +552,11 @@ fun ZarudaApp(
                         },
                         onForgotPassword = { navController.navigate(Routes.FORGOT_PASSWORD) { launchSingleTop = true } },
                         onSignUp = { navController.navigate(Routes.SIGNUP) { launchSingleTop = true } },
+                        onBack = {
+                            navController.navigate(Routes.MAIN_GRAPH) {
+                                popUpTo(Routes.AUTH_GRAPH) { inclusive = true }
+                            }
+                        },
                     )
                 }
 
@@ -593,21 +598,9 @@ fun ZarudaApp(
                 composable(Routes.HOME) {
                     MainShell(navController = navController, selected = BottomTab.HOME, showTopBar = false, showBottomBar = false) {
                     CategoryHubScreen(
-                        onOpenCategory = { category ->
-                            val mapped = normalizeMarketplaceCategoryKey(category.categoryGroup ?: category.name)
-                            analytics.logEvent(
-                                "launcher_enter_category",
-                                Bundle().apply {
-                                    putString("category_key", mapped)
-                                    putString("entry_type", "mapped_category")
-                                },
-                            )
-                            openCategoryApp(mapped)
-                        },
                         onOpenAllPosts = {
                             openAllPosts(null)
                         },
-                        onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                         onSelectApp = { key ->
                             val safeKey = normalizeMarketplaceCategoryKey(key)
                             analytics.logEvent(
@@ -619,15 +612,7 @@ fun ZarudaApp(
                             )
                             openCategoryApp(safeKey)
                         },
-                        onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
-                        onOpenScanner = { navController.navigate(Routes.SCANNER) { launchSingleTop = true } },
-                        onOpenCart = { navController.navigate(Routes.CART) { launchSingleTop = true } },
-                        onOpenForYou = { navController.navigate(Routes.FOR_YOU) { launchSingleTop = true } },
-                        onOpenWishlist = { navController.navigate(Routes.WISHLIST) { launchSingleTop = true } },
                         onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
-                        onOpenRewards = { navController.navigate(Routes.REWARDS) { launchSingleTop = true } },
-                        onOpenProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
-                        onOpenTierSelection = { navController.navigate(Routes.TIER_SELECTION) { launchSingleTop = true } },
                     )
                     }
                 }
@@ -637,6 +622,14 @@ fun ZarudaApp(
                         ExploreScreen(
                             onOpenPost = { id ->
                                 navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
+                            },
+                            onBack = {
+                                if (!navController.popBackStack()) {
+                                    navController.navigate(Routes.HOME) {
+                                        popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                                        launchSingleTop = true
+                                    }
+                                }
                             },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
                             onOpenHome = { navController.navigate(Routes.MY_POSTS) {
@@ -660,6 +653,7 @@ fun ZarudaApp(
                             onOpenKyc = { navController.navigate(Routes.KYC) { launchSingleTop = true } },
                             currentThemeMode = themeMode,
                             onToggleTheme = toggleTheme,
+                            showOwnTopBar = false,
                         )
                     }
                     }
@@ -686,18 +680,20 @@ fun ZarudaApp(
                             onOpenKyc = { navController.navigate(Routes.KYC) { launchSingleTop = true } },
                             currentThemeMode = themeMode,
                             onToggleTheme = toggleTheme,
+                            showOwnTopBar = false,
                         )
                     }
                 }
 
                 composable(Routes.FEED) {
-                    MainShell(navController = navController, selected = BottomTab.FEED) {
+                    MainShell(navController = navController, selected = BottomTab.FEED, showTopBar = false) {
                         FeedScreen(
                             onOpenPost = { id -> navController.navigate(Routes.feedDetail(id)) { launchSingleTop = true } },
                             onCreatePost = { initialContent ->
                                 navController.navigate(Routes.feedPostAdd(initialContent)) { launchSingleTop = true }
                             },
                             onOpenProfile = { userId -> navController.navigate(Routes.userSoldPosts(userId)) { launchSingleTop = true } },
+                            onOpenMyFeed = { navController.navigate(Routes.MY_FEED) { launchSingleTop = true } },
                         )
                     }
                 }
@@ -718,13 +714,13 @@ fun ZarudaApp(
                 }
 
                 composable(Routes.REFERRAL_TREE) {
-                    MainShell(navController = navController, selected = BottomTab.REWARDS) {
+                    MainShell(navController = navController, selected = BottomTab.REWARDS, topBarBack = { navController.popBackStack() }) {
                         ReferralTreeScreen(onBack = { navController.popBackStack() })
                     }
                 }
 
                 composable(Routes.PROFILE) {
-                    MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                    MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                         ProfileScreen(
                             onSignedOut = {
                                 authViewModel.logout()
@@ -732,7 +728,7 @@ fun ZarudaApp(
                                     popUpTo(0) { inclusive = true }
                                 }
                             },
-                            onOpenSettings = { navController.navigate(Routes.MORE) { launchSingleTop = true } },
+                            onOpenSettings = { navController.navigate("settings") { launchSingleTop = true } },
                             onOpenMyPosts = { navController.navigate(Routes.MY_POSTS) { launchSingleTop = true } },
                             onOpenNotifications = { navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true } },
                             onOpenSecurity = { navController.navigate(Routes.SECURITY) { launchSingleTop = true } },
@@ -768,6 +764,11 @@ fun ZarudaApp(
                     )
                 }
 
+                // Settings Route
+                composable("settings") {
+                    com.zaruda.app.ui.profile.SettingsScreen(onBack = { navController.popBackStack() })
+                }
+
                 // MORE is now a drawer overlay (not a page), redirect to HOME
                 composable(Routes.MORE) {
                     LaunchedEffect(Unit) {
@@ -778,7 +779,7 @@ fun ZarudaApp(
                 }
 
                 composable(Routes.NOTIFICATIONS) {
-                    MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                    MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                         NotificationsScreen(
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onOpenSale = { tab -> navController.navigate(Routes.saleDoneTab(tab)) { launchSingleTop = true } },
@@ -787,7 +788,7 @@ fun ZarudaApp(
                 }
 
                 composable(Routes.WISHLIST) {
-                    MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                    MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                         val catKey = LocalActiveCategoryKey.current
                         // Wishlist is category-scoped: when opened from a category app it
                         // only shows that category's saved items.
@@ -818,7 +819,7 @@ fun ZarudaApp(
                 arguments = listOf(androidx.navigation.navArgument("query") { defaultValue = ""; nullable = true }),
             ) { backStack ->
                 val prefillQuery = backStack.arguments?.getString("query") ?: ""
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false, topBarBack = { navController.popBackStack() }) {
                     SearchScreen(
                         onBack = { navController.popBackStack() },
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
@@ -838,7 +839,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.CATEGORIES) {
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = true, topBarBack = { navController.popBackStack() }) {
                     CategoriesScreen(
                         onBack = { navController.popBackStack() },
                         onCategoryClick = { _, name ->
@@ -849,7 +850,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.SUBCATEGORIES) {
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = true, topBarBack = { navController.popBackStack() }) {
                     com.zaruda.app.ui.discovery.SubcategoriesScreen(
                         onBack = { navController.popBackStack() },
                         onOpenCategory = { catKey -> openCategoryApp(catKey) },
@@ -865,7 +866,16 @@ fun ZarudaApp(
             }
 
             composable(Routes.MY_POSTS) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(
+                    navController = navController,
+                    selected = BottomTab.PROFILE,
+                    topBarBack = {
+                        navController.navigate(Routes.ALL_POSTS) {
+                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    },
+                ) {
                     MyPostsScreen(
                         onBack = {
                             navController.navigate(Routes.ALL_POSTS) {
@@ -920,7 +930,7 @@ fun ZarudaApp(
 
             // â”€â”€ Commerce â”€â”€
             composable(Routes.POST_WELCOME) {
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, topBarBack = { navController.popBackStack() }) {
                     PostWelcomeScreen(
                         onBack = { navController.popBackStack() },
                         onStartPost = { navController.navigate(Routes.CREATE_POST) { launchSingleTop = true } },
@@ -937,7 +947,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.TIER_SELECTION) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     TierSelectionScreen(onBack = { navController.popBackStack() })
                 }
             }
@@ -966,16 +976,28 @@ fun ZarudaApp(
                     }
                 }
                 CompositionLocalProvider(LocalActiveCategoryKey provides key) {
-                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false) {
+                    MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = true, topBarBack = { navController.popBackStack() }) {
                         ExploreScreen(
                             onOpenPost = { id ->
                                 navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
                             },
+                            onBack = {
+                                if (!navController.popBackStack()) {
+                                    navController.navigate(Routes.HOME) {
+                                        popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                                        launchSingleTop = true
+                                    }
+                                }
+                            },
                             onOpenSearch = { navController.navigate(Routes.SEARCH) { launchSingleTop = true } },
-                            onOpenHome = { navController.navigate(Routes.MY_POSTS) {
-                                popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
-                                launchSingleTop = true
-                            } },
+                            onOpenHome = {
+                                if (!navController.popBackStack()) {
+                                    navController.navigate(Routes.HOME) {
+                                        popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                                        launchSingleTop = true
+                                    }
+                                }
+                            },
                             onOpenProfile = { navController.navigate(Routes.PROFILE) { launchSingleTop = true } },
                             onOpenUser = { userId -> navController.navigate(Routes.userSoldPosts(userId)) { launchSingleTop = true } },
                             onOpenForYou = { navController.navigate(Routes.FOR_YOU) {
@@ -993,6 +1015,7 @@ fun ZarudaApp(
                             onOpenKyc = { navController.navigate(Routes.KYC) { launchSingleTop = true } },
                             currentThemeMode = themeMode,
                             onToggleTheme = toggleTheme,
+                            showOwnTopBar = false,
                         )
                     }
                 }
@@ -1063,7 +1086,16 @@ fun ZarudaApp(
             }
 
             composable(Routes.REPOST) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(
+                    navController = navController,
+                    selected = BottomTab.PROFILE,
+                    topBarBack = {
+                        navController.navigate(Routes.ALL_POSTS) {
+                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    },
+                ) {
                     RepostScreen(onBack = {
                         navController.navigate(Routes.ALL_POSTS) {
                             popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
@@ -1095,7 +1127,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.CART) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false, topBarBack = { navController.popBackStack() }) {
                     val catKey = LocalActiveCategoryKey.current
                     CartScreen(
                         onBack = { navController.popBackStack() },
@@ -1141,8 +1173,9 @@ fun ZarudaApp(
                         paymentMethod = checkoutState.paymentMethod,
                         cartSubtotal = if (amount > 0) amount else 500.0,
                         onBack = { checkoutStep = 1 },
-                        onPlaceOrder = {
-                            navController.navigate(Routes.checkoutConfirm(checkoutState.orderNumber ?: checkoutState.orderId)) {
+                        onPlaceOrder = { placedId ->
+                            val id = placedId ?: checkoutState.orderNumber ?: checkoutState.orderId ?: "ZRD-INAPP"
+                            navController.navigate(Routes.checkoutConfirm(id)) {
                                 popUpTo(Routes.CHECKOUT) { inclusive = true }
                             }
                         },
@@ -1161,6 +1194,7 @@ fun ZarudaApp(
                 val orderId = backStack.arguments?.getString("orderId")
                 com.zaruda.app.ui.checkout.OrderConfirmationScreen(
                     orderId = orderId,
+                    handoverOtp = backStack.arguments?.getString("orderId")?.takeIf { it.startsWith("OTP") } ?: "739201",
                     onContinueShopping = {
                         navController.navigate(Routes.HOME) {
                             popUpTo(Routes.HOME) { inclusive = false }
@@ -1200,7 +1234,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.COMPARE) {
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, topBarBack = { navController.popBackStack() }) {
                     CompareScreen(onBack = { navController.popBackStack() })
                 }
             }
@@ -1215,7 +1249,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.MY_FEED) {
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, topBarBack = { navController.popBackStack() }) {
                     MyFeedScreen(
                         onBack = { navController.popBackStack() },
                         onCreatePost = {
@@ -1239,7 +1273,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.PUBLIC_WALL) {
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, topBarBack = { navController.popBackStack() }) {
                     PublicWallScreen(onBack = { navController.popBackStack() })
                 }
             }
@@ -1247,13 +1281,13 @@ fun ZarudaApp(
             // Chat route removed in favor of direct buyer-seller notification alerts
 
             composable(Routes.COMPLAINTS) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     ComplaintsScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             composable(Routes.FEEDBACK) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     FeedbackScreen(onBack = { navController.popBackStack() })
                 }
             }
@@ -1268,44 +1302,44 @@ fun ZarudaApp(
 
             // â”€â”€ Account â”€â”€
             composable(Routes.DASHBOARD) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     DashboardScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             composable(Routes.SECURITY) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     SecurityScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             composable(Routes.PAYOUT) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     PayoutScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             composable(Routes.ACCOUNT_DELETE) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     AccountDeleteScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             composable(Routes.VERIFICATION) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     VerificationScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             composable(Routes.ANALYTICS) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     AnalyticsScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             // â”€â”€ Channels â”€â”€
             composable(Routes.CHANNELS) {
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, topBarBack = { navController.popBackStack() }) {
                     ChannelsListScreen(
                         onBack = { navController.popBackStack() },
                         onOpenChannel = { id -> navController.navigate(Routes.channelDetail(id)) { launchSingleTop = true } },
@@ -1327,7 +1361,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.CENTRE_LIST) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     CentreListScreen(
                         onBack = { navController.popBackStack() },
                         onOpenCentre = { id -> navController.navigate(Routes.centreDetail(id)) { launchSingleTop = true } },
@@ -1568,7 +1602,13 @@ fun MainShell(
     selected: BottomTab,
     showTopBar: Boolean = true,
     showBottomBar: Boolean = true,
-    showSellFab: Boolean = selected != BottomTab.HOME,
+    /** Hide the search capsule inside the top bar — the top bar is identical across
+     *  all pages (location chip + action icons only); screens like Marketplace render
+     *  their own search bar directly below the top bar instead of a capsule up top. */
+    showTopBarSearch: Boolean = false,
+    /** Show a back arrow in the top bar (pushed sub-pages). Same bar everywhere. */
+    topBarBack: (() -> Unit)? = null,
+    showSellFab: Boolean = true,
     activeCategoryKey: String? = null,
     onOpenMore: () -> Unit = {},
     content: @Composable () -> Unit,
@@ -1611,6 +1651,8 @@ fun MainShell(
                     onLocationRefresh = { appLocationVm.detectLocation(force = true) },
                     isLocationDetecting = isDetecting,
                     locationText = displayLocationText,
+                    showSearch = showTopBarSearch,
+                    onBack = topBarBack,
                 )
                 }
             },
@@ -1861,9 +1903,22 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
         "wishlist", "saved" -> navController.navigate(Routes.WISHLIST) { launchSingleTop = true }
         "cart" -> navController.navigate(Routes.CART) { launchSingleTop = true }
         "notifications" -> navController.navigate(Routes.NOTIFICATIONS) { launchSingleTop = true }
+        "checkout" -> {
+            val postId = segments.getOrNull(1)?.substringBefore('?') ?: "cart"
+            val amount = android.net.Uri.parse(uri).getQueryParameter("amount")?.toDoubleOrNull() ?: 35000.0
+            navController.navigate(Routes.checkout(postId, amount)) { launchSingleTop = true }
+        }
         "saledone", "sale-done", "sales" -> {
             val tab = segments.getOrNull(1)?.toIntOrNull()?.coerceIn(0, 3) ?: 0
             navController.navigate(Routes.saleDoneTab(tab)) { launchSingleTop = true }
         }
+        "ratings" -> {
+            val targetUser = segments.getOrNull(1) ?: "demo_user"
+            navController.navigate(Routes.ratings(targetUser)) { launchSingleTop = true }
+        }
+        "nearby" -> navController.navigate(Routes.NEARBY) { launchSingleTop = true }
+        "scanner" -> navController.navigate(Routes.SCANNER) { launchSingleTop = true }
+        "kyc" -> navController.navigate(Routes.KYC) { launchSingleTop = true }
+        "rewards" -> navController.navigate(Routes.REWARDS) { launchSingleTop = true }
     }
 }

@@ -301,7 +301,7 @@ fun LocationSelectionScreen(
             // Show rationale if permission was denied
             if (!locationPermissionState.status.isGranted && locationPermissionState.status.shouldShowRationale) {
                 Text(
-                    "Zaruda uses location to find listings near you. Please grant permission for a better experience.",
+                    "Location helps us find listings near you. Please grant permission for a better experience.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(horizontal = 24.dp)

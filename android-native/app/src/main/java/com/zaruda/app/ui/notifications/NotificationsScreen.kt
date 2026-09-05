@@ -352,80 +352,79 @@ fun NotificationsScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(text = stringResource(R.string.notif_title), fontWeight = FontWeight.Bold)
-                        if (unreadCount > 0) {
-                            Text(
-                                text = "$unreadCount unread",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    if (state.selectMode) {
-                        TextButton(onClick = {
-                            if (state.selectedItems.size == displayItems.size) viewModel.deselectAll()
-                            else viewModel.selectAll()
-                        }) {
-                            Text(
-                                if (state.selectedItems.size == displayItems.size) "Deselect All" else "Select All",
-                                style = MaterialTheme.typography.labelMedium,
-                            )
-                        }
-                        IconButton(
-                            onClick = { viewModel.deleteSelected() },
-                            enabled = state.selectedItems.isNotEmpty(),
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete selected", tint = if (state.selectedItems.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        TextButton(onClick = { viewModel.toggleSelectMode() }) {
-                            Text("Cancel", style = MaterialTheme.typography.labelMedium)
-                        }
-                    } else {
-                        IconButton(onClick = { viewModel.toggleSelectMode() }) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = "Select")
-                        }
-                        IconButton(onClick = { viewModel.toggleSettings() }) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
-                        }
-                        if (unreadCount > 0) {
-                            TextButton(onClick = { viewModel.markAllRead() }) {
-                                Icon(
-                                    Icons.Default.DoneAll,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(stringResource(R.string.notif_mark_all_read), style = MaterialTheme.typography.labelMedium)
-                            }
-                        }
-                        if (state.items.isNotEmpty()) {
-                            var showDeleteAllDialog by remember { mutableStateOf(false) }
-                            IconButton(onClick = { showDeleteAllDialog = true }) {
-                                Icon(Icons.Default.DeleteSweep, contentDescription = "Delete all")
-                            }
-                            if (showDeleteAllDialog) {
-                                AlertDialog(
-                                    onDismissRequest = { showDeleteAllDialog = false },
-                                    title = { Text(stringResource(R.string.notif_delete_all_title)) },
-                                    text = { Text(stringResource(R.string.notif_delete_all_confirm, state.items.size)) },
-                                    confirmButton = { TextButton(onClick = { viewModel.deleteAll(); showDeleteAllDialog = false }) { Text(stringResource(R.string.notif_delete_all)) } },
-                                    dismissButton = { TextButton(onClick = { showDeleteAllDialog = false }) { Text(stringResource(R.string.notif_cancel)) } },
-                                )
-                            }
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
-        },
+        // Top bar is the shared marketplace-style bar rendered by MainShell.
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            // Title + actions row (was the TopAppBar; sits directly below the shared top bar)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(text = stringResource(R.string.notif_title), fontWeight = FontWeight.Bold)
+                    if (unreadCount > 0) {
+                        Text(
+                            text = "$unreadCount unread",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+                if (state.selectMode) {
+                    TextButton(onClick = {
+                        if (state.selectedItems.size == displayItems.size) viewModel.deselectAll()
+                        else viewModel.selectAll()
+                    }) {
+                        Text(
+                            if (state.selectedItems.size == displayItems.size) "Deselect All" else "Select All",
+                            style = MaterialTheme.typography.labelMedium,
+                        )
+                    }
+                    IconButton(
+                        onClick = { viewModel.deleteSelected() },
+                        enabled = state.selectedItems.isNotEmpty(),
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete selected", tint = if (state.selectedItems.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    TextButton(onClick = { viewModel.toggleSelectMode() }) {
+                        Text("Cancel", style = MaterialTheme.typography.labelMedium)
+                    }
+                } else {
+                    IconButton(onClick = { viewModel.toggleSelectMode() }) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = "Select")
+                    }
+                    IconButton(onClick = { viewModel.toggleSettings() }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
+                    if (unreadCount > 0) {
+                        TextButton(onClick = { viewModel.markAllRead() }) {
+                            Icon(
+                                Icons.Default.DoneAll,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(stringResource(R.string.notif_mark_all_read), style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                    if (state.items.isNotEmpty()) {
+                        var showDeleteAllDialog by remember { mutableStateOf(false) }
+                        IconButton(onClick = { showDeleteAllDialog = true }) {
+                            Icon(Icons.Default.DeleteSweep, contentDescription = "Delete all")
+                        }
+                        if (showDeleteAllDialog) {
+                            AlertDialog(
+                                onDismissRequest = { showDeleteAllDialog = false },
+                                title = { Text(stringResource(R.string.notif_delete_all_title)) },
+                                text = { Text(stringResource(R.string.notif_delete_all_confirm, state.items.size)) },
+                                confirmButton = { TextButton(onClick = { viewModel.deleteAll(); showDeleteAllDialog = false }) { Text(stringResource(R.string.notif_delete_all)) } },
+                                dismissButton = { TextButton(onClick = { showDeleteAllDialog = false }) { Text(stringResource(R.string.notif_cancel)) } },
+                            )
+                        }
+                    }
+                }
+            }
         PullToRefreshBox(
             isRefreshing = state.loading && state.items.isNotEmpty(),
             onRefresh = { viewModel.load() },
@@ -629,6 +628,7 @@ fun NotificationsScreen(
                     }
                 }
             }
+        }
         }
     }
     

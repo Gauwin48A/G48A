@@ -24,10 +24,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Article
@@ -300,131 +305,14 @@ fun FeedScreen(
         if (isGuest) searched.take(5) else searched
     }
 
-    Scaffold(
-        topBar = {
-            Column {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(stringResource(R.string.feed_title), fontWeight = FontWeight.Bold)
-                            Text(
-                                stringResource(R.string.feed_subtitle),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    },
-                    actions = {
-                        // Sort dropdown
-                        var showSortMenu by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { showSortMenu = true }) {
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Sort")
-                            }
-                            DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
-                                listOf("For You" to "✨ Discover", "Shuffle" to "🔀 Shuffle", "Recent" to "🕒 Newest", "Oldest" to "📜 Oldest", "Updated" to "⚡ Updated", "Views" to "👁 Popular", "Likes" to "❤ Most Liked", "Title" to "🗒 Title").forEach { (value, label) ->
-                                    DropdownMenuItem(
-                                        text = { Text(label) },
-                                        onClick = { viewModel.setSortOption(value); showSortMenu = false },
-                                        leadingIcon = if (state.sortOption == value) {{ Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }} else null,
-                                    )
-                                }
-                            }
-                        }
-                        // Density toggle
-                        var showDensityMenu by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { showDensityMenu = true }) {
-                                Icon(Icons.Default.Visibility, contentDescription = "Density", modifier = Modifier.size(20.dp))
-                            }
-                            DropdownMenu(expanded = showDensityMenu, onDismissRequest = { showDensityMenu = false }) {
-                                listOf("COMPACT" to "Compact", "NORMAL" to "Normal", "SPACIOUS" to "Spacious").forEach { (value, label) ->
-                                    DropdownMenuItem(
-                                        text = { Text(label) },
-                                        onClick = { viewModel.setDensity(value); showDensityMenu = false },
-                                        leadingIcon = if (state.density == value) {{ Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }} else null,
-                                    )
-                                }
-                            }
-                        }
-                        IconButton(onClick = { showSearch = !showSearch }) {
-                            Icon(
-                                if (showSearch) Icons.Default.Close else Icons.Default.Search,
-                                contentDescription = "Search",
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-                )
-                if (showSearch) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        placeholder = { Text(stringResource(R.string.feed_search_placeholder)) },
-                        leadingIcon = { Icon(Icons.Default.Search, null) },
-                        trailingIcon = {
-                            if (searchQuery.isNotBlank()) {
-                                IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, null) }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                    )
-                }
-                // Sort order pills row (web parity) — derived from sortOption to stay in sync with dropdown
-                val sortPillNewest = state.sortOption == "Recent"
-                val sortPillOldest = state.sortOption == "Oldest"
-                Surface(color = MaterialTheme.colorScheme.surface) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (sortPillNewest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.clickable { viewModel.setSortOption("Recent") },
-                        ) {
-                            Text("↓ Newest first", fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
-                                color = if (sortPillNewest) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp))
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (sortPillOldest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.clickable { viewModel.setSortOption("Oldest") },
-                        ) {
-                            Text("↑ Oldest first", fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
-                                color = if (sortPillOldest) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp))
-                        }
-                        if (state.feedItems.isNotEmpty()) {
-                            Spacer(Modifier.weight(1f))
-                            Text("${state.feedItems.size} posts", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-            }
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { onCreatePost("") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 72.dp),
-            ) {
-                Icon(Icons.Default.Add, "Create post", tint = MaterialTheme.colorScheme.onPrimary)
-            }
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
+    Box(modifier = Modifier.fillMaxSize()) {
         PullToRefreshBox(
             isRefreshing = state.refreshing,
             onRefresh = { viewModel.load(refresh = true) },
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize(),
         ) {
             when {
-                state.loading -> ListShimmer(count = 5, modifier = Modifier.padding(top = 12.dp))
+                state.loading -> ListShimmer(count = 5, modifier = Modifier.padding(top = 100.dp))
 
                 state.error != null && state.feedItems.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     AppErrorState(
@@ -435,81 +323,138 @@ fun FeedScreen(
                     )
                 }
 
-                state.feedItems.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    AppEmptyState(
-                        icon = Icons.Outlined.AccountCircle,
-                        title = "No feed posts yet",
-                        subtitle = "New updates from users will appear here.",
-                    )
-                }
-
                 else -> {
-                    Box(Modifier.fillMaxSize()) {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(when (state.density) {
-                                "COMPACT" -> 6.dp
-                                "SPACIOUS" -> 16.dp
-                                else -> 10.dp
-                            }),
-                        ) {
-                            // Hero banner (web parity: from-indigo-600 via-purple-600 to-blue-600)
-                            item(key = "hero_banner") {
-                                Box(
-                                    modifier = Modifier.fillMaxWidth()
-                                        .background(Brush.horizontalGradient(listOf(Color(0xFF4F46E5), Color(0xFF7C3AED), Color(0xFF2563EB))))
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 100.dp),
+                        verticalArrangement = Arrangement.spacedBy(when (state.density) {
+                            "COMPACT" -> 6.dp
+                            "SPACIOUS" -> 16.dp
+                            else -> 10.dp
+                        }),
+                    ) {
+                        // ── Layer 1: Scenic Hero Backdrop ──
+                        item(key = "feed_hero") {
+                            FeedHeroBackdrop()
+                        }
+
+                        // ── Layer 2: 32dp Floating Curved Sheet Header ──
+                        item(key = "curved_sheet_header") {
+                            Surface(
+                                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                                color = MaterialTheme.colorScheme.background,
+                                shadowElevation = 8.dp,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 14.dp, bottom = 4.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
+                                    // Centered tactile drag handle (40.dp x 4.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(width = 40.dp, height = 4.dp)
+                                            .clip(RoundedCornerShape(2.dp))
+                                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f))
+                                    )
+
+                                    Spacer(Modifier.height(10.dp))
+
+                                    // Search input if open
+                                    if (showSearch) {
+                                        OutlinedTextField(
+                                            value = searchQuery,
+                                            onValueChange = { searchQuery = it },
+                                            placeholder = { Text(stringResource(R.string.feed_search_placeholder)) },
+                                            leadingIcon = { Icon(Icons.Default.Search, null) },
+                                            trailingIcon = {
+                                                if (searchQuery.isNotBlank()) {
+                                                    IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Close, null) }
+                                                }
+                                            },
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 6.dp),
+                                        )
+                                    }
+
+                                    // Filter Pills & Density controls
                                     Row(
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 14.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
-                                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                Icon(Icons.Outlined.Update, null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(22.dp))
-                                                Text("News & Updates", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
-                                            }
+                                        val sortPillNewest = state.sortOption == "Recent"
+                                        val sortPillOldest = state.sortOption == "Oldest"
+                                        Surface(
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = if (sortPillNewest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                            modifier = Modifier.clickable { viewModel.setSortOption("Recent") },
+                                        ) {
                                             Text(
-                                                "Share knowledge, news, and updates with the community",
-                                                fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f), lineHeight = 16.sp,
+                                                "↓ Newest",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = if (sortPillNewest) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
                                             )
-                                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                                Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.15f)) {
-                                                    Text("Community feed", fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
-                                                }
-                                                Surface(shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.1f)) {
-                                                    Text("Browse marketplace", fontSize = 10.sp, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
-                                                }
-                                            }
                                         }
-                                        Spacer(Modifier.width(8.dp))
-                                        Column(verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.End) {
-                                            Surface(shape = RoundedCornerShape(12.dp), color = Color.White.copy(alpha = 0.15f), modifier = Modifier.clickable { onOpenMyFeed() }) {
-                                                Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                    Icon(Icons.Outlined.AccountCircle, null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                                    Text("My Feed", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                                }
-                                            }
-                                            if (!isGuest) {
-                                                Surface(shape = RoundedCornerShape(12.dp), color = Color.White, modifier = Modifier.clickable(onClick = { onCreatePost("") })) {
-                                                    Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                        Icon(Icons.Filled.Add, null, tint = Color(0xFF4F46E5), modifier = Modifier.size(14.dp))
-                                                        Text("Share Update", color = Color(0xFF4F46E5), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                                    }
-                                                }
-                                            }
+                                        Surface(
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = if (sortPillOldest) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                            modifier = Modifier.clickable { viewModel.setSortOption("Oldest") },
+                                        ) {
+                                            Text(
+                                                "↑ Oldest",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = if (sortPillOldest) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                                            )
+                                        }
+                                        Spacer(Modifier.weight(1f))
+                                        if (filteredPosts.isNotEmpty()) {
+                                            Text(
+                                                "${filteredPosts.size} stories",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
                                         }
                                     }
                                 }
                             }
-                            // Composer Card at top
-                            item(key = "composer_card") {
+                        }
+
+                        // Composer Card at top of feed
+                        item(key = "composer_card") {
+                            Box(modifier = Modifier.padding(horizontal = 14.dp)) {
                                 ComposerCard(onCreatePost = { text -> onCreatePost(text) })
                             }
+                        }
+                        if (filteredPosts.isEmpty()) {
+                            item(key = "empty_feed_state") {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 36.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    AppEmptyState(
+                                        icon = Icons.Outlined.AccountCircle,
+                                        title = "No feed posts yet",
+                                        subtitle = "Be the first to share an update with the community!",
+                                    )
+                                }
+                            }
+                        } else {
                             items(filteredPosts, key = { it.stableId }) { post ->
+                            Box(modifier = Modifier.padding(horizontal = 14.dp)) {
                                 FeedCard(
                                     post = post,
                                     onOpenPost = {
@@ -524,62 +469,83 @@ fun FeedScreen(
                                     onLike = { viewModel.toggleLike(post.stableId) },
                                 )
                             }
-                            if (state.hasMore && filteredPosts.isNotEmpty() && !isGuest) {
-                                item {
-                                    LaunchedEffect(Unit) { viewModel.loadMore() }
-                                    if (state.loadingMore) {
-                                        Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                                        }
-                                    }
-                                }
-                            }
-                            // Guest login overlay (web parity: shows after 5 posts)
-                            if (isGuest && filteredPosts.size > 5) {
-                                item(key = "guest_login_cta") {
-                                    Surface(
-                                        shape = RoundedCornerShape(16.dp),
-                                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
-                                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.padding(24.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                                        ) {
-                                            Text(
-                                                stringResource(R.string.feed_login_to_see_more),
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            )
-                                            Text(
-                                                stringResource(R.string.feed_login_subtitle),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                                            )
-                                            androidx.compose.material3.Button(
-                                                onClick = onNavigateToLogin,
-                                                shape = RoundedCornerShape(12.dp),
-                                            ) {
-                                                Text(stringResource(R.string.action_sign_in))
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            item { Box(modifier = Modifier.height(56.dp)) }
                         }
-                        // Back-to-top button
-                        com.zaruda.app.ui.components.BackToTopButton(
-                            listState = listState,
-                            coroutineScope = coroutineScope,
-                            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 72.dp),
-                        )
+                        }
+                        if (state.hasMore && filteredPosts.isNotEmpty() && !isGuest) {
+                            item {
+                                LaunchedEffect(Unit) { viewModel.loadMore() }
+                                if (state.loadingMore) {
+                                    Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                                    }
+                                }
+                            }
+                        }
+                        // Guest login overlay (web parity: shows after 5 posts)
+                        if (isGuest && filteredPosts.size > 5) {
+                            item(key = "guest_login_cta") {
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(24.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    ) {
+                                        Text(
+                                            stringResource(R.string.feed_login_to_see_more),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        )
+                                        Text(
+                                            stringResource(R.string.feed_login_subtitle),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                                        )
+                                        androidx.compose.material3.Button(
+                                            onClick = onNavigateToLogin,
+                                            shape = RoundedCornerShape(12.dp),
+                                        ) {
+                                            Text(stringResource(R.string.action_sign_in))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        item { Box(modifier = Modifier.height(56.dp)) }
                     }
                 }
             }
         }
+
+        // ── Layer 3: Pinned Floating Glassmorphic Top Controls ──
+        FeedFloatingTopBar(
+            onMyFeed = onOpenMyFeed,
+            onCreatePost = { onCreatePost("") },
+            onSearchToggle = { showSearch = !showSearch },
+            showSearch = showSearch,
+        )
+
+        // Floating Action Button for Create Post
+        FloatingActionButton(
+            onClick = { onCreatePost("") },
+            containerColor = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 80.dp),
+        ) {
+            Icon(Icons.Default.Add, "Create post", tint = MaterialTheme.colorScheme.onPrimary)
+        }
+
+        // Back-to-top button
+        com.zaruda.app.ui.components.BackToTopButton(
+            listState = listState,
+            coroutineScope = coroutineScope,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 144.dp),
+        )
     }
 }
 
@@ -743,7 +709,7 @@ private fun FeedCard(
                     )
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
-                            text = "Zaruda network",
+                            text = "Local network",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -847,7 +813,7 @@ private fun FeedCard(
                     shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     modifier = Modifier.clickable {
-                        val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out ${post.displayContent} on Zaruda!") }
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Check out this community post!") }
                         context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                     },
                 ) {
@@ -936,4 +902,153 @@ private fun relativeTime(dateStr: String?): String {
             else -> "${days / 365}y ago"
         }
     } catch (_: Exception) { "" }
+}
+
+@Composable
+private fun FeedHeroBackdrop() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(280.dp)
+    ) {
+        AsyncImage(
+            model = "https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=1200&q=80",
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF0F172A).copy(alpha = 0.40f),
+                            Color(0xFF0F172A).copy(alpha = 0.85f),
+                        )
+                    )
+                )
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(horizontal = 20.dp, vertical = 24.dp)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFF059669).copy(alpha = 0.35f),
+                border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.6f)),
+                modifier = Modifier.padding(bottom = 6.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF22C55E)))
+                    Text(
+                        text = "LIVE COMMUNITY PULSE",
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
+            Text(
+                text = "Community Pulse 👥",
+                color = Color.White,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.ExtraBold,
+            )
+            Text(
+                text = "⚡ Community updates, local stories & verified deals",
+                color = Color(0xFF94A3B8),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FeedFloatingTopBar(
+    onMyFeed: () -> Unit,
+    onCreatePost: () -> Unit,
+    onSearchToggle: () -> Unit,
+    showSearch: Boolean,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = Color(0xFF0F172A).copy(alpha = 0.85f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+        shadowElevation = 8.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "👥 Community Pulse",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+            )
+            Spacer(Modifier.weight(1f))
+            IconButton(
+                onClick = onSearchToggle,
+                modifier = Modifier.size(34.dp)
+            ) {
+                Icon(
+                    if (showSearch) Icons.Default.Close else Icons.Default.Search,
+                    contentDescription = "Search",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(Modifier.width(4.dp))
+            // My Feed — labeled pill so it reads as a button, not a profile icon
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = Color.White.copy(alpha = 0.14f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                modifier = Modifier.clickable { onMyFeed() }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.AccountCircle,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text("My Feed", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Spacer(Modifier.width(4.dp))
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = Color(0xFF3B82F6),
+                modifier = Modifier.clickable { onCreatePost() }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(Icons.Default.Add, null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    Text("Post", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
 }

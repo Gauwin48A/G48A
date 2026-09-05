@@ -118,22 +118,22 @@ class PlanExpiryNotificationWorker(
         when (daysLeft.toInt()) {
             7 -> sendNotification(
                 title = "Plan expiring in 7 days",
-                body = "Your Zaruda plan expires on ${expiresAt.take(10)}. Renew now to keep selling.",
+                body = "Your plan expires on ${expiresAt.take(10)}. Renew now to keep selling.",
                 notifId = 1001,
             )
             3 -> sendNotification(
                 title = "Plan expiring in 3 days",
-                body = "Only 3 days left on your Zaruda plan! Renew to avoid service interruption.",
+                body = "Only 3 days left on your plan! Renew to avoid service interruption.",
                 notifId = 1002,
             )
             1 -> sendNotification(
                 title = "Plan expires tomorrow!",
-                body = "Your Zaruda plan expires tomorrow. Renew now to continue posting and selling.",
+                body = "Your plan expires tomorrow. Renew now to continue posting and selling.",
                 notifId = 1003,
             )
             0 -> sendNotification(
                 title = "Plan expired",
-                body = "Your Zaruda plan has expired. Renew your subscription to post and sell again.",
+                body = "Your plan has expired. Renew your subscription to post and sell again.",
                 notifId = 1004,
             )
         }

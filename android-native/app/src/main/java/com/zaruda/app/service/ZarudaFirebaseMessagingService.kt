@@ -71,7 +71,7 @@ Log.d("ZARUDA-FCM", "✅ Push notification received")
 Log.d("ZARUDA-FCM", "Title = ${message.notification?.title}")
 Log.d("ZARUDA-FCM", "Data = ${message.data}")
 
-        val title = message.notification?.title ?: message.data["title"] ?: "Zaruda Alert"
+        val title = message.notification?.title ?: message.data["title"] ?: "Marketplace Alert"
         val body  = message.notification?.body  ?: message.data["message"] ?: message.data["body"] ?: ""
         val imageUrl = message.notification?.imageUrl?.toString() ?: message.data["image_url"] ?: message.data["image"]
         val deepLink = message.data["deep_link"] ?: message.data["action"] ?: ""

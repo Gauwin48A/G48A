@@ -844,7 +844,7 @@ fun SaleDoneScreen(onBack: () -> Unit, viewModel: SaleDoneViewModel = hiltViewMo
                         put("amount", (event.amount * 100).toLong())
                         put("currency", event.currency)
                         put("order_id", event.orderId)
-                        put("name", "Zaruda Marketplace")
+                        put("name", "Marketplace")
                         put("description", "Sale: ${event.saleTitle}")
                         put("theme", JSONObject().apply { put("color", "#16A34A") })
                     }
@@ -1097,7 +1097,7 @@ private fun PaymentModeSection(state: SaleDoneUiState, viewModel: SaleDoneViewMo
                     Text("🛡️", fontSize = 16.sp)
                     Column {
                         Text(
-                            "Escrow Protected — this Electronics listing is paid inside the app. Your money is held securely and released only after you confirm receipt.",
+                            "This Electronics listing is paid inside the app. Your money is held securely and released only after you confirm receipt.",
                             fontSize = 11.5.sp,
                             lineHeight = 15.sp,
                             color = if (isDark) Color(0xFFA7F3D0) else Color(0xFF065F46),
@@ -1105,7 +1105,7 @@ private fun PaymentModeSection(state: SaleDoneUiState, viewModel: SaleDoneViewMo
                         if (state.escrowFeePct != null) {
                             Spacer(Modifier.height(2.dp))
                             Text(
-                                "Platform fee ${state.escrowFeePct}% applies on sale completion (seller side).",
+                                "In-app payment settles to your payout account after the buyer confirms receipt.",
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF047857),
@@ -1117,7 +1117,7 @@ private fun PaymentModeSection(state: SaleDoneUiState, viewModel: SaleDoneViewMo
             Spacer(Modifier.height(8.dp))
             PaymentModeOption(
                 selected = true,
-                title = "Pay inside the app (escrow)",
+                title = "Pay inside the app",
                 subtitle = "Required for Electronics listings — safest for both parties.",
                 emoji = "🛡️",
                 onClick = { viewModel.setPaymentMode("IN_APP") },
@@ -1138,7 +1138,7 @@ private fun PaymentModeSection(state: SaleDoneUiState, viewModel: SaleDoneViewMo
                 ) {
                     Text("🤝", fontSize = 16.sp)
                     Text(
-                        "Direct payment — this category doesn't use in-app escrow. You and the seller arrange payment directly (cash / UPI); the sale is still tracked here.",
+                        "Direct payment — this category uses direct payment. You and the seller arrange payment directly (cash / UPI); the sale is still tracked here.",
                         fontSize = 11.5.sp,
                         lineHeight = 15.sp,
                         color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E),
@@ -1159,7 +1159,7 @@ private fun PaymentModeSection(state: SaleDoneUiState, viewModel: SaleDoneViewMo
             Text("How do you want to pay?", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
             PaymentModeOption(
                 selected = state.selectedPaymentMode == "IN_APP",
-                title = "Pay inside the app (escrow)",
+                title = "Pay inside the app",
                 subtitle = "Money is held securely and released only after you confirm receipt. Safest.",
                 emoji = "🛡️",
                 onClick = { viewModel.setPaymentMode("IN_APP") },
@@ -2130,7 +2130,7 @@ private fun EscrowTransactionStepper(
         "Seller Confirmed" to "Seller accepted the order",
         "Item Shipped" to "Package is on its way",
         "Buyer Inspects" to "Buyer verifies the item",
-        "Payment Released" to "Escrow funds released to seller",
+        "Payment Released" to "Payment released to seller",
     )
     Column(modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         steps.forEachIndexed { index, (title, subtitle) ->

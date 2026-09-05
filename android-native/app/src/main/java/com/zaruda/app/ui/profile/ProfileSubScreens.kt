@@ -167,7 +167,7 @@ fun OrderHistoryScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "🛡️ Platform facilitates verified discovery & escrow protection for electronics. Buyers must verify items upon physical exchange.",
+                        "🛡️ Platform facilitates verified discovery for electronics. Buyers must verify items upon physical exchange.",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         lineHeight = 16.sp

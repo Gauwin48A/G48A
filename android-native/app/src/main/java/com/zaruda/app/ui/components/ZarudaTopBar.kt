@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
@@ -108,6 +109,19 @@ fun ZarudaTopBar(
     unreadNotifCount: Int = 0,
     cartItemCount: Int = 0,
     locationText: String = "",
+    /**
+     * Whether the tappable "Search …" capsule is shown inside the top bar.
+     * Screens that host their own dedicated search bar directly below the top bar
+     * (e.g. ExploreScreen's inline "Search listings" field) set this to false so the
+     * two search affordances don't duplicate on the same screen.
+     */
+    showSearch: Boolean = true,
+    /**
+     * When provided, shows a back arrow at the start of the bar (used on pushed
+     * sub-pages so navigation stays available while keeping the exact same
+     * marketplace-style top bar across every screen).
+     */
+    onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -137,6 +151,18 @@ fun ZarudaTopBar(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Back arrow — only on pushed sub-pages; keeps the bar identical everywhere else
+            if (onBack != null) {
+                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+
             // Location chip — shows detected city & opens location picker
             Row(
                 modifier = Modifier
@@ -187,32 +213,38 @@ fun ZarudaTopBar(
 
             // Actions row — compact: only essential icons visible, rest in overflow
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Search capsule — always visible tappable bar (Amazon-style)
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 6.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White.copy(alpha = 0.18f))
-                        .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
-                        .clickable { onSearch() }
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = "Search marketplace",
-                        tint = Color.White.copy(alpha = 0.7f),
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Text(
-                        text = "Search phones, cars, fashion...",
-                        color = Color.White.copy(alpha = 0.6f),
-                        fontSize = 12.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                if (showSearch) {
+                    // Search capsule — always visible tappable bar (Amazon-style)
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 6.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color.White.copy(alpha = 0.18f))
+                            .border(1.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
+                            .clickable { onSearch() }
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Search marketplace",
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            text = "Search phones, cars, fashion...",
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                } else {
+                    // Screen has its own search bar below the top bar — keep the
+                    // location chip company with a spacer so actions stay right-aligned.
+                    Spacer(Modifier.weight(1f))
                 }
 
                 // Profile (person icon — moved from bottom nav to top bar)

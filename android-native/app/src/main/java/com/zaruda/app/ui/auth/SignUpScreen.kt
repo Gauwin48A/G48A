@@ -374,7 +374,7 @@ fun SignUpScreen(
                         OutlinedTextField(
                             value = referralCode,
                             onValueChange = { referralCode = it.uppercase() },
-                            placeholder = { Text("ZARUDA100", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
+                            placeholder = { Text("WELCOME100", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth().height(52.dp),

@@ -849,7 +849,7 @@ fun CreatePostScreen(
                                         Column(Modifier.padding(12.dp)) {
                                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                                 Text("📊", fontSize = 16.sp)
-                                                Text("Zaruda Price Intelligence", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                                Text("Price Intelligence", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                             }
                                             Spacer(Modifier.height(12.dp))
                                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -155,6 +155,12 @@ fun CheckoutAddressScreen(
                         city = "Bengaluru"
                         state = "Karnataka"
                         pincode = "560001"
+                        nameError = ""
+                        phoneError = ""
+                        line1Error = ""
+                        cityError = ""
+                        stateError = ""
+                        pincodeError = ""
                     }
                 ) {
                     Row(
@@ -194,6 +200,12 @@ fun CheckoutAddressScreen(
                         city = "Hyderabad"
                         state = "Telangana"
                         pincode = "500081"
+                        nameError = ""
+                        phoneError = ""
+                        line1Error = ""
+                        cityError = ""
+                        stateError = ""
+                        pincodeError = ""
                     }
                 ) {
                     Row(
@@ -317,9 +329,9 @@ fun CheckoutPaymentScreen(
                         Text("🛡️", fontSize = 24.sp)
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text("100% Zaruda Escrow Protection", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF059669))
+                            Text("Secure In-App Payment", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF059669))
                             Spacer(Modifier.height(4.dp))
-                            Text("Payment is held safely in escrow. Seller is paid only after you inspect the item and share your Delivery OTP.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("You pay safely inside the app. The seller is paid only after you inspect the item and confirm delivery.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -559,7 +571,7 @@ fun CheckoutReviewScreen(
                             PriceLine("Subtotal", "₹${subtotal.toInt()}")
                             PriceLine("GST (18%)", "₹${tax.toInt()}")
                             PriceLine("Shipping", if (shipping == 0.0) "FREE" else "₹${shipping.toInt()}")
-                            PriceLine("Escrow Buyer Insurance", "FREE (₹0)", isHighlightGreen = true)
+                            PriceLine("Buyer Insurance", "FREE (₹0)", isHighlightGreen = true)
                             Spacer(Modifier.height(4.dp))
                             HorizontalDivider()
                             Spacer(Modifier.height(4.dp))
@@ -673,7 +685,7 @@ fun OrderConfirmationScreen(
                 Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("🎉", fontSize = 24.sp)
                     Spacer(Modifier.width(12.dp))
-                    Text("Congratulations! Your payment is 100% Escrow protected.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF166534), fontWeight = FontWeight.SemiBold)
+                    Text("Congratulations! Your payment is protected.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF166534), fontWeight = FontWeight.SemiBold)
                 }
             }
 
@@ -688,7 +700,7 @@ fun OrderConfirmationScreen(
             }
 
             Text(
-                "Estimated delivery in 3–5 business days. Your payment is held securely in escrow.",
+                "Estimated delivery in 3–5 business days. Your payment is held securely and released only after you confirm delivery.",
                 style = MaterialTheme.typography.bodySmall,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

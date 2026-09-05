@@ -368,7 +368,7 @@ private fun SoldPostsListScreen(
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("⚠️", fontSize = 15.sp)
                             Text(
-                                "Zaruda verifies every user with KYC (one Aadhaar = one account). But the platform is not a party to user-to-user deals — check the history & trust score above before you pay. For Electronics, always use in-app escrow.",
+                                "Every user is verified with KYC (one Aadhaar = one account). Check the history & trust score above before you pay. For Electronics listings, prefer the in-app buy option.",
                                 fontSize = 11.sp,
                                 lineHeight = 15.sp,
                                 color = Color(0xFF92400E),
@@ -726,7 +726,7 @@ private fun BoughtTab(state: SoldPostsUiState, onOpenPost: (String) -> Unit) {
                     Icon(Icons.Filled.ShoppingBag, null, modifier = Modifier.size(44.dp), tint = Color(0xFFCBD5E1))
                     Text("No purchases yet", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                     Text(
-                        "This user hasn't bought anything on Zaruda yet. New accounts have no history to judge by — verify the listing, check KYC, and prefer in-app escrow for Electronics.",
+                        "This user hasn't bought anything yet. New accounts have no history to judge by — verify the listing and check KYC before you pay.",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,

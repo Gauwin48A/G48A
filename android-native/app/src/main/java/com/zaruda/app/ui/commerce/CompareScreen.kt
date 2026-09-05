@@ -148,7 +148,7 @@ fun CompareScreen(onBack: () -> Unit, onOpenPost: (String) -> Unit = {}, categor
 
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar(stringResource(R.string.compare_title), onBack)
+            // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)

@@ -298,7 +298,7 @@ Share with your friends and earn rewards.
     <string name="feed_tab_recent">Recent</string>
 
     <!-- Feed Screen -->
-    <string name="feed_title">Feed</string>
+    <string name="feed_title">Community Feed</string>
     <string name="feed_subtitle">Community updates</string>
     <string name="feed_search_placeholder">Search in feed…</string>
     <string name="feed_login_to_see_more">Sign in to see more</string>

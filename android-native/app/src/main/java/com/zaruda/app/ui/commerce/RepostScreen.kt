@@ -202,7 +202,7 @@ fun RepostScreen(onBack: () -> Unit, viewModel: RepostViewModel = hiltViewModel(
 
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            ScreenTopBar("Repost", onBack)
+            // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
 
             // Hero card
             Box(

@@ -142,7 +142,7 @@ fun DashboardScreen(onBack: () -> Unit, viewModel: DashboardViewModel = hiltView
     val statMeta = listOf(Icons.AutoMirrored.Filled.List to MaterialTheme.colorScheme.primary, Icons.Filled.ShoppingCart to Color(0xFF22C55E), Icons.Filled.Visibility to Color(0xFF8B5CF6), Icons.Filled.Stars to Color(0xFFF59E0B))
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            AccountTopBar(stringResource(R.string.account_dashboard), onBack)
+            // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
             if (state.loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
             else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // View toggle
@@ -485,7 +485,7 @@ fun SecurityScreen(onBack: () -> Unit, viewModel: SecurityViewModel = hiltViewMo
     val state by viewModel.state.collectAsState()
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            AccountTopBar("Security Settings", onBack)
+            // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
             if (state.loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
             else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 // Password change section
@@ -659,7 +659,7 @@ fun AccountDeleteScreen(onBack: () -> Unit, viewModel: DeleteAccountViewModel = 
     val state by viewModel.state.collectAsState()
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            AccountTopBar("Delete Account", onBack)
+            // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFFFF7ED), modifier = Modifier.fillMaxWidth()) {
                     Row(Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
@@ -731,7 +731,7 @@ fun VerificationScreen(onBack: () -> Unit, viewModel: VerificationViewModel = hi
     val state by viewModel.state.collectAsState()
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            AccountTopBar("Get Verified", onBack)
+            // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
             if (state.loading) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) }
             else when (state.status) {
                 "verified" -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -821,7 +821,7 @@ fun AnalyticsScreen(onBack: () -> Unit, viewModel: AnalyticsViewModel = hiltView
     val timeRanges = listOf("7d" to "7 Days", "30d" to "30 Days", "90d" to "90 Days", "all" to "All Time")
     Box(Modifier.fillMaxSize().background(bgGradient)) {
         Column(Modifier.fillMaxSize()) {
-            AccountTopBar("Analytics", onBack)
+            // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
             // Time range filter
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 timeRanges.forEach { (key, label) ->

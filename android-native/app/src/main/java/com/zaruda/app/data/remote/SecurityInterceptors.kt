@@ -59,8 +59,11 @@ class SecurityHeadersInterceptor(
 
         if (method in listOf("POST", "PUT", "PATCH", "DELETE")) {
             val timestamp = System.currentTimeMillis().toString()
+            val nonce = "android-$timestamp-${secureRandom.nextLong().toULong()}"
             builder.header("X-Zaruda-Timestamp", timestamp)
-            builder.header("X-Zaruda-Nonce", "android-$timestamp-${secureRandom.nextLong().toULong()}")
+            builder.header("X-MHub-Timestamp", timestamp)
+            builder.header("X-Zaruda-Nonce", nonce)
+            builder.header("X-MHub-Nonce", nonce)
 
             // Read XSRF-TOKEN from cookie jar
             val cookies = cookieJar.loadForRequest(request.url)

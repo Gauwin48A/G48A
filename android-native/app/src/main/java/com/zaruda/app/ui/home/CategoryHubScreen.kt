@@ -1,8 +1,10 @@
 package com.zaruda.app.ui.home
 import com.zaruda.app.ui.theme.ColorTokens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,11 +33,8 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhoneAndroid
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.Workspaces
 import androidx.compose.material3.Badge
@@ -143,11 +142,11 @@ private val APPS = listOf(
     ),
     AppDef(
         key = "others",
-        label = "Living & Spaces",
-        tagline = "Homes, decor & services",
-        offer = "Zero Brokerage",
-        ctaText = "Discover",
-        imageUrl = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&auto=format&fit=crop&q=80",
+        label = "Others",
+        tagline = "Books, sports, hobbies & more",
+        offer = "Everyday Finds",
+        ctaText = "Explore",
+        imageUrl = "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=600&auto=format&fit=crop&q=80",
         fallbackGradient = listOf(Color(0xFF4C1D95), Color(0xFF7C3AED), Color(0xFFA78BFA)),
     ),
 )
@@ -216,24 +215,9 @@ class CategoryHubViewModel @Inject constructor(
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryHubScreen(
-    onOpenCategory: (Category) -> Unit = {},
     onOpenAllPosts: () -> Unit = {},
-    onOpenSearch: () -> Unit,
     onSelectApp: (String) -> Unit = {},
-    onOpenNotifications: () -> Unit = {},
-    onOpenSettings: () -> Unit = {},
-    onOpenScanner: () -> Unit = {},
-    onOpenCart: () -> Unit = {},
-    onOpenForYou: () -> Unit = {},
-    onOpenWishlist: () -> Unit = {},
     onOpenRecentlyViewed: () -> Unit = {},
-    onOpenRewards: () -> Unit = {},
-    onOpenProfile: () -> Unit = {},
-    onOpenTierSelection: () -> Unit = {},
-    onOpenKyc: () -> Unit = {},
-    onOpenPayouts: () -> Unit = {},
-    unreadNotifications: Int = 0,
-    cartItemCount: Int = 0,
     viewModel: CategoryHubViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -245,14 +229,8 @@ fun CategoryHubScreen(
         modifier = Modifier.fillMaxSize(),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // ── Layer 1: Parallax Full-Bleed Scenic Hero Header ──────────────
-            MarketplaceHeroHeader(
-                onOpenSearch = onOpenSearch,
-                onOpenNotifications = onOpenNotifications,
-                onOpenCart = onOpenCart,
-                cartCount = cartItemCount,
-                unreadNotifications = unreadNotifications,
-            )
+            // ── Layer 1: Scenic Hero Backdrop ────────────────────────────────
+            MarketplaceHeroBackdrop()
 
             // ── Layer 2: Floating Curved Sheet (Rapido Standard) ─────────────
             LazyColumn(
@@ -261,14 +239,14 @@ fun CategoryHubScreen(
             ) {
                 // Top spacer so hero header is visible
                 item(key = "hero_spacer") {
-                    Spacer(Modifier.height(210.dp))
+                    Spacer(Modifier.height(235.dp))
                 }
 
                 // Curved Sheet content
                 item(key = "curved_sheet") {
                     Surface(
                         shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                        color = if (isDark) Color(0xFF0F172A) else Color(0xFFF8FAFC),
+                        color = if (isDark) Color(0xFF0F172A) else Color.White,
                         modifier = Modifier
                             .fillMaxWidth()
                             .shadow(elevation = 16.dp, shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)),
@@ -276,20 +254,9 @@ fun CategoryHubScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                                .padding(horizontal = 16.dp, vertical = 20.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            // Sheet drag handle indicator
-                            Box(
-                                modifier = Modifier
-                                    .width(42.dp)
-                                    .height(4.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(if (isDark) Color(0xFF334155) else Color(0xFFCBD5E1))
-                            )
-
-                            Spacer(Modifier.height(16.dp))
-
                             // ── Row 1: Electronics + Vehicles ────────────────────────
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -313,7 +280,7 @@ fun CategoryHubScreen(
 
                             Spacer(Modifier.height(14.dp))
 
-                            // ── Row 2: Fashion + Living & Spaces ─────────────────────
+                            // ── Row 2: Fashion + Others ──────────────────────────────
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -336,74 +303,7 @@ fun CategoryHubScreen(
                                 )
                             }
 
-                            Spacer(Modifier.height(18.dp))
 
-                            // ── Storytelling Editorial Banner ────────────────────────
-                            EscrowStorytellingBanner(onClick = onOpenAllPosts)
-
-                            Spacer(Modifier.height(16.dp))
-
-                            // ── Flash Deals Banner ───────────────────────────────────
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .clickable { onOpenAllPosts() },
-                                shape = RoundedCornerShape(16.dp),
-                                color = Color.Transparent,
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Brush.horizontalGradient(listOf(Color(0xFFFF6B00), Color(0xFFFF8C00))))
-                                        .padding(horizontal = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.LocalOffer, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                                        Spacer(Modifier.width(8.dp))
-                                        Column {
-                                            Text("Flash Deals & Steals", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
-                                            Text("Limited-time verified drops", color = Color.White.copy(alpha = 0.85f), fontSize = 10.sp)
-                                        }
-                                    }
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("View Deals", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                        Spacer(Modifier.width(4.dp))
-                                        Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                                    }
-                                }
-                            }
-
-                            Spacer(Modifier.height(16.dp))
-
-                            // ── Category Quick Actions (Material Icons, no emojis) ──
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                contentPadding = PaddingValues(vertical = 4.dp),
-                            ) {
-                                item { CategoryIconPill(icon = Icons.Default.PhoneAndroid, label = "Phones", gradientColors = listOf(Color(0xFF3B82F6), Color(0xFF6366F1)), onClick = { onSelectApp("electronics") }, isDark = isDark) }
-                                item { CategoryIconPill(icon = Icons.Default.DirectionsCar, label = "Vehicles", gradientColors = listOf(Color(0xFF10B981), Color(0xFF14B8A6)), onClick = { onSelectApp("vehicles") }, isDark = isDark) }
-                                item { CategoryIconPill(icon = Icons.Default.Checkroom, label = "Fashion", gradientColors = listOf(Color(0xFFEC4899), Color(0xFFF43F5E)), onClick = { onSelectApp("fashion") }, isDark = isDark) }
-                                item { CategoryIconPill(icon = Icons.Default.Home, label = "Homes", gradientColors = listOf(Color(0xFFF59E0B), Color(0xFFEF4444)), onClick = { onSelectApp("others") }, isDark = isDark) }
-                                item { CategoryIconPill(icon = Icons.Default.LocalOffer, label = "Deals", gradientColors = listOf(Color(0xFF8B5CF6), Color(0xFF6366F1)), onClick = { onOpenAllPosts() }, isDark = isDark) }
-                                item { CategoryIconPill(icon = Icons.Default.Search, label = "Search", gradientColors = listOf(Color(0xFF64748B), Color(0xFF475569)), onClick = { onOpenSearch() }, isDark = isDark) }
-                            }
-
-                            Spacer(Modifier.height(14.dp))
-
-                            // ── Quick-Ribbon: 1-tap shortcuts (Material icons) ────
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                contentPadding = PaddingValues(vertical = 4.dp),
-                            ) {
-                                item { QuickRibbonPill(icon = Icons.Default.EmojiEvents, label = "Rewards", onClick = onOpenRewards, isDark = isDark) }
-                                item { QuickRibbonPill(icon = Icons.Default.Person, label = "Profile", onClick = onOpenProfile, isDark = isDark) }
-                                item { QuickRibbonPill(icon = Icons.Default.Workspaces, label = "Premium", onClick = onOpenTierSelection, isDark = isDark) }
-                                item { QuickRibbonPill(icon = Icons.Default.Verified, label = "KYC", onClick = onOpenKyc, isDark = isDark) }
-                                item { QuickRibbonPill(icon = Icons.Default.AccountBalance, label = "Wallet", onClick = onOpenPayouts, isDark = isDark) }
-                            }
 
                             // ── Continue Where You Left Off ──────────────────────────
                             val recentPosts = com.zaruda.app.ui.explore.SharedExploreStore.recentlyViewedPosts
@@ -478,30 +378,25 @@ fun CategoryHubScreen(
                     }
                 }
             }
+
         }
     }
 }
 
-/* ── Marketplace Hero Header (Full-Bleed Scenic Rapido Standard) ────────── */
+/* ── Marketplace Hero Backdrop (Full-Bleed Scenic Rapido Standard) ────────── */
 
 @Composable
-private fun MarketplaceHeroHeader(
-    onOpenSearch: () -> Unit,
-    onOpenNotifications: () -> Unit,
-    onOpenCart: () -> Unit,
-    cartCount: Int,
-    unreadNotifications: Int,
-) {
+private fun MarketplaceHeroBackdrop() {
     val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(260.dp),
+            .height(300.dp),
     ) {
-        // High-res scenic backdrop
+        // High-res alpine scenic backdrop
         AsyncImage(
             model = ImageRequest.Builder(context)
-                .data("https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1080&auto=format&fit=crop&q=80")
+                .data("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&auto=format&fit=crop&q=85")
                 .crossfade(true)
                 .build(),
             contentDescription = null,
@@ -516,110 +411,90 @@ private fun MarketplaceHeroHeader(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
+                            Color.Black.copy(alpha = 0.40f),
+                            Color.Black.copy(alpha = 0.15f),
                             Color.Black.copy(alpha = 0.45f),
-                            Color.Black.copy(alpha = 0.30f),
                             Color.Black.copy(alpha = 0.70f),
                         )
                     )
                 )
         )
 
-        // Hero contents
+        // Clean headline positioned below status bar matching Rapido Screen 2
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .padding(WindowInsets.statusBars.asPaddingValues())
-                .padding(horizontal = 16.dp, vertical = 6.dp),
+                .padding(top = 18.dp, start = 16.dp, end = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Top action bar
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                // Search capsule shortcut
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color.Black.copy(alpha = 0.4f),
-                    modifier = Modifier.clickable { onOpenSearch() }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Filled.Search, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Search Zaruda...", color = Color.White.copy(alpha = 0.9f), fontSize = 13.sp)
-                    }
-                }
-
-                // Notifications and Cart actions
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Surface(
-                        shape = CircleShape,
-                        color = Color.Black.copy(alpha = 0.4f),
-                        modifier = Modifier.size(38.dp).clickable { onOpenNotifications() }
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.Notifications, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            if (unreadNotifications > 0) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFEF4444))
-                                        .align(Alignment.TopEnd)
-                                )
-                            }
-                        }
-                    }
-
-                    Surface(
-                        shape = CircleShape,
-                        color = Color.Black.copy(alpha = 0.4f),
-                        modifier = Modifier.size(38.dp).clickable { onOpenCart() }
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.ShoppingCart, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            if (cartCount > 0) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFF10B981))
-                                        .align(Alignment.TopEnd)
-                                )
-                            }
-                        }
-                    }
-                }
+                Text(
+                    text = "Discover",
+                    fontFamily = FontFamily.Serif,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    letterSpacing = 0.5.sp,
+                )
+                Text(
+                    text = "✦",
+                    fontSize = 20.sp,
+                    color = Color.White.copy(alpha = 0.95f),
+                )
             }
 
-            Spacer(Modifier.height(20.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = "✦",
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.90f),
+                )
+                Text(
+                    text = "Marketplace Deals",
+                    fontFamily = FontFamily.Cursive,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
+            }
 
-            // Clean headline — no promo codes, no clutter
+            Spacer(Modifier.height(8.dp))
+
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = Color.White.copy(alpha = 0.25f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.6f)),
+            ) {
+                Text(
+                    text = "LOCALDEALS",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.5.sp,
+                    color = Color.White,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                )
+            }
+
+            Spacer(Modifier.height(5.dp))
+
             Text(
-                text = "Discover Nearby Deals",
-                color = Color.White,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-                letterSpacing = (-0.3).sp,
-            )
-
-            Spacer(Modifier.height(6.dp))
-
-            Text(
-                text = "Verified sellers \u2022 Escrow protected \u2022 Zero scams",
-                color = Color.White.copy(alpha = 0.85f),
-                fontSize = 13.sp,
+                text = "Direct deals from verified local sellers",
+                color = Color.White.copy(alpha = 0.90f),
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
             )
         }
     }
 }
+
 
 /* ── Rapido Photorealistic Category Card ─────────────────────────────────── */
 
@@ -634,14 +509,13 @@ private fun RapidoCategoryCard(
     val haptic = LocalHapticFeedback.current
 
     Surface(
-        shape = RoundedCornerShape(22.dp),
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onClick()
+        },
+        shape = RoundedCornerShape(24.dp),
         shadowElevation = 8.dp,
-        modifier = modifier
-            .height(210.dp)
-            .clickable {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onClick()
-            },
+        modifier = modifier.height(230.dp),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             // Background photographic image
@@ -662,7 +536,7 @@ private fun RapidoCategoryCard(
                     .graphicsLayer { alpha = 0.25f }.background(Brush.linearGradient(app.fallbackGradient))
             )
 
-            // Dark vignette bottom scrim for high text contrast
+            // Dark vignette bottom scrim for high text contrast (keeps top daylight clear)
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -670,81 +544,55 @@ private fun RapidoCategoryCard(
                         Brush.verticalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                Color.Black.copy(alpha = 0.25f),
-                                Color.Black.copy(alpha = 0.85f),
-                                Color.Black.copy(alpha = 0.95f),
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.35f),
+                                Color.Black.copy(alpha = 0.80f),
+                                Color.Black.copy(alpha = 0.92f),
                             ),
-                            startY = 60f,
+                            startY = 100f,
                         )
                     )
             )
-
-            // Live badge at top right
-            if (listingsCount > 0) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(10.dp)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color.Black.copy(alpha = 0.5f),
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        ) {
-                            Box(Modifier.size(5.dp).clip(CircleShape).background(Color(0xFF22C55E)))
-                            Text("$listingsCount", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
-                    }
-                }
-            }
 
             // Bottom contents: Title + Value Hook + White Pill Button
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                    .padding(horizontal = 14.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
                     text = app.label,
                     color = Color.White,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp,
                 )
                 Text(
                     text = app.offer,
-                    color = Color(0xFFFDE047),
+                    color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
+                    fontSize = 16.sp,
+                    letterSpacing = (-0.2).sp,
                 )
 
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(5.dp))
 
-                // Elevated White Pill Button
+                // Elevated White Pill Button matching Rapido Screen 2
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = Color.White,
-                    shadowElevation = 4.dp,
-                    modifier = Modifier
-                        .height(34.dp)
-                        .clickable {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onClick()
-                        },
+                    shadowElevation = 3.dp,
+                    modifier = Modifier.height(34.dp),
                 ) {
                     Box(
-                        modifier = Modifier.padding(horizontal = 14.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = app.ctaText,
                             color = Color(0xFF0F172A),
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                         )
                     }
@@ -754,146 +602,6 @@ private fun RapidoCategoryCard(
     }
 }
 
-/* ── Storytelling Editorial Banner ───────────────────────────────────────── */
-
-@Composable
-private fun EscrowStorytellingBanner(
-    onClick: () -> Unit,
-) {
-    val context = LocalContext.current
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        shadowElevation = 6.dp,
-        color = Color(0xFFF1F5F9),
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(130.dp),
-        ) {
-            // Background aesthetic landscape texture
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop&q=80")
-                    .crossfade(true)
-                    .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
-
-            // Translucent overlay
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.White.copy(alpha = 0.94f),
-                                Color.White.copy(alpha = 0.85f),
-                                Color.White.copy(alpha = 0.60f),
-                            )
-                        )
-                    )
-            )
-
-            // Content overlay
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column {
-                    Text(
-                        text = "Every Deal Safe in Escrow",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF0F172A),
-                        letterSpacing = (-0.2).sp,
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = "Buy verified items with 100% money-back guarantee",
-                        fontSize = 11.sp,
-                        color = Color(0xFF475569),
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669).copy(alpha = 0.12f)) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(3.dp),
-                            ) {
-                                Icon(Icons.Default.Verified, null, tint = Color(0xFF059669), modifier = Modifier.size(10.dp))
-                                Text("Escrow Insured", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
-                            }
-                        }
-                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF2563EB).copy(alpha = 0.12f)) {
-                            Text("OTP Handover", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                        }
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF0F172A),
-                        modifier = Modifier.padding(2.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text("Explore", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.width(2.dp))
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, tint = Color.White, modifier = Modifier.size(12.dp))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuickRibbonPill(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    isDark: Boolean,
-) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = if (isDark) Color(0xFF1E293B) else Color(0xFFF1F5F9),
-        modifier = Modifier
-            .height(36.dp)
-            .clickable { onClick() },
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Icon(icon, null, tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B), modifier = Modifier.size(16.dp))
-            Text(
-                label,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF334155),
-            )
-        }
-    }
-}
 
 /**
  * Category Icon Pill — circular icon with gradient background + label.

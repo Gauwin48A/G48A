@@ -118,10 +118,18 @@ fun ChannelsListScreen(onBack: () -> Unit, onOpenChannel: (String) -> Unit = {},
     val filtered = state.channels.filter { state.search.isBlank() || it.displayName.contains(state.search, true) || (it.description ?: "").contains(state.search, true) }
 
     Scaffold(
-        topBar = { TopBar("Centre Pages", onBack) { IconButton(onClick = onCreateChannel) { Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary) } } },
+        // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
     ) { padding ->
         PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(Modifier.fillMaxSize()) {
+                // Header row (was the TopAppBar)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Centre Pages", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
+                    IconButton(onClick = onCreateChannel) { Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary) }
+                }
                 // Search bar
                 OutlinedTextField(value = state.search, onValueChange = { viewModel.setSearch(it) },
                     placeholder = { Text("Search centre pages…") }, leadingIcon = { Icon(Icons.Filled.Search, null) },
@@ -544,8 +552,19 @@ class CentresListViewModel @Inject constructor(private val repo: CentresReposito
 @Composable
 fun CentreListScreen(onBack: () -> Unit, onOpenCentre: (String) -> Unit = {}, onCreateCentre: () -> Unit = {}, viewModel: CentresListViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
-    Scaffold(topBar = { TopBar("Centres", onBack) { IconButton(onClick = onCreateCentre) { Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary) } } }) { padding ->
+    Scaffold(
+        // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
+    ) { padding ->
         PullToRefreshBox(isRefreshing = state.refreshing, onRefresh = { viewModel.refresh() }, modifier = Modifier.fillMaxSize().padding(padding)) {
+            Column(Modifier.fillMaxSize()) {
+            // Header row (was the TopAppBar)
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Centres", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.weight(1f))
+                IconButton(onClick = onCreateCentre) { Icon(Icons.Filled.Add, null, tint = MaterialTheme.colorScheme.primary) }
+            }
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                 state.centres.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -579,7 +598,7 @@ fun CentreListScreen(onBack: () -> Unit, onOpenCentre: (String) -> Unit = {}, on
                                     }
                                     Spacer(Modifier.height(6.dp))
                                     Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669).copy(alpha = 0.1f)) {
-                                        Text("🛡️ Zaruda Inspection Desk", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        Text("🛡️ Inspection Desk", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                     }
                                 }
                                 IconButton(onClick = { /* navigate to directions */ }) {
@@ -589,6 +608,7 @@ fun CentreListScreen(onBack: () -> Unit, onOpenCentre: (String) -> Unit = {}, on
                         }
                     }
                 }
+            }
             }
         }
     }

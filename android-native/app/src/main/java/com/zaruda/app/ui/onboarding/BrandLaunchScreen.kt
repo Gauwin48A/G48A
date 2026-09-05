@@ -127,7 +127,7 @@ fun BrandLaunchScreen(
             Spacer(modifier = Modifier.height(22.dp))
 
             Text(
-                text = "ZARUDA",
+                text = "MARKETPLACE",
                 fontSize = 34.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.White,
@@ -160,7 +160,7 @@ fun BrandLaunchScreen(
             ) {
                 Text("🛡️", fontSize = 12.sp)
                 Text(
-                    text = "100% Escrow Protected • Zero Scam Deals",
+                    text = "100% Verified Local Deals",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.White.copy(alpha = 0.75f),

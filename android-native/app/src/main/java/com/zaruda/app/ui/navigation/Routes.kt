@@ -63,7 +63,7 @@ object Routes {
     const val CART = "cart"
     const val CHECKOUT = "checkout/{postId}?amount={amount}"
     fun checkout(postId: String = "cart", amount: Double = 0.0): String = "checkout/$postId?amount=$amount"
-    fun checkoutConfirm(orderId: String? = null): String = if (orderId != null) "checkout/confirm?orderId=$orderId" else "checkout/confirm"
+    fun checkoutConfirm(orderId: String? = null): String = "checkout/confirm?orderId=${orderId.orEmpty()}"
     const val RECENTLY_VIEWED = "recently-viewed"
     const val SAVED_SEARCHES = "saved-searches"
     const val COMPARE = "compare"

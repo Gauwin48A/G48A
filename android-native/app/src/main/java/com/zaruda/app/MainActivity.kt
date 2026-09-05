@@ -45,12 +45,8 @@ class MainActivity : AppCompatActivity() {
 
         handleDeepLink(intent)
 
-        var keepSplash = true
-        splash.setKeepOnScreenCondition { keepSplash }
-
         setContent {
             ZarudaApp(
-                onReady = { keepSplash = false },
                 connectivityObserver = connectivityObserver,
                 deepLinkUri = deepLinkUri.value,
                 onDeepLinkConsumed = { deepLinkUri.value = null },

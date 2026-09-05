@@ -734,9 +734,9 @@ fun GetVerifiedScreen(onBack: () -> Unit, onDone: () -> Unit = {}, viewModel: Ge
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Icon(Icons.Default.VerifiedUser, null, tint = Color(0xFF22C55E), modifier = Modifier.size(72.dp))
                             Text("Identity Verified!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
-                            Text("Your KYC is complete. You can now list items on Zaruda and unlock full marketplace features.", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B), textAlign = TextAlign.Center)
+                            Text("Your KYC is complete. You can now list items and unlock full marketplace features.", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B), textAlign = TextAlign.Center)
                             Button(onClick = onDone, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E))) {
-                                Text("Continue to Zaruda", fontWeight = FontWeight.SemiBold)
+                                Text("Continue", fontWeight = FontWeight.SemiBold)
                             }
                         }
                     }

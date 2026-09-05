@@ -276,7 +276,7 @@ fun LoginScreen(
                                 color = Color.White.copy(alpha = 0.18f),
                             ) {
                                 Text(
-                                    text = "🛡️ ₹4.2Cr+ Escrow Protected • 50k+ Aadhaar Verified",
+                                    text = "🛡️ 50k+ Aadhaar Verified Sellers",
                                     color = Color.White,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
@@ -712,7 +712,7 @@ fun LoginScreen(
             }
 
             Text(
-                text = "By signing in, you agree to Zaruda Terms & Privacy Policy",
+                text = "By signing in, you agree to our Terms & Privacy Policy",
                 color = mutedText,
                 fontSize = 11.sp,
                 textAlign = TextAlign.Center,
@@ -732,10 +732,10 @@ private fun SecurityTicker(
     modifier: Modifier = Modifier,
 ) {
     val items = listOf(
-        "₹4.2 Cr Protected in Escrow Today",
         "50,000+ Aadhaar Verified Users",
+        "100% Verified Local Sellers",
         "Zero Fraud Policy",
-        "100% Escrow Buyer Protection",
+        "Secure In-App Payments",
     )
     var copyWidth by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val infinite = rememberInfiniteTransition(label = "securityTicker")

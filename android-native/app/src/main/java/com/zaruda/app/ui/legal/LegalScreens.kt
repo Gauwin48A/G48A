@@ -99,29 +99,67 @@ class RefundViewModel @Inject constructor(private val repo: CmsRepository) : Vie
 private fun CmsScreen(title: String, icon: ImageVector, state: CmsUiState, onBack: () -> Unit, fallbackContent: String? = null) {
     val isDark = ColorTokens.isDark
     val bodyText = state.content?.takeIf { it.isNotBlank() } ?: fallbackContent
-    Box(Modifier.fillMaxSize().background(bgGradient(isDark))) {
-        Column(Modifier.fillMaxSize()) {
-            LegalTopBar(title, onBack)
-            when {
-                state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB)) }
-                bodyText != null -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Surface(shape = RoundedCornerShape(16.dp), color = if (isDark) Color(0xFF1E293B) else Color.White, shadowElevation = if (isDark) 0.dp else 2.dp, modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(if (isDark) Color(0xFF3B82F6).copy(alpha = 0.2f) else Color(0xFF2563EB).copy(alpha = 0.1f)), contentAlignment = Alignment.Center) {
-                                    Icon(icon, null, tint = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB), modifier = Modifier.size(20.dp))
-                                }
-                                Spacer(Modifier.width(12.dp))
-                                Text(title, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
+    
+    Box(modifier = Modifier.fillMaxSize().background(ColorTokens.Background)) {
+        // Layer 1: Contextual Hero Backdrop
+        Box(
+            modifier = Modifier.fillMaxWidth().height(200.dp)
+                .background(bgGradient(isDark))
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(80.dp)
+                    .offset(y = (-20).dp),
+                tint = Color.White.copy(alpha = 0.2f)
+            )
+        }
+
+        // Layer 2: Top Floating Bar
+        LegalTopBar(title, onBack)
+
+        // Layer 3: 32dp Curved Sheet
+        Surface(
+            shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+            color = ColorTokens.Surface,
+            modifier = Modifier.fillMaxSize().padding(top = 160.dp)
+        ) {
+            Column(Modifier.fillMaxSize()) {
+                // Tactile Drag Handle
+                Box(modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.width(40.dp).height(4.dp).clip(CircleShape).background(Color.Gray.copy(alpha = 0.3f)))
+                }
+
+                when {
+                    state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    bodyText != null -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 32.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            item {
+                                Text(
+                                    title,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 24.sp,
+                                    color = ColorTokens.OnBackground
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Text(
+                                    bodyText,
+                                    fontSize = 15.sp,
+                                    color = ColorTokens.OnSurfaceVariant,
+                                    lineHeight = 26.sp, // Typography improvements
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Start
+                                )
                             }
-                            Spacer(Modifier.height(16.dp))
-                            Text(bodyText, fontSize = 14.sp, color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF374151), lineHeight = 22.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Start)
                         }
                     }
-                }
-                else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-                        Text(state.error ?: "Content unavailable", color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
+                    else -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(state.error ?: "Content unavailable", color = ColorTokens.OnSurfaceVariant)
                     }
                 }
             }
@@ -208,8 +246,8 @@ If an item is not as described or a transaction fails, buyers should first conta
 3. Mediation
 If the buyer and seller cannot resolve the dispute, The platform offers mediation through the Complaints section. Our team will review the case and facilitate a fair resolution.
 
-4. Escrow Protection
-For transactions processed through the platform's in-app payment system, funds are held in escrow until both parties confirm satisfaction.
+4. In-App Payments
+For transactions processed through the platform's in-app payment system, the payment is held securely until both parties confirm satisfaction.
 
 5. Chargebacks
 Buyers who initiate chargebacks without first attempting to resolve the dispute through the platform may have their account restricted.
@@ -228,9 +266,9 @@ private val helpFaqs: List<HelpFaq> = listOf(
     HelpFaq("How do I secure my account?", "Open Profile → Security to set a strong password and enable two-factor authentication (2FA). With 2FA on, you'll need a one-time code when logging in from a new device.", "Account"),
     HelpFaq("Can I use the app in my language?", "Yes. The app supports English, Hindi, Telugu, Tamil, Kannada, Marathi, Bengali and Gujarati. Switch anytime from More → Appearance & Language.", "Account"),
 
-    HelpFaq("How do I buy an item?", "Browse or search listings in Electronics, Fashion, Vehicles and Others. Open an item to view details, then contact the seller, express interest or send an offer, or buy safely in-app when the listing carries the escrow lock badge.", "Buying"),
+    HelpFaq("How do I buy an item?", "Browse or search listings in Electronics, Fashion, Vehicles and Others. Open an item to view details, then contact the seller, express interest or send an offer, or buy in-app when the listing offers that option.", "Buying"),
     HelpFaq("What is the Interest / Offer option?", "It tells the seller that you want to buy. You can send an offer amount with a short message; the seller can accept or decline it. Once accepted, you'll be guided to complete the purchase.", "Buying"),
-    HelpFaq("What is Escrow Protection?", "On escrow-eligible listings your payment is held securely and released to the seller only after you confirm you've received the item — protecting both sides. A 2.5% platform fee applies to escrow-protected purchases and is always shown before you pay.", "Buying"),
+    HelpFaq("What is the In-App Buy option?", "On Electronics listings that offer it, your payment is held securely and released to the seller only after you confirm you've received the item. It protects both sides and is the recommended way to buy electronics.", "Buying"),
     HelpFaq("When can I see a seller's contact number?", "A seller's number is revealed when the seller is KYC-verified with an active plan and you are verified too. Otherwise, connect with the seller through the app.", "Buying"),
     HelpFaq("Where do I find my purchases?", "Open Profile → Orders → Order History, or the Bought Posts section, to see everything you've bought, track its status and raise any issues.", "Buying"),
     HelpFaq("What are Wishlist, Compare and Saved Searches?", "Tap the heart on a listing to save it to Wishlist. Compare lets you view similar listings side by side, and Saved Searches notifies you when new listings match your filters.", "Buying"),
@@ -238,17 +276,16 @@ private val helpFaqs: List<HelpFaq> = listOf(
     HelpFaq("How do I start selling?", "Tap Sell from the home screen. You need an active plan (free or paid) and completed KYC (Aadhaar + PAN). Then add photos, a title and description, price and category, and publish your listing.", "Selling"),
     HelpFaq("What do the plans include?", "The Free plan includes 1 photo per post. Paid plans add more photos, better visibility, promoted listings, analytics, a profile badge and priority support.", "Selling"),
     HelpFaq("How do I mark a listing as sold?", "Open the listing and choose More → Sale Done. Made a mistake? Use Repost to bring the listing back.", "Selling"),
-    HelpFaq("How do I get paid for an escrow sale?", "Once the buyer confirms receipt, escrow payments are released to your payout account. Add your UPI or bank details under Profile → Payout Account.", "Selling"),
+    HelpFaq("How do I get paid for an in-app sale?", "Once the buyer confirms receipt, in-app payments are released to your payout account. Add your UPI or bank details under Profile → Payout Account.", "Selling"),
     HelpFaq("How do I track how my listings are doing?", "Open Profile → Seller Analytics to see views, likes and engagement for your posts. Analytics access is included with paid plans.", "Selling"),
 
     HelpFaq("Why do I need KYC?", "KYC (Aadhaar + PAN) confirms that sellers are real people, which builds trust and keeps the marketplace safe. KYC verification is required to publish listings.", "KYC & Verification"),
     HelpFaq("How do I complete KYC?", "Go to More → Verification, verify your Aadhaar with an OTP, verify your PAN, and submit. An active plan is required to complete KYC.", "KYC & Verification"),
     HelpFaq("How long does KYC take?", "Most verifications are approved within 24–48 hours. You'll get a notification when your status changes to verified.", "KYC & Verification"),
 
-    HelpFaq("What payment methods are accepted?", "In-app escrow purchases are processed through a secure gateway using UPI, cards and net banking. Direct deals outside escrow are arranged between the buyer and seller.", "Plans & Payments"),
-    HelpFaq("What is the 2.5% platform fee?", "A 2.5% platform fee applies to escrow-protected (in-app) purchases. It covers secure payment handling, fraud protection and dispute support, and is shown on the order summary before you pay.", "Plans & Payments"),
+    HelpFaq("What payment methods are accepted?", "In-app purchases are processed through a secure gateway using UPI, cards and net banking. Direct deals are arranged between the buyer and seller.", "Plans & Payments"),
     HelpFaq("Can I cancel a paid plan?", "Yes. Open the Plans page and cancel anytime; you keep your benefits until the end of the current billing period.", "Plans & Payments"),
-    HelpFaq("How do refunds work?", "Refunds are handled through the order flow or via a complaint. Escrow funds are returned to you if the item is never delivered or isn't as described. See the Refund Policy for details.", "Plans & Payments"),
+    HelpFaq("How do refunds work?", "Refunds are handled through the order flow or via a complaint. In-app payments are returned to you if the item is never delivered or isn't as described. See the Refund Policy for details.", "Plans & Payments"),
 
     HelpFaq("What are the Public Wall and Feed?", "They are community spaces for discussions, local updates and posts. You can follow channels, write reviews and interact with other members.", "Community & Rewards"),
     HelpFaq("How do Rewards and Coins work?", "Earn coins through daily check-ins, spins, engagement and referral milestones. Redeem them in the Rewards store for discounts and perks.", "Community & Rewards"),
@@ -282,13 +319,76 @@ fun HelpSupportScreen(onBack: () -> Unit) {
         }
     }
 
-    Box(Modifier.fillMaxSize().background(bgGradient(isDark))) {
-        Column(Modifier.fillMaxSize()) {
-            LegalTopBar("Help & Support", onBack)
-            Column(
-                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { /* Start chat */ },
+                containerColor = ColorTokens.Primary,
+                contentColor = Color.White
             ) {
+                Icon(Icons.Filled.Chat, contentDescription = "Chat Support")
+            }
+        },
+        containerColor = ColorTokens.Background
+    ) { scaffoldPadding ->
+        Box(modifier = Modifier.fillMaxSize().padding(scaffoldPadding)) {
+            // Layer 1: Backdrop
+            Box(
+                modifier = Modifier.fillMaxWidth().height(200.dp)
+                    .background(bgGradient(isDark))
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.SupportAgent,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(80.dp)
+                        .offset(y = (-20).dp),
+                    tint = Color.White.copy(alpha = 0.2f)
+                )
+            }
+            
+            // Layer 2: Floating Top Bar
+            LegalTopBar("Help & Support", onBack)
+            
+            // Layer 3: Curved Sheet
+            Surface(
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = ColorTokens.Surface,
+                modifier = Modifier.fillMaxSize().padding(top = 160.dp)
+            ) {
+                Column(Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), contentAlignment = Alignment.Center) {
+                        Box(modifier = Modifier.width(40.dp).height(4.dp).clip(CircleShape).background(Color.Gray.copy(alpha = 0.3f)))
+                    }
+
+                    Column(
+                        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 100.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        // Ticket Tracker Section
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = ColorTokens.SurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(Modifier.padding(18.dp)) {
+                                Text("Your Open Tickets", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.OnSurface)
+                                Spacer(Modifier.height(12.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(ColorTokens.Background).padding(12.dp)
+                                ) {
+                                    Icon(Icons.Filled.ReportProblem, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("Missing Refund", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                        Text("Waiting on Support • Updated 2h ago", fontSize = 11.sp, color = ColorTokens.OnSurfaceVariant)
+                                    }
+                                    Icon(Icons.Filled.ChevronRight, null, tint = ColorTokens.OnSurfaceVariant)
+                                }
+                            }
+                        }
                 // Header card with contact channels
                 Surface(
                     shape = RoundedCornerShape(16.dp),
@@ -299,7 +399,7 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                     Column(Modifier.padding(18.dp)) {
                         Text("How can we help you?", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF1E293B))
                         Spacer(Modifier.height(4.dp))
-                        Text("Guides, answers and direct support for everything in Zaruda.", fontSize = 13.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
+                        Text("Guides, answers and direct support for everything on the platform.", fontSize = 13.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
                         Spacer(Modifier.height(12.dp))
                         HelpContactRow(Icons.Filled.Comment, "In-app Feedback — More → Feedback", onClick = null)
                         HelpContactRow(Icons.Filled.Report, "Complaints & disputes — More → Complaints", onClick = null)
@@ -376,6 +476,8 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                 }
                 Spacer(Modifier.height(8.dp))
             }
+            } // close inner column
+            } // close surface
         }
     }
 }
@@ -440,10 +542,10 @@ fun ShippingPolicyScreen(onBack: () -> Unit) {
 Shipping Policy
 
 1. Shipping Responsibility
-Shipping is the responsibility of the seller. Zaruda acts as a marketplace facilitator and does not directly handle shipping or logistics.
+Shipping is the responsibility of the seller. The platform acts as a marketplace facilitator and does not directly handle shipping or logistics.
 
 2. Delivery Timelines
-Estimated delivery timelines are provided by sellers. Zaruda is not responsible for delays caused by sellers or logistics partners.
+Estimated delivery timelines are provided by sellers. The platform is not responsible for delays caused by sellers or logistics partners.
 
 3. Shipping Costs
 Shipping costs, if any, are set by the seller and displayed on the listing page before purchase.
@@ -452,10 +554,10 @@ Shipping costs, if any, are set by the seller and displayed on the listing page 
 Where available, sellers will provide tracking information after dispatch. Buyers can track their orders from the "Bought Posts" section.
 
 5. Damaged / Lost Shipments
-If a shipment arrives damaged or is lost in transit, buyers should report the issue within 48 hours via the Complaints section. Zaruda will mediate between buyer and seller.
+If a shipment arrives damaged or is lost in transit, buyers should report the issue within 48 hours via the Complaints section. The platform will mediate between buyer and seller.
 
 6. Local Pickup
-Many transactions on Zaruda support local pickup. Buyers and sellers can coordinate pickup details via the in-app chat.
+Many transactions on the platform support local pickup. Buyers and sellers can coordinate pickup details via the in-app chat.
 
 7. Return Shipping
 Return shipping costs are borne by the buyer unless the item was misrepresented or defective. See our Refund Policy for details.
