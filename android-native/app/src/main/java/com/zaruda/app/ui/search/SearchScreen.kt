@@ -109,6 +109,7 @@ data class SearchState(
     val error: String? = null,
     val savedSearches: List<SavedSearch> = emptyList(),
     val selectedCategory: String? = null,
+    val selectedSubcategory: String? = null,
     val suggestions: List<String> = emptyList(),
     val refreshing: Boolean = false,
     /** Last 10 query strings shown as recent-search chips (web-parity: localStorage in SearchPage.jsx) */
@@ -182,7 +183,9 @@ class SearchViewModel @Inject constructor(
     }
 
     fun setCategory(cat: String?) {
-        _state.value = _state.value.copy(selectedCategory = cat)
+        // Switching category invalidates the subcategory — different category,
+        // different subcategory set (prevents cross-category sub leakage).
+        _state.value = _state.value.copy(selectedCategory = cat, selectedSubcategory = null)
         if (_state.value.query.isNotBlank()) {
             viewModelScope.launch { doSearch(_state.value.query) }
         }
@@ -192,6 +195,16 @@ class SearchViewModel @Inject constructor(
     fun setScopedCategory(cat: String?) {
         if (cat != null && cat != _state.value.selectedCategory) {
             _state.value = _state.value.copy(selectedCategory = cat)
+        }
+    }
+
+    /** Subcategory filter — ALWAYS sent as the subcategory param, never as category. */
+    fun setSubcategory(sub: String?) {
+        if (sub != _state.value.selectedSubcategory) {
+            _state.value = _state.value.copy(selectedSubcategory = sub)
+            if (_state.value.query.isNotBlank()) {
+                viewModelScope.launch { doSearch(_state.value.query) }
+            }
         }
     }
 
@@ -280,7 +293,11 @@ class SearchViewModel @Inject constructor(
 
     private suspend fun doSearch(query: String) {
         _state.value = _state.value.copy(loading = true, error = null)
-        when (val result = repo.feed(query = query, categoryId = _state.value.selectedCategory)) {
+        when (val result = repo.feed(
+            query = query,
+            categoryId = _state.value.selectedCategory,
+            subcategory = _state.value.selectedSubcategory,
+        )) {
             is ApiResult.Success -> {
                 val ranked = rankSearchResults(result.data, query)
                 // Persist to recent queries (keep last 10, deduplicate) — scoped searches
@@ -443,7 +460,6 @@ fun SearchScreen(
     var dateTo by remember { mutableStateOf("") }
     var sortBy by remember { mutableStateOf("") }
     var sortDirection by remember { mutableStateOf("desc") }
-    var selectedSubcategory by remember { mutableStateOf("") }
     var showShareSheet by remember { mutableStateOf(false) }
     var sharePostId by remember { mutableStateOf("") }
     var sharePostTitle by remember { mutableStateOf("") }
@@ -452,7 +468,7 @@ fun SearchScreen(
     var interestPostTitle by remember { mutableStateOf("") }
     var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
     val haptic = LocalHapticFeedback.current
-    val activeFilterCount = listOf(minPrice.isNotBlank(), maxPrice.isNotBlank(), selectedCondition.isNotBlank(), sortBy.isNotBlank(), selectedBrand.isNotBlank(), selectedModel.isNotBlank(), locationRadius.isNotBlank(), dateFrom.isNotBlank(), dateTo.isNotBlank(), selectedSubcategory.isNotBlank()).count { it }
+    val activeFilterCount = listOf(minPrice.isNotBlank(), maxPrice.isNotBlank(), selectedCondition.isNotBlank(), sortBy.isNotBlank(), selectedBrand.isNotBlank(), selectedModel.isNotBlank(), locationRadius.isNotBlank(), dateFrom.isNotBlank(), dateTo.isNotBlank(), state.selectedSubcategory != null).count { it }
 
     val voiceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val spokenText = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
@@ -684,7 +700,7 @@ fun SearchScreen(
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text("Advanced Filters", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                             if (activeFilterCount > 0) {
-                                TextButton(onClick = { minPrice = ""; maxPrice = ""; selectedCondition = ""; sortBy = ""; selectedBrand = ""; selectedModel = ""; locationRadius = ""; dateFrom = ""; dateTo = ""; selectedSubcategory = "" }) {
+                                TextButton(onClick = { minPrice = ""; maxPrice = ""; selectedCondition = ""; sortBy = ""; selectedBrand = ""; selectedModel = ""; locationRadius = ""; dateFrom = ""; dateTo = ""; viewModel.setSubcategory(null) }) {
                                     Icon(Icons.Default.ClearAll, null, modifier = Modifier.size(16.dp))
                                     Spacer(Modifier.width(4.dp))
                                     Text("Clear All")
@@ -944,8 +960,8 @@ fun SearchScreen(
                     if (sortBy.isNotBlank()) {
                         item { InputChip(selected = true, onClick = { sortBy = "" }, label = { Text("Sort: $sortBy") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
                     }
-                    if (selectedSubcategory.isNotBlank()) {
-                        item { InputChip(selected = true, onClick = { selectedSubcategory = "" }, label = { Text("Sub: $selectedSubcategory") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
+                    state.selectedSubcategory?.let { sub ->
+                        item { InputChip(selected = true, onClick = { viewModel.setSubcategory(null) }, label = { Text("Sub: $sub") }, trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }) }
                     }
                 }
             }
@@ -984,9 +1000,9 @@ fun SearchScreen(
                         ) {
                             items(subcategories, key = { "sub_$it" }) { sub ->
                                 FilterChip(
-                                    selected = selectedSubcategory == sub,
-                                    onClick = { selectedSubcategory = sub },
-                                    label = { Text(if (sub.isBlank()) "All ${state.selectedCategory}" else sub, style = MaterialTheme.typography.labelSmall) },
+                                    selected = (state.selectedSubcategory ?: "") == sub,
+                                    onClick = { viewModel.setSubcategory(sub.ifBlank { null }) },
+                                    label = { Text(if (sub.isBlank()) "All" else sub, style = MaterialTheme.typography.labelSmall) },
                                     colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer, selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer),
                                 )
                             }

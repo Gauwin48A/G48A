@@ -49,8 +49,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AddShoppingCart
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.Flag
@@ -818,6 +820,7 @@ fun PostDetailScreen(
     var showReportDialog by remember { mutableStateOf(false) }
     var showImageZoom by remember { mutableStateOf(false) }
     var zoomImageIndex by remember { mutableStateOf(0) }
+    // Buy-flow explainer now lives in the CART (escrow entry point moved there)
     var showBuyFlowHowItWorks by remember { mutableStateOf(false) }
     val salePrefs = remember {
         context.getSharedPreferences("zaruda_sale_prefs", android.content.Context.MODE_PRIVATE)
@@ -837,6 +840,7 @@ fun PostDetailScreen(
                     showBuyFlowHowItWorks = false
                     val buyFlowKey = "buy_flow_seen_" + buyPost.stableId
                     salePrefs.edit().putBoolean(buyFlowKey, true).apply()
+                    // Purchase continues in the CART — the escrow entry point
                     buyPost.userId?.let { sellerId -> onOpenSale(buyPost.stableId, sellerId) }
                 },
                 onDismiss = { showBuyFlowHowItWorks = false },
@@ -991,11 +995,13 @@ fun PostDetailScreen(
                 else -> null
             }
             val isNegotiable = post.isNegotiable == true || post.pricingType?.lowercase()?.contains("negoti") == true
+            // Escrow is Electronics-only (platform policy). Detect via canonical
+            // category key — never the raw "categoryId == 1" hack (fragile against
+            // DB re-seeding and mismatched with the server's category-name check).
             val isElectronics = remember(post) {
-                post.category?.lowercase()?.contains("elec") == true ||
-                post.categoryName?.lowercase()?.contains("elec") == true ||
-                post.categoryId?.lowercase()?.contains("elec") == true ||
-                post.categoryId == "1"
+                com.zaruda.app.ui.wishlist.normalizeMarketplaceCategoryKey(
+                    post.categoryName ?: post.category ?: post.categoryId
+                ) == "electronics"
             }
 
             // ── Layer 1: Full-Bleed Edge-to-Edge Hero Image Pager ──
@@ -1991,22 +1997,31 @@ fun PostDetailScreen(
                                 Text("💬 Make Offer", fontWeight = FontWeight.Bold)
                             }
                             if (isElectronics) {
+                                // Escrow "Buy with Platform" is ONLY offered inside the
+                                // Cart (per platform policy) — the post detail offers
+                                // Add to Cart instead; the purchase happens from there.
                                 Button(
                                     onClick = {
-                                        post.userId?.let { sellerId ->
-                                            val key = "buy_flow_seen_" + post.stableId
-                                            if (salePrefs.getBoolean(key, false)) {
-                                                onOpenSale(post.stableId, sellerId)
-                                            } else {
-                                                showBuyFlowHowItWorks = true
-                                            }
-                                        }
+                                        viewModel.addToCart()
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            "Added to cart — open Cart to Buy with Platform",
+                                            android.widget.Toast.LENGTH_LONG,
+                                        ).show()
                                     },
                                     modifier = Modifier.weight(0.60f).height(50.dp),
                                     shape = RoundedCornerShape(14.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669))
                                 ) {
-                                    Text("🛡️ Buy with Platform", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    if (state.inCart) {
+                                        Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("Added to Cart", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    } else {
+                                        Icon(Icons.Default.AddShoppingCart, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("Add to Cart", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                    }
                                 }
                             } else {
                                 val rawNumber = post.contactNumber?.trim().orEmpty()

@@ -92,8 +92,12 @@ class HomeViewModel @Inject constructor(
         }
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
-            val categoryId = id ?: _categoryKey
-            when (val res = repo.feed(page = 1, limit = PAGE_SIZE, categoryId = categoryId)) {
+            // CRITICAL: subcategory id must go in the SUBCATEGORY param, never as
+            // categoryId — both tables use small integer ids, so subId=3 (Laptops)
+            // would match categoryId=3 (Vehicles). Parent category stays applied too.
+            val categoryId = _categoryKey
+            val subcategoryId = id
+            when (val res = repo.feed(page = 1, limit = PAGE_SIZE, categoryId = categoryId, subcategory = subcategoryId)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
                     loading = false,
                     posts = res.data,
@@ -103,7 +107,7 @@ class HomeViewModel @Inject constructor(
                     lastLoadTimeMs = System.currentTimeMillis(),
                 )
                 is ApiResult.Failure -> {
-                    crashlytics.logApiError(res.error, "HOME_FEED", "Failed to load subcategory feed for $categoryId")
+                    crashlytics.logApiError(res.error, "HOME_FEED", "Failed to load subcategory feed for ${categoryId ?: "all"}/$subcategoryId")
                     _state.value = _state.value.copy(
                         loading = false,
                         error = res.error.message,
@@ -130,10 +134,12 @@ class HomeViewModel @Inject constructor(
             currentPage = 1,
             hasMore = true,
         )
-        val categoryId = _state.value.selectedSubcategory ?: _categoryKey
+        // Keep category and subcategory on their OWN params (never subid-as-categoryId)
+        val categoryId = _categoryKey
+        val subcategoryId = _state.value.selectedSubcategory
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
-            when (val res = repo.feed(page = 1, limit = PAGE_SIZE, categoryId = categoryId)) {
+            when (val res = repo.feed(page = 1, limit = PAGE_SIZE, categoryId = categoryId, subcategory = subcategoryId)) {
                 is ApiResult.Success -> _state.value = _state.value.copy(
                     loading = false,
                     refreshing = false,
@@ -174,10 +180,12 @@ class HomeViewModel @Inject constructor(
         val nextPage = current.currentPage + 1
         _state.value = current.copy(loadingMore = true)
 
-        val categoryId = current.selectedSubcategory ?: _categoryKey
+        // Keep category and subcategory on their OWN params (never subid-as-categoryId)
+        val categoryId = _categoryKey
+        val subcategoryId = current.selectedSubcategory
         loadMoreJob?.cancel()
         loadMoreJob = viewModelScope.launch {
-            when (val res = repo.feed(page = nextPage, limit = PAGE_SIZE, categoryId = categoryId)) {
+            when (val res = repo.feed(page = nextPage, limit = PAGE_SIZE, categoryId = categoryId, subcategory = subcategoryId)) {
                 is ApiResult.Success -> {
                     _state.value = _state.value.copy(
                         loadingMore = false,

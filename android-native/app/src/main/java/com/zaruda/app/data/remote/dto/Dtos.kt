@@ -1225,9 +1225,11 @@ data class CartItem(
     val category: String? = null,
 ) {
     val stableId: String get() = id ?: postId ?: title.orEmpty()
-    /** True for Electronics — the only category with in-app escrow purchase. */
-    val isElectronics: Boolean get() = (categoryName ?: category)
-        ?.lowercase()?.contains("electron") == true
+    /** Escrow-eligible (Electronics only — platform policy). Canonical key match
+     *  so subcategory names like "Mobiles"/"Laptops" also qualify, matching the
+     *  server's category-name resolution. */
+    val isElectronics: Boolean get() =
+        com.zaruda.app.ui.wishlist.normalizeMarketplaceCategoryKey(categoryName ?: category) == "electronics"
 }
 
 @Serializable

@@ -519,8 +519,13 @@ fun CartScreen(
                                         onRemove = { viewModel.removeWithUndo(item.postId ?: "") },
                                         onSaveForLater = { viewModel.saveForLater(item.postId ?: "") },
                                         onBuyWithPlatform = {
+                                            // Escrow is Electronics-only (platform policy);
+                                            // the button only renders for electronics items,
+                                            // but guard here too so non-electronics can never
+                                            // reach the IN_APP flow.
                                             if (onCheckout != null) onCheckout()
-                                            else if (item.isElectronics) viewModel.confirmBuy(item)
+                                            else if (item.isElectronics && item.sellerId != null) viewModel.confirmBuy(item)
+                                            else viewModel.setError("Platform purchase is available for Electronics listings only.")
                                         },
                                     )
                                 }
@@ -600,9 +605,11 @@ fun CartScreen(
                             onClick = {
                                 if (onCheckout != null) onCheckout()
                                 else {
+                                    // Escrow only ever targets an Electronics item (IN_APP);
+                                    // anything else in the cart is direct/outside by policy.
                                     val target = state.items.firstOrNull { it.isElectronics && (it.sellerId != null) }
                                     if (target != null) viewModel.confirmBuy(target)
-                                    else viewModel.setError("Unable to checkout at this time.")
+                                    else viewModel.setError("No Electronics item in cart — platform purchase applies to Electronics only.")
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
