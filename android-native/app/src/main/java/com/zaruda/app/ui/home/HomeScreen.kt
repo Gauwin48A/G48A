@@ -367,7 +367,7 @@ private fun CompareDialog(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.allposts_price), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         posts.forEach { post ->
-                            Text(post.price?.let { "â‚¹${"%,.0f".format(it)}" } ?: "N/A", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                            Text(post.price?.let { "₹" + "%,.0f".format(it) } ?: "N/A", Modifier.weight(1f), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                     HorizontalDivider(Modifier.padding(vertical = 4.dp))
@@ -1414,7 +1414,7 @@ fun HomeScreen(
                                                 }
                                                 Column(Modifier.padding(8.dp)) {
                                                     Text(post.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                                                    post.price?.let { Text("â‚¹${"%,.0f".format(it)}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary) }
+                                                    post.price?.let { Text("₹" + "%,.0f".format(it), fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary) }
                                                     Text("${post.viewCount ?: 0} views", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                 }
                                             }
@@ -1567,7 +1567,7 @@ fun HomeScreen(
                                         InputChip(
                                             selected = true,
                                             onClick = { filters = filters.copy(minPrice = 0f, maxPrice = 100000f) },
-                                            label = { Text("â‚¹${"%,.0f".format(filters.minPrice)}-â‚¹${"%,.0f".format(filters.maxPrice)}", style = MaterialTheme.typography.labelSmall) },
+                                            label = { Text("₹" + "%,.0f".format(filters.minPrice) + " - ₹" + "%,.0f".format(filters.maxPrice), style = MaterialTheme.typography.labelSmall) },
                                             trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) },
                                         )
                                     }
@@ -2089,7 +2089,7 @@ fun ListPostCard(
                 }
                 Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f)), startY = 80f)))
                 post.price?.let { price ->
-                    Text("INR ${"%,.0f".format(price)}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
+                    Text("₹" + "%,.0f".format(price), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
                 }
                 val wishlistPosts by com.zaruda.app.ui.explore.SharedExploreStore.wishlistFlow.collectAsState()
                 val wishlisted = wishlistPosts.any { it.stableId == post.stableId }
@@ -2116,9 +2116,22 @@ fun ListPostCard(
                         Text(cat, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                     }
                 }
+                val isCardElectronics = post.categoryId == "1" ||
+                    post.category?.lowercase()?.contains("elec") == true ||
+                    post.categoryName?.lowercase()?.contains("elec") == true ||
+                    post.category?.lowercase()?.contains("mobile") == true ||
+                    post.categoryName?.lowercase()?.contains("mobile") == true ||
+                    post.category?.lowercase()?.contains("gadget") == true ||
+                    post.categoryName?.lowercase()?.contains("gadget") == true
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669).copy(alpha = 0.12f)) {
-                        Text("🛡️ In-App Buy", style = MaterialTheme.typography.labelSmall, color = Color(0xFF059669), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                    if (isCardElectronics) {
+                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF059669).copy(alpha = 0.12f)) {
+                            Text("🛡️ In-App Buy", style = MaterialTheme.typography.labelSmall, color = Color(0xFF059669), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
+                    } else {
+                        Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF2563EB).copy(alpha = 0.10f)) {
+                            Text("🤝 Direct Deal", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                        }
                     }
                     Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF3B82F6).copy(alpha = 0.10f)) {
                         Text("⚡ Replies in ~15m", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2563EB), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
@@ -2143,7 +2156,7 @@ fun ListPostCard(
                         Spacer(Modifier.width(3.dp))
                         Text(post.location ?: "Nearby", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         if (distanceKm != null && distanceKm < 1000.0) {
-                            Text(" \u00b7 ${"%.1f".format(distanceKm)} km", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                            Text(" · " + "%.1f".format(distanceKm) + " km", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                         }
                     }
                     val timeAgo = relativeTime(post.createdAt)
@@ -2248,7 +2261,7 @@ fun GridPostCard(
                 )
                 post.price?.let { price ->
                     Text(
-                        "₹${"%,.0f".format(price)}",
+                        "₹" + "%,.0f".format(price),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
@@ -2293,19 +2306,39 @@ fun GridPostCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                val isGridElectronics = post.categoryId == "1" ||
+                    post.category?.lowercase()?.contains("elec") == true ||
+                    post.categoryName?.lowercase()?.contains("elec") == true ||
+                    post.category?.lowercase()?.contains("mobile") == true ||
+                    post.categoryName?.lowercase()?.contains("mobile") == true ||
+                    post.category?.lowercase()?.contains("gadget") == true ||
+                    post.categoryName?.lowercase()?.contains("gadget") == true
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF059669).copy(alpha = 0.10f)) {
-                        Text(
-                            "🛡️ In-App Buy",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF059669),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 9.sp,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                        )
+                    if (isGridElectronics) {
+                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF059669).copy(alpha = 0.10f)) {
+                            Text(
+                                "🛡️ In-App Buy",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF059669),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 9.sp,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
+                    } else {
+                        Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF2563EB).copy(alpha = 0.10f)) {
+                            Text(
+                                "🤝 Direct Deal",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF2563EB),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 9.sp,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
                     }
                     post.condition?.let { cond ->
                         Surface(

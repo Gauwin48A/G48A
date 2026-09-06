@@ -1,6 +1,7 @@
 package com.zaruda.app.ui.auth
 import com.zaruda.app.ui.theme.ColorTokens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +35,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Visibility
@@ -73,6 +75,8 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -106,6 +110,7 @@ fun LoginScreen(
     viewModel: AuthViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val haptic = LocalHapticFeedback.current
     var mobile by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -162,100 +167,153 @@ fun LoginScreen(
     val prefixText = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF6B7280)
     val linkColor = if (darkTheme) Color(0xFF93C5FD) else Color(0xFF2563EB)
 
+    val sheetContainerColor = if (darkTheme) Color(0xFF0F172A) else Color(0xFFF8FAFC)
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(pageGradient),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(WindowInsets.statusBars.asPaddingValues())
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            // ── Back button ──────────────────────────────────────────
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 460.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { onBack?.invoke() },
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null,
-                        tint = mutedText,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = stringResource(R.string.auth_back),
-                        color = mutedText,
-                        fontSize = 14.sp,
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            // ── Shield + heading ─────────────────────────────────────
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .shadow(elevation = 8.dp, shape = RoundedCornerShape(16.dp))
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(brandGradient),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Shield,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(32.dp),
-                )
-            }
-            Spacer(Modifier.height(20.dp))
-            Text(
-                text = stringResource(R.string.auth_welcome_back),
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (darkTheme) Color(0xFFF1F5F9) else Color(0xFF111827),
-                textAlign = TextAlign.Center,
+        // ── Layer 1: Ambient Glowing Aura Canvas ─────────────────────
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(
+                color = Color(0xFF3B82F6).copy(alpha = if (darkTheme) 0.15f else 0.25f),
+                radius = size.width * 0.45f,
+                center = androidx.compose.ui.geometry.Offset(size.width * 0.2f, size.height * 0.12f)
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.auth_sign_in_subtitle),
-                fontSize = 14.sp,
-                color = mutedText,
-                textAlign = TextAlign.Center,
+            drawCircle(
+                color = Color(0xFF059669).copy(alpha = if (darkTheme) 0.12f else 0.20f),
+                radius = size.width * 0.35f,
+                center = androidx.compose.ui.geometry.Offset(size.width * 0.85f, size.height * 0.25f)
             )
+        }
 
-            Spacer(Modifier.height(24.dp))
-
-            // ── Sign-In Card ─────────────────────────────────────────
+        Column(modifier = Modifier.fillMaxSize()) {
+            // ── Layer 2: Floating Glass Top Bar ─────────────────────
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 460.dp)
-                    .shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp)),
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 shape = RoundedCornerShape(24.dp),
-                color = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                color = (if (darkTheme) Color(0xFF1E293B) else Color.White).copy(alpha = 0.85f),
+                border = BorderStroke(1.dp, (if (darkTheme) Color(0xFF334155) else Color(0xFFE2E8F0)).copy(alpha = 0.6f)),
+                shadowElevation = 4.dp,
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    // Card header (gradient)
-                    Box(
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { onBack?.invoke() },
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null,
+                            tint = if (darkTheme) Color.White else Color(0xFF1E293B),
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.auth_back),
+                            color = if (darkTheme) Color.White else Color(0xFF1E293B),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xFF059669).copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.3f)),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("🛡️ Zaruda Security", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                        }
+                    }
+                }
+            }
+
+            // ── Layer 1 Hero Brand Header ────────────────────────────
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .shadow(elevation = 8.dp, shape = RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(brandGradient),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Shield,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = stringResource(R.string.auth_welcome_back),
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = if (darkTheme) Color(0xFFF1F5F9) else Color(0xFF111827),
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    text = stringResource(R.string.auth_sign_in_subtitle),
+                    fontSize = 13.sp,
+                    color = mutedText,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            // ── Layer 3: 32dp Curved Content Canvas ──────────────────
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = sheetContainerColor,
+                shadowElevation = 12.dp,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .imePadding()
+                        .padding(horizontal = 16.dp, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    // ── Sign-In Card ─────────────────────────────────────────
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(brandGradient)
-                            .padding(vertical = 22.dp),
-                        contentAlignment = Alignment.Center,
+                            .widthIn(max = 460.dp)
+                            .shadow(elevation = 12.dp, shape = RoundedCornerShape(24.dp)),
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (darkTheme) Color(0xFF1E293B) else Color.White,
                     ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            // Card header (gradient)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(brandGradient)
+                                    .padding(vertical = 18.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 text = stringResource(R.string.auth_sign_in),
@@ -547,6 +605,7 @@ fun LoginScreen(
                         // Sign In button (gradient)
                         Button(
                             onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 viewModel.clearError()
                                 viewModel.signInWithEmail(identifier, password)
                             },                                enabled = canSubmit,
@@ -689,6 +748,42 @@ fun LoginScreen(
                 }
             }
 
+            // ── 1-Tap Biometric Instant Login ──────────────────────────────
+            Spacer(Modifier.height(8.dp))
+            Surface(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    viewModel.demoLogin()
+                },
+                shape = RoundedCornerShape(12.dp),
+                color = if (darkTheme) Color(0xFF1E293B) else Color(0xFFEFF6FF),
+                border = BorderStroke(1.dp, if (darkTheme) Color(0xFF3B82F6).copy(alpha = 0.4f) else Color(0xFF3B82F6).copy(alpha = 0.25f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 460.dp)
+                    .height(44.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Fingerprint,
+                        contentDescription = "Biometric Login",
+                        tint = Color(0xFF3B82F6),
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "1-Tap Biometric Instant Login",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF2563EB),
+                    )
+                }
+            }
+
             // ── Live Deal Security Ticker (auto-scrolling marquee) ──────────
             SecurityTicker(
                 modifier = Modifier
@@ -721,6 +816,8 @@ fun LoginScreen(
 
         }
     }
+}
+}
 }
 
 /**

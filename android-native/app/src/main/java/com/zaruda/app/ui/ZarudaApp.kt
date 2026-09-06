@@ -766,18 +766,19 @@ fun ZarudaApp(
                     com.zaruda.app.ui.profile.SettingsScreen(onBack = { navController.popBackStack() })
                 }
 
-                // MORE is now a drawer overlay (not a page), redirect to HOME
+                // MORE redirect to settings page
                 composable(Routes.MORE) {
                     LaunchedEffect(Unit) {
-                        navController.navigate(Routes.HOME) {
+                        navController.navigate("settings") {
                             popUpTo(Routes.MORE) { inclusive = true }
                         }
                     }
                 }
 
                 composable(Routes.NOTIFICATIONS) {
-                    MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
+                    MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                         NotificationsScreen(
+                            onBack = { navController.popBackStack() },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                             onOpenSale = { tab -> navController.navigate(Routes.saleDoneTab(tab)) { launchSingleTop = true } },
                         )
@@ -794,7 +795,7 @@ fun ZarudaApp(
                 }
             }
 
-            // â”€â”€ Full-Screen Routes â”€â”€
+            // ── Full-Screen Routes ──
                 composable(
                     route = Routes.POST_DETAIL,
                     arguments = listOf(navArgument("postId") { type = NavType.StringType }),
@@ -812,15 +813,20 @@ fun ZarudaApp(
             }
 
             composable(
-                route = "${Routes.SEARCH}?query={query}",
-                arguments = listOf(androidx.navigation.navArgument("query") { defaultValue = ""; nullable = true }),
+                route = "${Routes.SEARCH}?query={query}&category={category}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("query") { defaultValue = ""; nullable = true },
+                    androidx.navigation.navArgument("category") { defaultValue = ""; nullable = true },
+                ),
             ) { backStack ->
                 val prefillQuery = backStack.arguments?.getString("query") ?: ""
+                val scopedCategory = backStack.arguments?.getString("category")?.takeIf { it.isNotBlank() }
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false, topBarBack = { navController.popBackStack() }) {
                     SearchScreen(
                         onBack = { navController.popBackStack() },
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
                         prefillQuery = prefillQuery,
+                        scopedCategory = scopedCategory,
                     )
                 }
             }
@@ -836,7 +842,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.CATEGORIES) {
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = true, topBarBack = { navController.popBackStack() }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false, topBarBack = { navController.popBackStack() }) {
                     CategoriesScreen(
                         onBack = { navController.popBackStack() },
                         onCategoryClick = { _, name ->
@@ -847,7 +853,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.SUBCATEGORIES) {
-                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = true, topBarBack = { navController.popBackStack() }) {
+                MainShell(navController = navController, selected = BottomTab.ALL_POSTS, showTopBar = false, topBarBack = { navController.popBackStack() }) {
                     com.zaruda.app.ui.discovery.SubcategoriesScreen(
                         onBack = { navController.popBackStack() },
                         onOpenCategory = { catKey -> openCategoryApp(catKey) },
@@ -866,12 +872,7 @@ fun ZarudaApp(
                 MainShell(
                     navController = navController,
                     selected = BottomTab.PROFILE,
-                    topBarBack = {
-                        navController.navigate(Routes.ALL_POSTS) {
-                            popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
-                            launchSingleTop = true
-                        }
-                    },
+                    showTopBar = false,
                 ) {
                     MyPostsScreen(
                         onBack = {
@@ -988,7 +989,14 @@ fun ZarudaApp(
                                     }
                                 }
                             },
-                            onOpenSearch = { q -> navController.navigate(if (q.isNullOrBlank()) Routes.SEARCH else "search?query=$q") { launchSingleTop = true } },
+                            // Search opened from INSIDE a category app — keep the category
+                            // scope so results never bleed into other categories.
+                            onOpenSearch = { q ->
+                                val base = if (q.isNullOrBlank()) Routes.SEARCH else "search?query=$q"
+                                val scoped = if (key.isNullOrBlank()) base else
+                                    if (q.isNullOrBlank()) "$base?category=$key" else "$base&category=$key"
+                                navController.navigate(scoped) { launchSingleTop = true }
+                            },
                             onOpenHome = { navController.navigate(Routes.MY_POSTS) {
                                 popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
                                 launchSingleTop = true
@@ -1017,7 +1025,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.BOUGHT_POSTS) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     BoughtPostsScreen(
                         onBack = { navController.popBackStack() },
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
@@ -1026,7 +1034,7 @@ fun ZarudaApp(
             }
 
             composable(Routes.SOLD_POSTS) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     SoldPostsScreen(
                         onBack = { navController.popBackStack() },
                         onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
@@ -1036,7 +1044,7 @@ fun ZarudaApp(
 
             composable(Routes.USER_SOLD_POSTS) { backStackEntry ->
                 val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
                     SoldPostsScreen(
                         userId = userId,
                         onBack = { navController.popBackStack() },
@@ -1053,7 +1061,7 @@ fun ZarudaApp(
                     navArgument("tab") { type = NavType.IntType; defaultValue = 0 },
                 ),
             ) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                     SaleDoneScreen(onBack = {
                         navController.navigate(Routes.ALL_POSTS) {
                             popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
@@ -1070,7 +1078,7 @@ fun ZarudaApp(
                     navArgument("sellerId") { type = NavType.StringType },
                 ),
             ) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                     SaleDoneScreen(onBack = {
                         navController.navigate(Routes.ALL_POSTS) {
                             popUpTo(Routes.MAIN_GRAPH) { inclusive = false }
@@ -1863,6 +1871,10 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
     when (segments.firstOrNull()) {
         "post", "posts", "listing" -> {
             val id = segments.getOrNull(1) ?: return
+            if (id == "mine") {
+                navController.navigate(Routes.MY_POSTS) { launchSingleTop = true }
+                return
+            }
             // Expiry reminders deep-link here with an action hint
             val action = segments.getOrNull(2)
             when (action) {
@@ -1871,6 +1883,11 @@ private fun handleDeepLink(uri: String, navController: NavHostController) {
                 else -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true }
             }
         }
+        "my-posts", "my_posts", "mine" -> navController.navigate(Routes.MY_POSTS) { launchSingleTop = true }
+        "home" -> navController.navigate(Routes.HOME) { launchSingleTop = true }
+        "explore" -> navController.navigate(Routes.ALL_POSTS) { launchSingleTop = true }
+        "login", "auth/login" -> navController.navigate(Routes.LOGIN) { launchSingleTop = true }
+        "signup", "auth/signup" -> navController.navigate(Routes.SIGNUP) { launchSingleTop = true }
         "expiry-action" -> {
             val id = segments.getOrNull(1) ?: return
             navController.navigate(Routes.expiryAction(id)) { launchSingleTop = true }

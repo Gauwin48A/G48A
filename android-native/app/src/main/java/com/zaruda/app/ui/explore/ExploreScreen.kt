@@ -809,9 +809,14 @@ class ExploreViewModel @Inject constructor(
     private suspend fun performSearch(query: String) {
         _state.value = _state.value.copy(isSearching = true, searchSuggestions = emptyList())
         val localResults = localSearchResults(query)
-        when (val result = postsRepo.feed(query = query)) {
+        // Search inside a category app MUST stay inside that category — pass the
+        // ecosystem key so the server filters, and re-filter the response as a
+        // safety net so cross-category posts never surface (iPhone in Fashion).
+        val ecoKey = _state.value.ecosystemKey
+        when (val result = postsRepo.feed(query = query, categoryId = ecoKey)) {
             is ApiResult.Success -> {
-                val merged = (result.data + localResults).distinctBy { it.stableId }
+                val serverPosts = if (ecoKey.isNullOrBlank()) result.data else filterForEcosystem(result.data, ecoKey)
+                val merged = (serverPosts + localResults).distinctBy { it.stableId }
                 _state.value = _state.value.copy(isSearching = false, searchResults = merged, hasSearchedQuery = true)
                 // Persist to recent queries (keep last 10, deduplicate)
                 val trimmed = query.trim()
@@ -3086,7 +3091,7 @@ private fun AllPostsBrowse(
                                                 modifier = Modifier.align(Alignment.BottomStart).padding(6.dp),
                                             ) {
                                                 Text(
-                                                    "₹${"%,.0f".format(price)}",
+                                                    "₹" + "%,.0f".format(price),
                                                     color = Color.White,
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.Bold,
@@ -3726,7 +3731,7 @@ fun AllPostCard(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
-                                "₹${"%,.0f".format(price)}",
+                                "₹" + "%,.0f".format(price),
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = 15.sp,
                                 color = Color.White
@@ -3735,7 +3740,7 @@ fun AllPostCard(
                             if (origPrice != null && origPrice > price && origPrice > 0) {
                                 val pct = ((origPrice - price) / origPrice * 100).toInt()
                                 Text(
-                                    "₹${"%,.0f".format(origPrice)}",
+                                    "₹" + "%,.0f".format(origPrice),
                                     fontSize = 10.sp,
                                     color = Color.White.copy(alpha = 0.65f),
                                     textDecoration = TextDecoration.LineThrough
@@ -4083,7 +4088,7 @@ private fun TrendingCard(
                         modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
                     ) {
                         Text(
-                            "₹${"%,.0f".format(it)}",
+                            "₹" + "%,.0f".format(it),
                             color = Color.White,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
@@ -4257,7 +4262,7 @@ private fun SearchResultCard(post: Post, onClick: () -> Unit) {
                 )
                 post.price?.let {
                     Text(
-                        text = "₹${"%,.0f".format(it)}",
+                        text = "₹" + "%,.0f".format(it),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,

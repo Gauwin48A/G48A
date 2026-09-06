@@ -303,6 +303,7 @@ class PostDetailViewModel @Inject constructor(
                     // Try to show previously cached post data instead of a generic mock
                     val cachedPost = SharedExploreStore.recentlyViewedPosts.firstOrNull { it.stableId == postId }
                         ?: SharedExploreStore.wishlistPosts.firstOrNull { it.stableId == postId }
+                        ?: MOCK_SUGGESTED_POSTS.firstOrNull { it.stableId == postId || it.id == postId }
                     if (cachedPost != null) {
                         _state.value = PostDetailState(
                             loading = false,
@@ -686,60 +687,49 @@ private fun PostDetailFloatingTopBar(
         label = "postDetailWishScale",
     )
 
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color.Black.copy(alpha = 0.65f),
+                        Color.Black.copy(alpha = 0.25f),
+                        Color.Transparent,
+                    )
+                )
+            )
             .padding(WindowInsets.statusBars.asPaddingValues())
             .padding(horizontal = 14.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        // Glassmorphic Back Button
-        Surface(
-            shape = CircleShape,
-            color = Color.Black.copy(alpha = 0.45f),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
-            modifier = Modifier.size(40.dp),
-            onClick = onBack,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
-
-        // Glassmorphic Title Capsule
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = Color.Black.copy(alpha = 0.45f),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = "$title ✦",
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-
-        // Glassmorphic Action Buttons (Wishlist, Share, Report)
         Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
+            // Glassmorphic Back Button
+            Surface(
+                shape = CircleShape,
+                color = Color.Black.copy(alpha = 0.45f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.35f)),
+                modifier = Modifier.size(40.dp),
+                onClick = onBack,
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+
+            // Glassmorphic Action Buttons (Wishlist, Share, Report)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
             // Wishlist Button
             Surface(
                 shape = CircleShape,
@@ -806,6 +796,7 @@ private fun PostDetailFloatingTopBar(
         }
     }
 }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -839,15 +830,18 @@ fun PostDetailScreen(
             onDismiss = { showShareSheet = false },
         )
     }
-    if (showBuyFlowHowItWorks) state.post?.let { buyPost ->
-        BuyFlowHowItWorksDialog(
-            onContinue = {
-                showBuyFlowHowItWorks = false
-                salePrefs.edit().putBoolean("buy_flow_seen_${buyPost.stableId}", true).apply()
-                buyPost.userId?.let { sellerId -> onOpenSale(buyPost.stableId, sellerId) }
-            },
-            onDismiss = { showBuyFlowHowItWorks = false },
-        )
+    if (showBuyFlowHowItWorks) {
+        state.post?.let { buyPost ->
+            BuyFlowHowItWorksDialog(
+                onContinue = {
+                    showBuyFlowHowItWorks = false
+                    val buyFlowKey = "buy_flow_seen_" + buyPost.stableId
+                    salePrefs.edit().putBoolean(buyFlowKey, true).apply()
+                    buyPost.userId?.let { sellerId -> onOpenSale(buyPost.stableId, sellerId) }
+                },
+                onDismiss = { showBuyFlowHowItWorks = false },
+            )
+        }
     }
     if (state.showRateDialog) {
         PostRatingDialog(
@@ -1028,7 +1022,7 @@ fun PostDetailScreen(
                 ) {
                     // Hero Spacer allowing backdrop to show through
                     item(key = "hero_spacer") {
-                        Spacer(modifier = Modifier.height(290.dp))
+                        Spacer(modifier = Modifier.height(300.dp))
                     }
 
                     // 32dp Floating Curved Sheet Header
@@ -1042,9 +1036,19 @@ fun PostDetailScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 16.dp, bottom = 8.dp),
+                                    .padding(top = 14.dp, bottom = 8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
+                                // Tactile Drag Handle (Rapido Travel / Marketplace Standard)
+                                Box(
+                                    modifier = Modifier
+                                        .width(44.dp)
+                                        .height(4.5.dp)
+                                        .clip(RoundedCornerShape(2.5.dp))
+                                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
+                                )
+
+                                Spacer(Modifier.height(14.dp))
 
                                 // Trust Guarantee Ribbon - Strictly Scoped by Category!
                                 if (isElectronics) {
@@ -1199,7 +1203,7 @@ fun PostDetailScreen(
                                 ) {
                                     Column {
                                         Text(
-                                            text = "₹${"%,.0f".format(price)}",
+                                            text = "₹" + "%,.0f".format(price),
                                             style = MaterialTheme.typography.headlineMedium.copy(
                                                 fontWeight = FontWeight.ExtraBold,
                                                 fontSize = 28.sp,
@@ -1217,7 +1221,7 @@ fun PostDetailScreen(
                                                 modifier = Modifier.padding(top = 2.dp)
                                             ) {
                                                 Text(
-                                                    text = "₹${"%,.0f".format(origPrice)}",
+                                                    text = "₹" + "%,.0f".format(origPrice),
                                                     style = MaterialTheme.typography.bodySmall,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     textDecoration = TextDecoration.LineThrough,
@@ -1225,7 +1229,7 @@ fun PostDetailScreen(
                                                 Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF22C55E).copy(alpha = 0.15f)) {
                                                     Text("-$pct% OFF", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E), modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp))
                                                 }
-                                                Text("Save ₹${"%,.0f".format(savings)}", fontSize = 11.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.SemiBold)
+                                                Text("Save ₹" + "%,.0f".format(savings), fontSize = 11.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.SemiBold)
                                             }
                                         }
                                     }
@@ -1624,7 +1628,7 @@ fun PostDetailScreen(
                                         post.condition?.let { add(conditionLabel to it.replaceFirstChar(Char::uppercase)) }
                                         post.brand?.let { add(brandLabel to it) }
                                         post.location?.let { add(locationLabel to it) }
-                                        post.price?.let { add(priceLabel to "₹${"%,.0f".format(it)}") }
+                                        post.price?.let { add(priceLabel to ("₹" + "%,.0f".format(it))) }
                                         post.categoryName?.let { add(categoryLabel to it) }
                                     }
                                 }
@@ -1866,7 +1870,7 @@ fun PostDetailScreen(
                                                         Text(sugPost.displayTitle, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                                             sugPost.price?.let { p ->
-                                                                Text("₹${"%,.0f".format(p)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                                                Text("₹" + "%,.0f".format(p), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                                             }
                                                             Spacer(Modifier.weight(1f))
                                                             Text("↗", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1883,32 +1887,34 @@ fun PostDetailScreen(
                                 }
                             }
                         }
-                    }
 
-                    state.ownerInsights?.let { insights ->
-                        Surface(shape = RoundedCornerShape(14.dp), color = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), shadowElevation = 2.dp) {
-                            Column(Modifier.padding(14.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Timeline, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(6.dp))
-                                    Text(stringResource(R.string.detail_listing_insights), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF92400E))
-                                }
-                                Spacer(Modifier.height(10.dp))
-                                val viewsLabel = stringResource(R.string.detail_views)
-                                val inquiriesLabel = stringResource(R.string.detail_inquiries)
-                                val offersLabel = stringResource(R.string.detail_offers)
-                                val watchersLabel = stringResource(R.string.detail_watchers)
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                    listOf(
-                                        Triple("👁", "${insights.totalViews}", viewsLabel),
-                                        Triple("💬", "${insights.totalInquiries}", inquiriesLabel),
-                                        Triple("💰", "${insights.totalOffers}", offersLabel),
-                                        Triple("👥", "${insights.activeWatchers}", watchersLabel),
-                                    ).forEach { (emoji, value, label) ->
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                            Text(emoji, fontSize = 18.sp)
-                                            Text(value, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF92400E))
-                                            Text(label, fontSize = 11.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFFB45309))
+                    if (state.ownerInsights != null) {
+                        item(key = "sec_insights") {
+                            val insights = state.ownerInsights!!
+                            Surface(shape = RoundedCornerShape(14.dp), color = if (isDark) Color(0xFF1C1408) else Color(0xFFFEF3C7), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), shadowElevation = 2.dp) {
+                                Column(Modifier.padding(14.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Timeline, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(stringResource(R.string.detail_listing_insights), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF92400E))
+                                    }
+                                    Spacer(Modifier.height(10.dp))
+                                    val viewsLabel = stringResource(R.string.detail_views)
+                                    val inquiriesLabel = stringResource(R.string.detail_inquiries)
+                                    val offersLabel = stringResource(R.string.detail_offers)
+                                    val watchersLabel = stringResource(R.string.detail_watchers)
+                                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                        listOf(
+                                            Triple("👁", "${insights.totalViews}", viewsLabel),
+                                            Triple("💬", "${insights.totalInquiries}", inquiriesLabel),
+                                            Triple("💰", "${insights.totalOffers}", offersLabel),
+                                            Triple("👥", "${insights.activeWatchers}", watchersLabel),
+                                        ).forEach { (emoji, value, label) ->
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text(emoji, fontSize = 18.sp)
+                                                Text(value, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = if (isDark) Color(0xFFFCD34D) else Color(0xFF92400E))
+                                                Text(label, fontSize = 11.sp, color = if (isDark) Color(0xFFFDE68A) else Color(0xFFB45309))
+                                            }
                                         }
                                     }
                                 }
@@ -1916,62 +1922,52 @@ fun PostDetailScreen(
                         }
                     }
 
-                    Surface(color = MaterialTheme.colorScheme.surface) {
-                        Column(Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 10.dp)) {
-                            // ── Owner: single manage-listing CTA (no buyer actions) ──
-                            if (isOwner) {
-                                Button(
-                                    onClick = {
-                                        post.userId?.let { sellerId -> onOpenSale(post.stableId, sellerId) }
-                                    },
-                                    enabled = post.userId != null,
-                                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
-                                ) {
-                                    Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Column(horizontalAlignment = Alignment.Start) {
-                                        Text("Manage Listing", fontWeight = FontWeight.Bold)
-                                        Text(stringResource(R.string.commerce_sell_manage), fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
-                                    }
-                                }
-                            } else {
-                                // Buyer: the single negotiation CTA lives in the sticky bar below —
-                                // here only the escrow how-it-works + seller contact (zero-chat policy).
-                                if (state.offerSent) {
-                                    Surface(shape = RoundedCornerShape(8.dp), color = if (isDark) Color(0xFF0D2818) else Color(0xFFDCFCE7), modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                                        Text(stringResource(R.string.detail_offer_success), color = Color(0xFF22C55E), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(12.dp))
-                                    }
-                                }
-                                if (isElectronics) {
-                                    TextButton(
-                                        onClick = { showBuyFlowHowItWorks = true },
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        Icon(Icons.Default.Info, null, tint = Color(0xFF059669), modifier = Modifier.size(15.dp))
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(stringResource(R.string.commerce_buy_flow_how), color = Color(0xFF059669), fontSize = 12.sp)
-                                    }
-                                }
-                            }
+                    // ── In-page Trust & Direct Contact Card (Buyer only) ──
+                    if (!isOwner) {
+                        item(key = "sec_seller_trust_contact") {
+                            SellerVerificationCard(
+                                post = post,
+                                isElectronics = isElectronics,
+                                context = context,
+                                onMakeOffer = { showOfferDialog = true },
+                            )
+                        }
+                    }
+                } // ends LazyColumn
 
-                            // ── Contact Seller — direct deal, number revealed on tap ──
-                            if (!isOwner) {
-                                Spacer(Modifier.height(6.dp))
-                                ContactSellerRevealPanel(
-                                    post = post,
-                                    context = context,
-                                    onBuyViaApp = {
-                                        post.userId?.let { sellerId -> onOpenSale(post.stableId, sellerId) }
-                                    },
-                                )
+                // Sticky Bottom Action Bar
+                if (isOwner) {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shadowElevation = 12.dp,
+                        color = MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                        ) {
+                            Button(
+                                onClick = {
+                                    post.userId?.let { sellerId -> onOpenSale(post.stableId, sellerId) }
+                                },
+                                enabled = post.userId != null,
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
+                            ) {
+                                Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Column(horizontalAlignment = Alignment.Start) {
+                                    Text("Manage Listing", fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.commerce_sell_manage), fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
+                                }
                             }
                         }
                     }
-
-                // Sticky Bottom Action Bar
-                if (!isOwner) {
+                } else {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shadowElevation = 12.dp,
@@ -1998,7 +1994,8 @@ fun PostDetailScreen(
                                 Button(
                                     onClick = {
                                         post.userId?.let { sellerId ->
-                                            if (salePrefs.getBoolean("buy_flow_seen_${post.stableId}", false)) {
+                                            val key = "buy_flow_seen_" + post.stableId
+                                            if (salePrefs.getBoolean(key, false)) {
                                                 onOpenSale(post.stableId, sellerId)
                                             } else {
                                                 showBuyFlowHowItWorks = true
@@ -2078,16 +2075,18 @@ fun PostDetailScreen(
                             Spacer(Modifier.height(12.dp))
                             OutlinedTextField(
                                 value = offerAmount,
-                                onValueChange = { offerAmount = it.filter(Char::isDigit) },
+                                onValueChange = { input -> offerAmount = input.filter { it.isDigit() } },
                                 placeholder = { Text("Your offer ₹") },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.fillMaxWidth(),
                                 isError = isTooLow,
-                                supportingText = if (isTooLow) {
-                                    { Text("Min ₹${"%,.0f".format(minAcceptable)}", color = Color(0xFFEF4444), fontSize = 10.sp) }
-                                } else null,
+                                supportingText = {
+                                    if (isTooLow) {
+                                        Text("Min ₹" + minAcceptable.toLong(), color = Color(0xFFEF4444), fontSize = 10.sp)
+                                    }
+                                },
                             )
                         }
                     },
@@ -2278,18 +2277,18 @@ private fun BuyFlowHowItWorksDialog(
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Contact Seller — reveal-on-tap number with Call / WhatsApp + outside-app notice
+// Seller Verification Card — Aadhaar KYC verified trust card & contact reveal
 // ──────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun ContactSellerRevealPanel(
+private fun SellerVerificationCard(
     post: Post,
+    isElectronics: Boolean,
     context: android.content.Context,
-    onBuyViaApp: () -> Unit = {},
+    onMakeOffer: () -> Unit = {},
 ) {
     val isDark = ColorTokens.isDarkTheme()
-    var revealed by remember { mutableStateOf(false) }
-    var numberVisible by remember { mutableStateOf(false) }
+    var numberRevealed by remember { mutableStateOf(false) }
     val rawNumber = post.contactNumber?.trim().orEmpty()
     val digits = rawNumber.filter { it.isDigit() }
     val displayNumber = when {
@@ -2303,104 +2302,97 @@ private fun ContactSellerRevealPanel(
         else -> ""
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        // KYC + active-plan trust line (all users are verified)
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.6f) else Color(0xFFF0FDF4),
-            modifier = Modifier.fillMaxWidth(),
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(Icons.Default.Verified, null, tint = Color(0xFF059669), modifier = Modifier.size(14.dp))
-                Text(
-                    stringResource(R.string.commerce_contact_kyc_note),
-                    fontSize = 10.5.sp,
-                    color = if (isDark) Color(0xFF6EE7B7) else Color(0xFF065F46),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-        OutlinedButton(
-            onClick = { revealed = !revealed; numberVisible = false },
-            modifier = Modifier.fillMaxWidth().height(46.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF3B82F6)),
-            border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.5f)),
-        ) {
-            Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(16.dp))
-            Spacer(Modifier.width(6.dp))
-            Text(stringResource(R.string.commerce_contact_seller), fontWeight = FontWeight.SemiBold)
-        }
-
-        if (revealed) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.88f) else Color.White,
-                shadowElevation = 2.dp,
-                modifier = Modifier.fillMaxWidth(),
+            // KYC Trust line
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (rawNumber.isBlank()) {
-                        // No number shared — give an actionable fallback instead of a dead end
-                        Text(
-                            stringResource(R.string.commerce_contact_not_shared),
-                            fontSize = 12.sp,
-                            color = if (isDark) Color.Gray else Color(0xFF64748B),
-                        )
-                        OutlinedButton(
-                            onClick = onBuyViaApp,
-                            modifier = Modifier.fillMaxWidth().height(40.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF059669)),
-                            border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.5f)),
-                        ) {
-                            Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.commerce_contact_use_buy), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Icon(
+                    imageVector = Icons.Default.Verified,
+                    contentDescription = null,
+                    tint = Color(0xFF059669),
+                    modifier = Modifier.size(18.dp),
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "100% KYC Verified Seller",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = if (isElectronics)
+                            "Aadhaar verified • Eligible for Zero-Risk In-App Escrow Buy."
+                        else
+                            "Aadhaar verified • Direct deal. Meet in public places & verify before paying.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+
+            if (digits.isNotEmpty()) {
+                if (!numberRevealed) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column {
+                            Text("Direct Contact", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(masked, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
-                    } else if (!numberVisible) {
-                        // Step 1 — show masked number, tap to reveal
-                        Text(
-                            stringResource(R.string.commerce_contact_masked),
-                            fontSize = 11.sp,
-                            color = if (isDark) Color.Gray else Color(0xFF64748B),
-                        )
-                        Text(masked, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         Button(
-                            onClick = { numberVisible = true },
-                            modifier = Modifier.fillMaxWidth().height(40.dp),
+                            onClick = { numberRevealed = true },
                             shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.height(36.dp),
                         ) {
-                            Icon(Icons.Outlined.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.commerce_contact_show), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Icon(Icons.Outlined.Visibility, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Reveal Number", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
-                    } else {
-                        // Step 2 — full number + Call / WhatsApp
-                        Text(
-                            stringResource(R.string.commerce_contact_seller),
-                            fontSize = 11.sp,
-                            color = if (isDark) Color.Gray else Color(0xFF64748B),
-                        )
-                        Text(displayNumber, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("Seller Phone", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(displayNumber, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                        }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Button(
                                 onClick = {
                                     runCatching {
-                                        val intent = android.content.Intent(Intent.ACTION_DIAL, Uri.parse("tel:$digits"))
+                                        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$digits"))
                                         context.startActivity(intent)
                                     }
                                 },
-                                enabled = digits.isNotEmpty(),
-                                modifier = Modifier.weight(1f).height(42.dp),
+                                modifier = Modifier.weight(1f).height(40.dp),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
                             ) {
-                                Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(15.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text(stringResource(R.string.commerce_contact_call), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Call", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                             Button(
                                 onClick = {
@@ -2410,22 +2402,36 @@ private fun ContactSellerRevealPanel(
                                         context.startActivity(intent)
                                     }
                                 },
-                                enabled = digits.isNotEmpty(),
-                                modifier = Modifier.weight(1f).height(42.dp),
+                                modifier = Modifier.weight(1f).height(40.dp),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
                             ) {
-                                Icon(Icons.Filled.Chat, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Filled.Chat, contentDescription = null, modifier = Modifier.size(15.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text(stringResource(R.string.commerce_contact_whatsapp), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("WhatsApp", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                         }
                     }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
                     Text(
-                        stringResource(R.string.commerce_outside_app_note),
-                        fontSize = 10.sp,
-                        color = if (isDark) Color.Gray else Color(0xFF6B7280),
+                        "Seller communicates via in-app offers.",
+                        fontSize = 11.5.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    OutlinedButton(
+                        onClick = onMakeOffer,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.height(34.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp),
+                    ) {
+                        Text("Make Offer", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

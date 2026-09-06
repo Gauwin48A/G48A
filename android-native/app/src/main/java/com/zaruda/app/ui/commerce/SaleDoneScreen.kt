@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +30,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -2192,6 +2195,105 @@ private fun EscrowTransactionStepper(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun EscrowInspectionChecklistCard(
+    modifier: Modifier = Modifier,
+    onAllChecked: (Boolean) -> Unit = {},
+) {
+    var checkItemMatches by remember { mutableStateOf(false) }
+    var checkPowersOn by remember { mutableStateOf(false) }
+    var checkNoDamage by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+
+    val allChecked = checkItemMatches && checkPowersOn && checkNoDamage
+    LaunchedEffect(allChecked) {
+        onAllChecked(allChecked)
+    }
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = if (allChecked) Color(0xFFDCFCE7) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = BorderStroke(1.dp, if (allChecked) Color(0xFF22C55E) else MaterialTheme.colorScheme.outlineVariant),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(if (allChecked) "✅" else "🔍", fontSize = 18.sp)
+                Text(
+                    "Physical Inspection Checklist",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = if (allChecked) Color(0xFF15803D) else MaterialTheme.colorScheme.onSurface,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Verify item before sharing handover OTP or releasing escrow payment:",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+
+            // Checkbox 1
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        checkItemMatches = !checkItemMatches
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = checkItemMatches, onCheckedChange = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    checkItemMatches = it
+                })
+                Spacer(Modifier.width(6.dp))
+                Text("Item matches photos & listed description", fontSize = 12.sp)
+            }
+
+            // Checkbox 2
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        checkPowersOn = !checkPowersOn
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = checkPowersOn, onCheckedChange = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    checkPowersOn = it
+                })
+                Spacer(Modifier.width(6.dp))
+                Text("Powers on & basic functions tested", fontSize = 12.sp)
+            }
+
+            // Checkbox 3
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        checkNoDamage = !checkNoDamage
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = checkNoDamage, onCheckedChange = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    checkNoDamage = it
+                })
+                Spacer(Modifier.width(6.dp))
+                Text("No undisclosed physical damage or defects", fontSize = 12.sp)
             }
         }
     }

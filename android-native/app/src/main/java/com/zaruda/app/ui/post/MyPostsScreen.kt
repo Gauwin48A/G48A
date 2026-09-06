@@ -9,8 +9,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import com.zaruda.app.ui.theme.ColorTokens
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -316,6 +318,222 @@ private fun SaleStatusChip(status: String?) {
     }
 }
 
+/* ── Layer 1: Ambient Atmospheric Canvas Backdrop ─────────────────────────── */
+
+@Composable
+private fun MyPostsAtmosphericBackdrop(isDark: Boolean) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(230.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = if (isDark) {
+                        listOf(
+                            Color(0xFF0F172A),
+                            Color(0xFF0C2442),
+                            Color(0xFF111827),
+                        )
+                    } else {
+                        listOf(
+                            Color(0xFFE0F2FE),
+                            Color(0xFFEDE9FE),
+                            Color(0xFFF8FAFC),
+                        )
+                    }
+                )
+            )
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+
+            // Aura 1 - Top Left Sky Blue
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = if (isDark) {
+                        listOf(Color(0xFF0284C7).copy(alpha = 0.28f), Color.Transparent)
+                    } else {
+                        listOf(Color(0xFF38BDF8).copy(alpha = 0.35f), Color.Transparent)
+                    },
+                    center = androidx.compose.ui.geometry.Offset(canvasWidth * 0.15f, canvasHeight * 0.25f),
+                    radius = canvasWidth * 0.55f,
+                )
+            )
+
+            // Aura 2 - Top Right Indigo/Emerald
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = if (isDark) {
+                        listOf(Color(0xFF6366F1).copy(alpha = 0.22f), Color.Transparent)
+                    } else {
+                        listOf(Color(0xFF818CF8).copy(alpha = 0.30f), Color.Transparent)
+                    },
+                    center = androidx.compose.ui.geometry.Offset(canvasWidth * 0.85f, canvasHeight * 0.35f),
+                    radius = canvasWidth * 0.50f,
+                )
+            )
+        }
+
+        // Ambient bottom gradient scrim
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            if (isDark) Color(0xFF111827).copy(alpha = 0.7f) else Color(0xFFF8FAFC).copy(alpha = 0.8f),
+                        )
+                    )
+                )
+        )
+    }
+}
+
+/* ── Layer 2: Pinned Floating Glassmorphic Top Bar ────────────────────────── */
+
+@Composable
+private fun MyPostsFloatingTopBar(
+    isDark: Boolean,
+    activeCount: Int,
+    bulkMode: Boolean,
+    selectedCount: Int,
+    isGridView: Boolean,
+    onBack: () -> Unit,
+    onToggleBulkMode: () -> Unit,
+    onSelectAll: () -> Unit,
+    onBulkMarkSold: () -> Unit,
+    onBulkDelete: () -> Unit,
+    onToggleLayout: () -> Unit,
+    onCreatePost: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.88f),
+            border = BorderStroke(1.dp, if (isDark) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.08f)),
+            shadowElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            if (bulkMode) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onToggleBulkMode) {
+                        Icon(Icons.Default.Close, contentDescription = "Cancel bulk mode")
+                    }
+                    Text(
+                        text = "$selectedCount selected",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(onClick = onSelectAll) {
+                        Text("All", fontWeight = FontWeight.Bold)
+                    }
+                    IconButton(onClick = onBulkMarkSold) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = "Mark Sold", tint = Color(0xFF22C55E))
+                    }
+                    IconButton(onClick = onBulkDelete) {
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    // Left: Back button + Title & Active count pill
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(36.dp),
+                            onClick = onBack,
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = "My Listings",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                        )
+
+                        if (activeCount > 0) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFF059669),
+                            ) {
+                                Text(
+                                    text = "$activeCount Active",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                )
+                            }
+                        }
+                    }
+
+                    // Right: Layout toggle + Select mode checklist + Create
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        IconButton(onClick = onToggleLayout, modifier = Modifier.size(36.dp)) {
+                            Icon(
+                                imageVector = if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                                contentDescription = "Toggle view",
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        IconButton(onClick = onToggleBulkMode, modifier = Modifier.size(36.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.Checklist,
+                                contentDescription = "Select",
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                        IconButton(onClick = onCreatePost, modifier = Modifier.size(36.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.AddCircle,
+                                contentDescription = "New Listing",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyPostsScreen(
@@ -531,113 +749,99 @@ fun MyPostsScreen(
         )
     }
 
-    // ── Main Scaffold ──
-    // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
-    Scaffold(
-        floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = onCreatePost, icon = { Icon(Icons.Default.Add, null) }, text = { Text("New Listing") })
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
-        val filtered = remember(state, searchQuery) { viewModel.filteredItems(searchQuery) }
-        val allItems = state.items
-        val activeCount = allItems.count { it.status?.lowercase() == "active" }
-        val soldCount = allItems.count { it.status?.lowercase() == "sold" }
+    val isDark = ColorTokens.isDarkTheme()
+    val allItems = state.items
+    val activeCount = allItems.count { it.status?.lowercase() == "active" }
+    val soldCount = allItems.count { it.status?.lowercase() == "sold" }
+    val filtered = remember(state, searchQuery) { viewModel.filteredItems(searchQuery) }
 
-        PullToRefreshBox(
-            isRefreshing = state.refreshing,
-            onRefresh = { viewModel.load(refresh = true) },
-            modifier = Modifier.fillMaxSize().padding(padding),
+    // ── Layout: 3-Layer Architecture ──
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // ── Layer 1: Ambient Atmospheric Canvas Backdrop ──
+        MyPostsAtmosphericBackdrop(isDark = isDark)
+
+        // ── Layer 3: 32dp Curved Content Sheet ──
+        Column(
+            modifier = Modifier.fillMaxSize(),
         ) {
-            when {
-                state.loading -> PostGridShimmer(count = 6, modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp))
-                state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    AppErrorState(
-                        title = "Unable to load your listings",
-                        message = state.error ?: "Unable to load your posts",
-                        onRetry = { viewModel.load() },
-                        retryLabel = "Retry listings",
-                    )
-                }
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 88.dp),
-                        verticalArrangement = Arrangement.spacedBy(0.dp),
-                    ) {
-                        // ── Actions toolbar (was the TopAppBar) ──
-                        item {
-                            if (state.bulkMode) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).padding(horizontal = 12.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    IconButton(onClick = { viewModel.toggleBulkMode() }) { Icon(Icons.Default.Close, null) }
-                                    Text("${state.selectedIds.size} selected", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                                    TextButton(onClick = { viewModel.selectAll() }) { Text("All") }
-                                    IconButton(onClick = { viewModel.bulkMarkSold() }) { Icon(Icons.Default.CheckCircle, "Mark Sold", tint = Color(0xFF22C55E)) }
-                                    IconButton(onClick = { if (state.selectedIds.isNotEmpty()) showBulkDeleteDialog = true }) { Icon(Icons.Default.Delete, "Delete", tint = MaterialTheme.colorScheme.error) }
-                                }
-                            } else {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.End,
-                                ) {
-                                    IconButton(onClick = { isGridView = !isGridView }) {
-                                        Icon(
-                                            if (isGridView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
-                                            contentDescription = "Toggle layout",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                        )
-                                    }
-                                    IconButton(onClick = { viewModel.toggleBulkMode() }) { Icon(Icons.Default.Checklist, "Select") }
-                                }
-                            }
-                        }
+            Spacer(modifier = Modifier.height(104.dp))
 
-                        // ── Hero Stats Section ──
-                        item {
-                            Column {
-                                Box(
-                                    Modifier.fillMaxWidth().background(
-                                        Brush.horizontalGradient(listOf(Color(0xFF0EA5E9), Color(0xFF3B82F6), Color(0xFF7C3AED)))
-                                    ).padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 24.dp),
+            Surface(
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    // Tactile Drag Handle
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 12.dp, bottom = 6.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .size(width = 36.dp, height = 4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                    )
+
+                    PullToRefreshBox(
+                        isRefreshing = state.refreshing,
+                        onRefresh = { viewModel.load(refresh = true) },
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        when {
+                            state.loading -> PostGridShimmer(count = 6, modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp))
+                            state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                AppErrorState(
+                                    title = "Unable to load your listings",
+                                    message = state.error ?: "Unable to load your posts",
+                                    onRetry = { viewModel.load() },
+                                    retryLabel = "Retry listings",
+                                )
+                            }
+                            else -> {
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(bottom = 88.dp),
+                                    verticalArrangement = Arrangement.spacedBy(0.dp),
                                 ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        Box(Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.15f)), contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Default.ShoppingBag, null, tint = Color.White, modifier = Modifier.size(22.dp))
-                                        }
-                                        Column {
-                                            Text("MY LISTINGS", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color.White.copy(alpha = 0.7f), letterSpacing = 1.5.sp)
-                                            Text(stringResource(R.string.my_posts_title), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.White)
-                                            Text("Your marketplace listings", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
-                                        }
-                                    }
-                                }
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    listOf(
-                                        Triple("${allItems.size}", "Total", listOf(Color(0xFF38BDF8), Color(0xFF6366F1))),
-                                        Triple("$activeCount", "Active", listOf(Color(0xFF34D399), Color(0xFF10B981))),
-                                        Triple("$soldCount", "Sold", listOf(Color(0xFF6366F1), Color(0xFF8B5CF6))),
-                                        Triple("${state.boughtItems.size}", "Bought", listOf(Color(0xFFF59E0B), Color(0xFFEF4444))),
-                                    ).forEach { (value, label, accent) ->
-                                        Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 4.dp, modifier = Modifier.weight(1f)) {
-                                            Column {
-                                                Box(Modifier.fillMaxWidth().height(3.dp).background(Brush.horizontalGradient(accent)))
-                                                Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                                    Text(value, fontWeight = FontWeight.Black, fontSize = 20.sp, color = MaterialTheme.colorScheme.onSurface)
-                                                    Text(label.uppercase(), fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.5.sp)
+                                    // ── Metric Cards ──
+                                    item {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            listOf(
+                                                Triple("${allItems.size}", "Total", listOf(Color(0xFF38BDF8), Color(0xFF6366F1))),
+                                                Triple("$activeCount", "Active", listOf(Color(0xFF34D399), Color(0xFF10B981))),
+                                                Triple("$soldCount", "Sold", listOf(Color(0xFF6366F1), Color(0xFF8B5CF6))),
+                                                Triple("${state.boughtItems.size}", "Bought", listOf(Color(0xFFF59E0B), Color(0xFFEF4444))),
+                                            ).forEach { (value, label, accent) ->
+                                                Surface(
+                                                    shape = RoundedCornerShape(16.dp),
+                                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                                                    shadowElevation = 2.dp,
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Column {
+                                                        Box(Modifier.fillMaxWidth().height(3.dp).background(Brush.horizontalGradient(accent)))
+                                                         Column(Modifier.padding(horizontal = 6.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                                            Text(value, fontWeight = FontWeight.Black, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                                                            Text(label.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.5.sp)
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
                                     }
-                                }
-                            }
-                        }
 
                         // ── Sales & Orders (initiated buy/sell — incl. mid-way & cancelled) ──
                         if (state.salePosts.isNotEmpty()) {
@@ -673,7 +877,7 @@ fun MyPostsScreen(
                                                         sale.buyerId?.let { Text("Buyer: $it", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                                     }
                                                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                        sale.agreedPrice?.let { Text("₹${"%,.0f".format(it)}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
+                                                        sale.agreedPrice?.let { Text("₹" + "%,.0f".format(it), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) }
                                                         sale.createdAt?.take(10)?.let { Text(it, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                                                     }
                                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -857,7 +1061,7 @@ fun MyPostsScreen(
                             if (isGridView) {
                                 // ── 2-column grid view ──
                                 val chunked = filtered.chunked(2)
-                                items(chunked.size, key = { "grid_row_$it" }) { rowIdx ->
+                                items(count = chunked.size, key = { "grid_row_$it" }) { rowIdx ->
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -930,7 +1134,7 @@ fun MyPostsScreen(
                                                         Spacer(Modifier.height(2.dp))
                                                         post.price?.let {
                                                             Text(
-                                                                text = "\u20B9${"%,.0f".format(it)}",
+                                                                text = "₹" + "%,.0f".format(it),
                                                                 style = MaterialTheme.typography.titleSmall,
                                                                 color = MaterialTheme.colorScheme.primary,
                                                                 fontWeight = FontWeight.Bold,
@@ -966,124 +1170,20 @@ fun MyPostsScreen(
                                 }
                             } else {
                                 // ── List view ──
-                                items(filtered, key = { it.stableId }) { post ->
-                                    Card(
-                                        onClick = { if (state.bulkMode) viewModel.toggleSelection(post.stableId) else onOpenPost(post.stableId) },
-                                        shape = RoundedCornerShape(0.dp),
-                                        colors = CardDefaults.cardColors(containerColor = if (post.stableId in state.selectedIds) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface),
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        Column {
-                                        Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                            if (state.bulkMode) {
-                                                Checkbox(checked = post.stableId in state.selectedIds, onCheckedChange = { viewModel.toggleSelection(post.stableId) })
-                                            }
-                                            Box(modifier = Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-                                                if (post.primaryImage != null) {
-                                                    AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                                                } else {
-                                                    Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
-                                                }
-                                            }
-                                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Text(text = post.displayTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                                post.price?.let {
-                                                    Text(text = "\u20B9${"%,.0f".format(it)}", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                                                }
-                                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                    post.status?.let { s ->
-                                                        val (bg, fg) = when (s.lowercase()) { "active" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.primary; "sold" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.tertiary; else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant }
-                                                        Surface(shape = RoundedCornerShape(8.dp), color = bg) {
-                                                            Text(s.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, color = fg, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                                                        }
-                                                    }
-                                                    post.viewCount?.let { v -> Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp)); Text("$v", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                                    post.likeCount?.let { l -> Icon(Icons.Default.Favorite, null, tint = Color(0xFFEF4444), modifier = Modifier.size(12.dp)); Text("$l", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                                }
-                                                // Post ID & Seller ID row (for complaints reference)
-                                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 2.dp)) {
-                                                    post.postId?.let { pid ->
-                                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                                            Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
-                                                            Text("Post: $pid", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                                                        }
-                                                    }
-                                                    post.userId?.let { uid ->
-                                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                                            Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
-                                                            Text("Seller: $uid", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            // 3-dot icon opens ModalBottomSheet
-                                            IconButton(onClick = { actionPost = post; showPostActionsSheet = true }, modifier = Modifier.size(34.dp)) {
-                                                Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
-                                            }
-                                        }
-                                        // ── 1-Tap Quick Actions ──
-                                        if (!state.bulkMode && post.status?.lowercase() != "sold") {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth().padding(start = 96.dp, end = 12.dp, bottom = 8.dp, top = 0.dp),
-                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                            ) {
-                                                // Repost (50c)
-                                                Surface(
-                                                    onClick = { viewModel.showRenew(post) },
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    color = Color(0xFF7C3AED).copy(alpha = 0.1f),
-                                                    modifier = Modifier.weight(1f).height(30.dp),
-                                                ) {
-                                                    Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                                        Text("🔄", fontSize = 11.sp)
-                                                        Spacer(Modifier.width(2.dp))
-                                                        Text("Repost", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7C3AED))
-                                                    }
-                                                }
-                                                // Edit
-                                                Surface(
-                                                    onClick = { onEditPost(post.stableId) },
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                                                    modifier = Modifier.weight(1f).height(30.dp),
-                                                ) {
-                                                    Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                                        Text("✏️", fontSize = 11.sp)
-                                                        Spacer(Modifier.width(2.dp))
-                                                        Text("Edit", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
-                                                    }
-                                                }
-                                                // Mark Sold
-                                                Surface(
-                                                    onClick = { viewModel.showMarkSold(post) },
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    color = Color(0xFF22C55E).copy(alpha = 0.1f),
-                                                    modifier = Modifier.weight(1f).height(30.dp),
-                                                ) {
-                                                    Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                                        Text("✅", fontSize = 11.sp)
-                                                        Spacer(Modifier.width(2.dp))
-                                                        Text("Sold", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
-                                                    }
-                                                }
-                                                // Boost
-                                                Surface(
-                                                    onClick = { promoteTarget = post },
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    color = Color(0xFFF59E0B).copy(alpha = 0.1f),
-                                                    modifier = Modifier.weight(1f).height(30.dp),
-                                                ) {
-                                                    Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                                                        Text("🚀", fontSize = 11.sp)
-                                                        Spacer(Modifier.width(2.dp))
-                                                        Text("Boost", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFD97706))
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
-                                        }
-                                    }
+                                items(count = filtered.size, key = { filtered[it].stableId }) { idx ->
+                                    val post = filtered[idx]
+                                    MyPostListRow(
+                                        post = post,
+                                        isSelected = post.stableId in state.selectedIds,
+                                        isBulkMode = state.bulkMode,
+                                        onToggleSelect = { viewModel.toggleSelection(post.stableId) },
+                                        onOpenPost = onOpenPost,
+                                        onMoreClick = { actionPost = post; showPostActionsSheet = true },
+                                        onRenew = { viewModel.showRenew(post) },
+                                        onEdit = { onEditPost(post.stableId) },
+                                        onMarkSold = { viewModel.showMarkSold(post) },
+                                        onPromote = { promoteTarget = post },
+                                    )
                                 }
                             }
                         }
@@ -1091,6 +1191,35 @@ fun MyPostsScreen(
                 }
             }
         }
+    }
+}
+        }
+
+        // ── Floating Action Button ──
+        ExtendedFloatingActionButton(
+            onClick = onCreatePost,
+            icon = { Icon(Icons.Default.Add, null) },
+            text = { Text("New Listing") },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 24.dp, end = 16.dp)
+        )
+
+        // ── Layer 2: Pinned Floating Glass Top Bar ──
+        MyPostsFloatingTopBar(
+            isDark = isDark,
+            activeCount = activeCount,
+            bulkMode = state.bulkMode,
+            selectedCount = state.selectedIds.size,
+            isGridView = isGridView,
+            onBack = onBack,
+            onToggleBulkMode = { viewModel.toggleBulkMode() },
+            onSelectAll = { viewModel.selectAll() },
+            onBulkMarkSold = { viewModel.bulkMarkSold() },
+            onBulkDelete = { if (state.selectedIds.isNotEmpty()) showBulkDeleteDialog = true },
+            onToggleLayout = { isGridView = !isGridView },
+            onCreatePost = onCreatePost,
+        )
     }
 
     // ═══ Post Actions Bottom Sheet ═══
@@ -1144,6 +1273,7 @@ fun MyPostsScreen(
     }
 }
 
+
 private data class TierOption(
     val label: String,
     val coinCost: Int,
@@ -1184,6 +1314,153 @@ private fun StatMiniCard(label: String, value: String, icon: ImageVector, iconCo
             Spacer(Modifier.height(4.dp))
             Text(value, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
             Text(label, fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f))
+        }
+    }
+}
+
+@Composable
+private fun MyPostListRow(
+    post: Post,
+    isSelected: Boolean,
+    isBulkMode: Boolean,
+    onToggleSelect: () -> Unit,
+    onOpenPost: (String) -> Unit,
+    onMoreClick: () -> Unit,
+    onRenew: () -> Unit,
+    onEdit: () -> Unit,
+    onMarkSold: () -> Unit,
+    onPromote: () -> Unit,
+) {
+    Card(
+        onClick = { if (isBulkMode) onToggleSelect() else onOpenPost(post.stableId) },
+        shape = RoundedCornerShape(0.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surface),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isBulkMode) {
+                    Checkbox(checked = isSelected, onCheckedChange = { onToggleSelect() })
+                }
+                Box(
+                    modifier = Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (post.primaryImage != null) {
+                        AsyncImage(model = post.primaryImage, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    } else {
+                        Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
+                    }
+                }
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(text = post.displayTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    post.price?.let {
+                        Text(text = "₹" + "%,.0f".format(it), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        post.status?.let { s ->
+                            val sLower = s.lowercase()
+                            val bg = if (sLower == "active") MaterialTheme.colorScheme.primaryContainer else if (sLower == "sold") MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                            val fg = if (sLower == "active") MaterialTheme.colorScheme.primary else if (sLower == "sold") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant
+                            Surface(shape = RoundedCornerShape(8.dp), color = bg) {
+                                Text(s.replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.labelSmall, color = fg, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                            }
+                        }
+                        post.viewCount?.let { v ->
+                            Icon(Icons.Default.Visibility, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(12.dp))
+                            Text("$v", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        post.likeCount?.let { l ->
+                            Icon(Icons.Default.Favorite, null, tint = Color(0xFFEF4444), modifier = Modifier.size(12.dp))
+                            Text("$l", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    // Post ID & Seller ID row (for complaints reference)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 2.dp)) {
+                        post.postId?.let { pid ->
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
+                                Text("Post: $pid", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                            }
+                        }
+                        post.userId?.let { uid ->
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(10.dp))
+                                Text("Seller: $uid", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                            }
+                        }
+                    }
+                }
+                // 3-dot icon opens ModalBottomSheet
+                IconButton(onClick = onMoreClick, modifier = Modifier.size(34.dp)) {
+                    Icon(Icons.Default.MoreVert, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                }
+            }
+            // ── 1-Tap Quick Actions ──
+            if (!isBulkMode && post.status?.lowercase() != "sold") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(start = 96.dp, end = 12.dp, bottom = 8.dp, top = 0.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    // Repost (50c)
+                    Surface(
+                        onClick = onRenew,
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF7C3AED).copy(alpha = 0.1f),
+                        modifier = Modifier.weight(1f).height(30.dp),
+                    ) {
+                        Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Text("🔄", fontSize = 11.sp)
+                            Spacer(Modifier.width(2.dp))
+                            Text("Repost", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF7C3AED))
+                        }
+                    }
+                    // Edit
+                    Surface(
+                        onClick = onEdit,
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                        modifier = Modifier.weight(1f).height(30.dp),
+                    ) {
+                        Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Text("✏️", fontSize = 11.sp)
+                            Spacer(Modifier.width(2.dp))
+                            Text("Edit", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                    // Mark Sold
+                    Surface(
+                        onClick = onMarkSold,
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFF22C55E).copy(alpha = 0.1f),
+                        modifier = Modifier.weight(1f).height(30.dp),
+                    ) {
+                        Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Text("✅", fontSize = 11.sp)
+                            Spacer(Modifier.width(2.dp))
+                            Text("Sold", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF059669))
+                        }
+                    }
+                    // Boost
+                    Surface(
+                        onClick = onPromote,
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFF59E0B).copy(alpha = 0.1f),
+                        modifier = Modifier.weight(1f).height(30.dp),
+                    ) {
+                        Row(Modifier.padding(horizontal = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                            Text("🚀", fontSize = 11.sp)
+                            Spacer(Modifier.width(2.dp))
+                            Text("Boost", fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFD97706))
+                        }
+                    }
+                }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
         }
     }
 }

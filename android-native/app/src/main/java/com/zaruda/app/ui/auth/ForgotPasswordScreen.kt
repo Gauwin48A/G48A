@@ -2,6 +2,8 @@ package com.zaruda.app.ui.auth
 import com.zaruda.app.ui.theme.ColorTokens
 import kotlinx.coroutines.delay
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -28,6 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Mail
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -55,8 +59,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -119,6 +126,98 @@ class ForgotPasswordViewModel @Inject constructor(
     }
 }
 
+// ── Layer 1: Ambient Glowing Aura Canvas ─────────────────────
+@Composable
+private fun AuthAtmosphericBackdrop(isDark: Boolean) {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        drawCircle(
+            color = Color(0xFF2563EB).copy(alpha = if (isDark) 0.15f else 0.22f),
+            radius = size.width * 0.45f,
+            center = Offset(size.width * 0.8f, size.height * 0.12f),
+        )
+        drawCircle(
+            color = Color(0xFF10B981).copy(alpha = if (isDark) 0.12f else 0.18f),
+            radius = size.width * 0.35f,
+            center = Offset(size.width * 0.15f, size.height * 0.28f),
+        )
+    }
+}
+
+// ── Layer 2: Floating Glass Top Bar ─────────────────────
+@Composable
+private fun AuthFloatingTopBar(
+    title: String,
+    onBack: () -> Unit,
+    isDark: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = (if (isDark) Color(0xFF1E293B) else Color.White).copy(alpha = 0.88f),
+        border = BorderStroke(1.dp, (if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)).copy(alpha = 0.6f)),
+        shadowElevation = 6.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onBack() }
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = if (isDark) Color.White else Color(0xFF1E293B),
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = stringResource(R.string.forgot_back_to_login),
+                    color = if (isDark) Color.White else Color(0xFF1E293B),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFF059669).copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.3f)),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Shield,
+                        contentDescription = null,
+                        tint = Color(0xFF059669),
+                        modifier = Modifier.size(13.dp),
+                    )
+                    Text(
+                        text = "Escrow Safe",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF059669),
+                    )
+                }
+            }
+        }
+    }
+}
+
 /**
  * ForgotPasswordScreen — Compose port of `Zaruda/client/src/pages/Auth/ForgotPassword.jsx`.
  */
@@ -129,6 +228,7 @@ fun ForgotPasswordScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var identifier by rememberSaveable { mutableStateOf("") }
+    val haptic = LocalHapticFeedback.current
     @Suppress("UNUSED_VARIABLE") val scope = rememberCoroutineScope()
 
     // Auto-focus the identifier field with the keyboard open on launch.
@@ -151,54 +251,58 @@ fun ForgotPasswordScreen(
     val labelText = if (darkTheme) Color(0xFFE2E8F0) else Color(0xFF374151)
     val borderColor = if (darkTheme) Color(0xFF334155) else Color(0xFFE5E7EB)
     val linkColor = if (darkTheme) Color(0xFF93C5FD) else Color(0xFF2563EB)
+    val sheetContainerColor = if (darkTheme) Color(0xFF0F172A) else Color(0xFFF8FAFC)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(pageGradient),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(WindowInsets.statusBars.asPaddingValues())
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            // Back link
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 460.dp)
-                    .clickable { onBack() },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null,
-                    tint = linkColor,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = stringResource(R.string.forgot_back_to_login),
-                    color = linkColor,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
+        // ── Layer 1: Ambient Glowing Aura Canvas ─────────────────────
+        AuthAtmosphericBackdrop(isDark = darkTheme)
 
-            Spacer(Modifier.height(20.dp))
+        Column(modifier = Modifier.fillMaxSize()) {
+            // ── Layer 2: Floating Glass Top Bar ─────────────────────
+            AuthFloatingTopBar(
+                title = stringResource(R.string.forgot_title),
+                onBack = onBack,
+                isDark = darkTheme,
+            )
 
+            // ── Layer 3: 32dp Curved Content Canvas ──────────────────
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 460.dp)
-                    .shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                color = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                    .weight(1f),
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = sheetContainerColor,
+                shadowElevation = 12.dp,
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .imePadding()
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    // Tactile Drag Handle Pill
+                    Box(
+                        modifier = Modifier
+                            .padding(bottom = 16.dp)
+                            .size(width = 36.dp, height = 4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                    )
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 460.dp)
+                            .shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp)),
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                    ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     // Header gradient
                     Column(
@@ -353,7 +457,10 @@ fun ForgotPasswordScreen(
                             )
 
                             Button(
-                                onClick = { viewModel.submit(identifier) },
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.submit(identifier)
+                                },
                                 enabled = !state.loading && identifier.isNotBlank(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(
@@ -403,6 +510,8 @@ fun ForgotPasswordScreen(
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+}
 }
 
 /**

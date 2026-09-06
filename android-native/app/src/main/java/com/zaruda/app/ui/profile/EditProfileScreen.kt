@@ -42,7 +42,201 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import com.zaruda.app.domain.model.User
+
+/* ── Layer 1: Ambient Atmospheric Canvas Backdrop ─────────────────────────── */
+
+@Composable
+private fun EditProfileAtmosphericBackdrop(isDark: Boolean) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(230.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = if (isDark) {
+                        listOf(
+                            Color(0xFF0F172A),
+                            Color(0xFF311042),
+                            Color(0xFF111827),
+                        )
+                    } else {
+                        listOf(
+                            Color(0xFFEDE9FE),
+                            Color(0xFFFAE8FF),
+                            Color(0xFFF8FAFC),
+                        )
+                    }
+                )
+            )
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+
+            // Aura 1 - Top Left Violet
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = if (isDark) {
+                        listOf(Color(0xFF8B5CF6).copy(alpha = 0.28f), Color.Transparent)
+                    } else {
+                        listOf(Color(0xFFA78BFA).copy(alpha = 0.35f), Color.Transparent)
+                    },
+                    center = androidx.compose.ui.geometry.Offset(canvasWidth * 0.18f, canvasHeight * 0.25f),
+                    radius = canvasWidth * 0.55f,
+                )
+            )
+
+            // Aura 2 - Top Right Emerald trust
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = if (isDark) {
+                        listOf(Color(0xFF059669).copy(alpha = 0.22f), Color.Transparent)
+                    } else {
+                        listOf(Color(0xFF34D399).copy(alpha = 0.30f), Color.Transparent)
+                    },
+                    center = androidx.compose.ui.geometry.Offset(canvasWidth * 0.85f, canvasHeight * 0.35f),
+                    radius = canvasWidth * 0.50f,
+                )
+            )
+        }
+
+        // Ambient bottom gradient scrim
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            if (isDark) Color(0xFF111827).copy(alpha = 0.7f) else Color(0xFFF8FAFC).copy(alpha = 0.8f),
+                        )
+                    )
+                )
+        )
+    }
+}
+
+/* ── Layer 2: Pinned Floating Glassmorphic Top Bar ────────────────────────── */
+
+@Composable
+private fun EditProfileFloatingTopBar(
+    isDark: Boolean,
+    saving: Boolean,
+    showSuccess: Boolean,
+    hasChanges: Boolean,
+    isValid: Boolean,
+    onBack: () -> Unit,
+    onSave: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.88f),
+            border = BorderStroke(1.dp, if (isDark) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.08f)),
+            shadowElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                // Back Button + Title
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.size(36.dp),
+                        onClick = onBack,
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    }
+
+                    Column {
+                        Text(
+                            text = "Edit Profile",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                        )
+                        AnimatedContent(
+                            targetState = saving || showSuccess,
+                            label = "savingState"
+                        ) { loading ->
+                            when {
+                                loading && saving -> Text(
+                                    "Saving\u2026",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                showSuccess && !saving -> Text(
+                                    "Saved!",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF22C55E),
+                                    fontWeight = FontWeight.Bold,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Action: Save Button
+                AnimatedVisibility(
+                    visible = hasChanges && isValid && !saving && !showSuccess,
+                    enter = fadeIn() + expandHorizontally(),
+                    exit = fadeOut() + shrinkHorizontally()
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        onClick = onSave,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(16.dp),
+                            )
+                            Text(
+                                "Save",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 // ─── Common Marketplace Categories ─────────────────────────────────────
 val marketplaceCategories = listOf(
@@ -257,60 +451,49 @@ fun EditProfileScreen(
         )
     }
 
-    // ── Layout ──
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Edit Profile", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                        AnimatedContent(targetState = saving || showSuccess,
-                            label = "savingState") { loading ->
-                            when {
-                                loading && saving -> Text("Saving\u2026", fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.primary)
-                                showSuccess && !saving -> Text("Saved!",
-                                    fontSize = 11.sp, color = Color(0xFF22C55E))
-                            }
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = { if (hasChanges && !saving && !showSuccess)
-                            showDiscardDialog = true else onDismiss() }
-                    ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
-                },
-                actions = {
-                    AnimatedVisibility(
-                        visible = hasChanges && isValid && !saving && !showSuccess,
-                        enter = fadeIn() + expandHorizontally(),
-                        exit = fadeOut() + shrinkHorizontally()
-                    ) {
-                        TextButton(onClick = { doSave() }, enabled = !saving) {
-                            Icon(Icons.Default.CheckCircle, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Save", fontWeight = FontWeight.Bold)
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
+    // ── Layout: 3-Layer Architecture ──
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // ── Layer 1: Ambient Atmospheric Canvas Backdrop ──
+        EditProfileAtmosphericBackdrop(isDark = darkTheme)
+
+        // ── Layer 3: 32dp Curved Content Sheet ──
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(scrollState)
-                .navigationBarsPadding()
-                .imePadding()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxSize(),
         ) {
+            Spacer(modifier = Modifier.height(104.dp))
+
+            Surface(
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    // Tactile Drag Handle
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 12.dp, bottom = 6.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .size(width = 36.dp, height = 4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState)
+                            .navigationBarsPadding()
+                            .imePadding()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
             Spacer(Modifier.height(4.dp))
 
             // ─── Success Banner ──────────────────────────────────
@@ -611,7 +794,23 @@ fun EditProfileScreen(
                 }
             }
             Spacer(Modifier.height(40.dp))
+                    }
+                }
+            }
         }
+
+        // ── Layer 2: Pinned Floating Glass Top Bar ──
+        EditProfileFloatingTopBar(
+            isDark = darkTheme,
+            saving = saving,
+            showSuccess = showSuccess,
+            hasChanges = hasChanges,
+            isValid = isValid,
+            onBack = {
+                if (hasChanges && !saving && !showSuccess) showDiscardDialog = true else onDismiss()
+            },
+            onSave = { doSave() },
+        )
     }
 }
 

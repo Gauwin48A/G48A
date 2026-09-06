@@ -1,7 +1,9 @@
 package com.zaruda.app.ui.auth
 import com.zaruda.app.ui.theme.ColorTokens
 
+import androidx.compose.animation.*
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -51,6 +53,7 @@ fun SignUpScreen(
     var password by rememberSaveable { mutableStateOf("") }
     var confirmPassword by rememberSaveable { mutableStateOf("") }
     var referralCode by rememberSaveable { mutableStateOf("") }
+    var showReferralAccordion by rememberSaveable { mutableStateOf(false) }
     var passwordVisible by rememberSaveable { mutableStateOf(false) }
     var confirmPasswordVisible by rememberSaveable { mutableStateOf(false) }
 
@@ -129,38 +132,101 @@ fun SignUpScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(pageGradient)) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(WindowInsets.statusBars.asPaddingValues())
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            // Back button
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 460.dp)
-                    .clickable { onBack() },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = linkColor, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Back to Login", color = linkColor, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            }
-            Spacer(Modifier.height(20.dp))
+    val sheetContainerColor = if (darkTheme) Color(0xFF0F172A) else Color(0xFFF8FAFC)
 
+    Box(modifier = Modifier.fillMaxSize().background(pageGradient)) {
+        // ── Layer 1: Ambient Glowing Aura Canvas ─────────────────────
+        androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(
+                color = Color(0xFF2563EB).copy(alpha = if (darkTheme) 0.15f else 0.25f),
+                radius = size.width * 0.45f,
+                center = androidx.compose.ui.geometry.Offset(size.width * 0.8f, size.height * 0.12f)
+            )
+            drawCircle(
+                color = Color(0xFF10B981).copy(alpha = if (darkTheme) 0.12f else 0.20f),
+                radius = size.width * 0.35f,
+                center = androidx.compose.ui.geometry.Offset(size.width * 0.15f, size.height * 0.28f)
+            )
+        }
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            // ── Layer 2: Floating Glass Top Bar ─────────────────────
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 460.dp)
-                    .shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp)),
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 shape = RoundedCornerShape(24.dp),
-                color = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                color = (if (darkTheme) Color(0xFF1E293B) else Color.White).copy(alpha = 0.85f),
+                border = BorderStroke(1.dp, (if (darkTheme) Color(0xFF334155) else Color(0xFFE2E8F0)).copy(alpha = 0.6f)),
+                shadowElevation = 4.dp,
             ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { onBack() },
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null,
+                            tint = if (darkTheme) Color.White else Color(0xFF1E293B),
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = "Back to Login",
+                            color = if (darkTheme) Color.White else Color(0xFF1E293B),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xFF059669).copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.3f)),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("🛡️ Escrow KYC Ready", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF059669))
+                        }
+                    }
+                }
+            }
+
+            // ── Layer 3: 32dp Curved Content Canvas ──────────────────
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = sheetContainerColor,
+                shadowElevation = 12.dp,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .imePadding()
+                        .padding(horizontal = 16.dp, vertical = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 460.dp)
+                            .shadow(elevation = 12.dp, shape = RoundedCornerShape(24.dp)),
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                    ) {
                 Column(Modifier.fillMaxWidth()) {
                     // Card header
                     Box(
@@ -369,17 +435,83 @@ fun SignUpScreen(
                             Text("Passwords don't match", color = Color(0xFFEF4444), fontSize = 11.sp)
                         }
 
-                        // Referral Code (Optional)
-                        Text("Referral Code (Optional)", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
-                        OutlinedTextField(
-                            value = referralCode,
-                            onValueChange = { referralCode = it.uppercase() },
-                            placeholder = { Text("WELCOME100", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
-                            colors = suTfColors(borderColor, darkTheme)
-                        )
+                        // Collapsible Referral Code Accordion with instant +500 Coins Preview
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (darkTheme) Color(0xFF1E293B).copy(alpha = 0.6f) else Color(0xFFF1F5F9),
+                            border = BorderStroke(1.dp, if (referralCode.isNotBlank()) Color(0xFF10B981) else borderColor),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            signUpHaptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            showReferralAccordion = !showReferralAccordion
+                                        },
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        Text("🎁", fontSize = 16.sp)
+                                        Text(
+                                            "Have a Referral Code?",
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 13.sp,
+                                            color = labelText,
+                                        )
+                                    }
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFF10B981).copy(alpha = 0.15f),
+                                    ) {
+                                        Text(
+                                            "+500 Coins",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF059669),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        )
+                                    }
+                                }
+
+                                AnimatedVisibility(
+                                    visible = showReferralAccordion || referralCode.isNotBlank(),
+                                    enter = fadeIn() + expandVertically(),
+                                    exit = fadeOut() + shrinkVertically(),
+                                ) {
+                                    Column(modifier = Modifier.padding(top = 10.dp)) {
+                                        OutlinedTextField(
+                                            value = referralCode,
+                                            onValueChange = {
+                                                referralCode = it.uppercase()
+                                                if (it.isNotBlank()) {
+                                                    signUpHaptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                                }
+                                            },
+                                            placeholder = { Text("e.g. WELCOME500", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
+                                            singleLine = true,
+                                            shape = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                                            colors = suTfColors(if (referralCode.isNotBlank()) Color(0xFF10B981) else borderColor, darkTheme),
+                                        )
+                                        if (referralCode.isNotBlank()) {
+                                            Spacer(Modifier.height(6.dp))
+                                            Text(
+                                                "🎉 +500 Welcome Bonus Coins will be credited upon signup!",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color(0xFF059669),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                         Spacer(Modifier.height(4.dp))
 
@@ -472,6 +604,8 @@ fun SignUpScreen(
             }
         }
     }
+}
+}
 }
 
 @Composable

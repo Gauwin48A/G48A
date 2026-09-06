@@ -23,6 +23,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -56,6 +59,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -166,6 +171,13 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    /** Hard category scope (e.g. opened from inside the Fashion category app). */
+    fun setScopedCategory(cat: String?) {
+        if (cat != null && cat != _state.value.selectedCategory) {
+            _state.value = _state.value.copy(selectedCategory = cat)
+        }
+    }
+
     fun onQueryChange(query: String) {
         _state.value = _state.value.copy(query = query)
         job?.cancel()
@@ -253,28 +265,104 @@ class SearchViewModel @Inject constructor(
         _state.value = _state.value.copy(loading = true, error = null)
         when (val result = repo.feed(query = query, categoryId = _state.value.selectedCategory)) {
             is ApiResult.Success -> {
-                // 20-field multi-token AND-logic (web-parity: SearchPage.jsx matchesAllTokens)
-                val tokens = query.trim().lowercase().split("\\s+".toRegex()).filter { it.isNotBlank() }
-                val filtered = if (tokens.isEmpty()) result.data else result.data.filter { post ->
-                    val searchable = listOf(
-                        post.title, post.description, post.brand, post.model,
-                        post.categoryName, post.subcategoryName, post.location,
-                        post.city, post.state, post.condition, post.color,
-                        post.size, post.tags?.joinToString(" "), post.userName,
-                        post.userHandle, post.hashtags?.joinToString(" "),
-                        post.price?.toLong()?.toString(), post.year?.toString(),
-                        post.mileage?.toString(), post.ramStorage,
-                    ).mapNotNull { it?.lowercase() }.joinToString(" ")
-                    tokens.all { token -> searchable.contains(token) }
-                }
+                val ranked = rankSearchResults(result.data, query)
                 // Persist to recent queries (keep last 10, deduplicate)
                 val trimmed = query.trim()
                 val updated = (_state.value.recentQueries.filter { it != trimmed } + trimmed).takeLast(10).reversed()
-                _state.value = _state.value.copy(loading = false, items = filtered, searched = true, recentQueries = updated)
+                _state.value = _state.value.copy(loading = false, items = ranked, searched = true, recentQueries = updated)
                 // Persist to DataStore
                 viewModelScope.launch { prefs.saveRecentSearches(updated) }
             }
             is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, searched = true, error = result.error.message)
+        }
+    }
+
+    companion object {
+        /** Non-keyword tokens that should never require a field match. */
+        private val STOP_TOKENS = setOf(
+            "under", "below", "less", "than", "over", "above", "above", "upto", "up", "to",
+            "budget", "within", "around", "near", "me", "in", "at", "for", "with", "and",
+            "or", "the", "a", "an", "of", "on", "best", "good", "cheap", "cheapest",
+        )
+
+        /**
+         * Smart ranking: tolerant matching (no zero-result walls) + relevance ordering.
+         *
+         * - Price/budget phrases ("iphone under 50000") become a price filter, not a text token.
+         * - Keyword tokens: core tokens must match (title/brand/category/…), descriptive
+         *   tokens score instead of hard-fail, so "good condition" never kills results.
+         * - Results sorted by match quality (title hit > brand > category > body),
+         *   boosted listings and recency as tiebreakers.
+         */
+        fun rankSearchResults(posts: List<Post>, rawQuery: String): List<Post> {
+            val q = rawQuery.trim().lowercase()
+            if (q.isEmpty()) return posts
+
+            // ── Budget parsing: "under/below/less than X" → maxPrice, "above/over X" → minPrice
+            var minPrice: Double? = null
+            var maxPrice: Double? = null
+            val budgetRegex = Regex("""(?:under|below|upto|up\s+to|less\s+than|max)\s*(?:rs\.?|₹)?\s*([0-9][0-9,]*)|(?:above|over|more\s+than|min)\s*(?:rs\.?|₹)?\s*([0-9][0-9,]*)""")
+            var textQuery = q
+            budgetRegex.findAll(q).forEach { m ->
+                val amount = (m.groupValues[1].ifBlank { m.groupValues[2] }).replace(",", "").toDoubleOrNull()
+                if (amount != null) {
+                    if (m.groupValues[1].isNotBlank()) maxPrice = amount else minPrice = amount
+                }
+                textQuery = textQuery.replace(m.value, " ")
+            }
+
+            val tokens = textQuery.split("\\s+".toRegex()).filter { it.isNotBlank() }
+            if (tokens.isEmpty() && minPrice == null && maxPrice == null) return posts
+
+            data class Scored(val post: Post, val score: Int)
+
+            val scored = posts.mapNotNull { post ->
+                // Budget filter first (hard constraint)
+                val price = post.price
+                if (maxPrice != null && price != null && price > maxPrice!!) return@mapNotNull null
+                if (minPrice != null && price != null && price < minPrice!!) return@mapNotNull null
+
+                val title = post.title?.lowercase().orEmpty()
+                val brand = post.brand?.lowercase().orEmpty()
+                val category = listOfNotNull(post.categoryName, post.subcategoryName).joinToString(" ").lowercase()
+                val body = listOf(
+                    post.description, post.model, post.location, post.city, post.state,
+                    post.condition, post.color, post.size, post.tags?.joinToString(" "),
+                    post.year?.toString(), post.mileage?.toString(), post.ramStorage,
+                ).mapNotNull { it?.lowercase() }.joinToString(" ")
+
+                var mustMatch = 0
+                var score = 0
+                for (token in tokens) {
+                    if (token in STOP_TOKENS || token.length < 2) continue
+                    val t = token.trim('\'', ',', '.', '!', '?')
+                    if (t.isEmpty()) continue
+                    val inTitle = t in title
+                    val inBrand = t in brand
+                    val inCategory = t in category
+                    val inBody = t in body
+                    if (inTitle) score += 10
+                    if (inBrand) score += 6
+                    if (inCategory) score += 5
+                    if (inBody) score += 2
+                    // Title must contain the token OR any field must — otherwise token is a
+                    // "descriptive" token that scores but doesn't disqualify.
+                    if (inTitle || inBrand || inCategory || inBody) mustMatch++
+                }
+
+                // Require at least one meaningful keyword hit somewhere (or a pure-budget search).
+                if (mustMatch == 0 && tokens.any { it !in STOP_TOKENS && it.length >= 2 }) return@mapNotNull null
+
+                // Boost & recency tiebreakers
+                score += (post.boostLevel ?: 0) * 3
+                if (post.createdAt?.take(10)?.let { it >= "2026-01-01" } == true) score += 1
+                Scored(post, score)
+            }
+
+            return scored.sortedWith(
+                compareByDescending<Scored> { it.score }
+                    .thenByDescending { it.post.viewCount ?: 0 }
+            ).map { it.post }
         }
     }
 
@@ -296,17 +384,24 @@ fun SearchScreen(
     onBack: () -> Unit,
     onOpenPost: (String) -> Unit,
     prefillQuery: String = "",
+    scopedCategory: String? = null,
     viewModel: SearchViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val focusRequester = remember { FocusRequester() }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+
+    // Lock the category scope once (category-app search must never go cross-category)
+    LaunchedEffect(scopedCategory) {
+        if (!scopedCategory.isNullOrBlank()) viewModel.setScopedCategory(scopedCategory)
+    }
     // Apply prefill query from deep-link (B7: SavedSearches "Run")
     LaunchedEffect(prefillQuery) {
         if (prefillQuery.isNotBlank() && state.query.isBlank()) {
             viewModel.onQueryChange(prefillQuery)
             viewModel.search(prefillQuery)
+            // avoid double-search with the scoped LaunchedEffect above
         }
     }
     var showFilters by remember { mutableStateOf(false) }
@@ -328,6 +423,7 @@ fun SearchScreen(
     var interestPostId by remember { mutableStateOf("") }
     var interestPostTitle by remember { mutableStateOf("") }
     var zoomImages by remember { mutableStateOf<List<String>>(emptyList()) }
+    val haptic = LocalHapticFeedback.current
     val activeFilterCount = listOf(minPrice.isNotBlank(), maxPrice.isNotBlank(), selectedCondition.isNotBlank(), sortBy.isNotBlank(), selectedBrand.isNotBlank(), selectedModel.isNotBlank(), locationRadius.isNotBlank(), dateFrom.isNotBlank(), dateTo.isNotBlank(), selectedSubcategory.isNotBlank()).count { it }
 
     val voiceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -508,20 +604,91 @@ fun SearchScreen(
                             }
                         }
 
-                        // Price range
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(
-                                value = minPrice, onValueChange = { minPrice = it.filter(Char::isDigit) },
-                                label = { Text("Min ₹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                                modifier = Modifier.weight(1f),
-                            )
-                            OutlinedTextField(
-                                value = maxPrice, onValueChange = { maxPrice = it.filter(Char::isDigit) },
-                                label = { Text("Max ₹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                                modifier = Modifier.weight(1f),
-                            )
+                        // Price range with Quick Chips & Visual Distribution Bars
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text("Price Range", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(6.dp))
+
+                            // Mini Histogram bars
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(28.dp)
+                                    .padding(horizontal = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.Bottom,
+                            ) {
+                                val heights = listOf(0.25f, 0.45f, 0.70f, 1.0f, 0.85f, 0.60f, 0.40f, 0.20f)
+                                heights.forEach { h ->
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight(h)
+                                            .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
+                                            .background(
+                                                if (minPrice.isNotBlank() || maxPrice.isNotBlank())
+                                                    MaterialTheme.colorScheme.primary
+                                                else
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                                            )
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.height(6.dp))
+
+                            // Quick Price Chips
+                            Row(
+                                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                listOf(
+                                    "Under ₹1,000" to ("" to "1000"),
+                                    "₹1k - ₹5k" to ("1000" to "5000"),
+                                    "₹5k - ₹20k" to ("5000" to "20000"),
+                                    "₹20k+" to ("20000" to ""),
+                                ).forEach { (label, range) ->
+                                    val isSelected = minPrice == range.first && maxPrice == range.second
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                        border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent),
+                                        modifier = Modifier.clickable {
+                                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                            if (isSelected) {
+                                                minPrice = ""; maxPrice = ""
+                                            } else {
+                                                minPrice = range.first; maxPrice = range.second
+                                            }
+                                        },
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(
+                                    value = minPrice, onValueChange = { minPrice = it.filter(Char::isDigit) },
+                                    label = { Text("Min ₹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                                    modifier = Modifier.weight(1f),
+                                )
+                                OutlinedTextField(
+                                    value = maxPrice, onValueChange = { maxPrice = it.filter(Char::isDigit) },
+                                    label = { Text("Max ₹") }, singleLine = true, shape = RoundedCornerShape(10.dp),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
                         }
 
                         // Date Range
@@ -1091,7 +1258,7 @@ private fun SearchResultCard(
                             .padding(10.dp),
                     ) {
                         Text(
-                            text = "₹${"%,.0f".format(p)}",
+                            text = "₹" + "%,.0f".format(p),
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.White,
                             fontSize = 16.sp,

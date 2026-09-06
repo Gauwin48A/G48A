@@ -106,24 +106,105 @@ import javax.inject.Inject
 
 /* ── Category-key normalization (single source of truth; imported by all category-scoped screens) ── */
 
+/** Canonical marketplace category keys. */
+private val CANONICAL_CATEGORY_KEYS = setOf("electronics", "fashion", "vehicles", "others")
+
+/** Exact-match alias table: category/subcategory display names → canonical key. */
+private val CATEGORY_ALIASES: Map<String, String> = mapOf(
+    // Electronics
+    "mobiles" to "electronics", "mobile" to "electronics", "mobile-phone" to "electronics",
+    "mobiles-tablets" to "electronics", "phones" to "electronics", "phone" to "electronics",
+    "smartphones" to "electronics", "tablets" to "electronics", "tablet" to "electronics",
+    "laptops" to "electronics", "laptop" to "electronics", "computers" to "electronics",
+    "computer" to "electronics", "tv" to "electronics", "tvs" to "electronics",
+    "television" to "electronics", "audio" to "electronics", "cameras" to "electronics",
+    "camera" to "electronics", "gaming" to "electronics", "games" to "electronics",
+    "consoles" to "electronics", "appliances" to "electronics", "home-appliances" to "electronics",
+    "electronics-accessories" to "electronics", "e-acc" to "electronics", "accessories" to "electronics",
+    "gadgets" to "electronics", "wearables" to "electronics",
+    // Fashion
+    "cloths" to "fashion", "clothing" to "fashion", "clothes" to "fashion", "apparel" to "fashion",
+    "mens-clothing" to "fashion", "womens-clothing" to "fashion", "shoes" to "fashion",
+    "footwear" to "fashion", "bags" to "fashion", "luggage" to "fashion",
+    "watches" to "fashion", "watch" to "fashion", "jewellery" to "fashion", "jewelry" to "fashion",
+    "eyewear" to "fashion", "sunglasses" to "fashion", "beauty" to "fashion", "cosmetics" to "fashion",
+    // Vehicles
+    "cars" to "vehicles", "car" to "vehicles", "motorcycles" to "vehicles",
+    "motorcycles-scooters" to "vehicles", "bikes" to "vehicles", "bike" to "vehicles",
+    "bicycles" to "vehicles", "bicycle" to "vehicles", "scooters" to "vehicles", "scooter" to "vehicles",
+    "commercial-vehicles" to "vehicles", "trucks" to "vehicles", "truck" to "vehicles",
+    "bus" to "vehicles", "buses" to "vehicles", "spare-parts" to "vehicles", "parts" to "vehicles",
+    "electric-vehicles" to "vehicles", "ev" to "vehicles", "automotive" to "vehicles",
+    // Others
+    "home-living" to "others", "furniture" to "others", "home-furniture" to "others",
+    "grocery" to "others", "groceries" to "others", "books" to "others", "book" to "others",
+    "sports" to "others", "fitness" to "others", "pets" to "others", "pet-care" to "others",
+    "toys" to "others", "baby-products" to "others", "kids" to "others", "agriculture" to "others",
+    "farm" to "others", "industrial" to "others", "real-estate" to "others", "estate" to "others",
+    "property" to "others", "rentals" to "others", "services" to "others", "music" to "others",
+    "instruments" to "others", "stationery" to "others", "art" to "others", "collectibles" to "others",
+    "home" to "others", "other" to "others", "others-all" to "others", "misc" to "others",
+)
+
+/** Whole-word keyword scan (ordered) — avoids substring false positives like "cardigan"→"car". */
+private val CATEGORY_KEYWORDS: List<Pair<String, String>> = listOf(
+    "electronics" to "electronics", "electronic" to "electronics", "gadget" to "electronics",
+    "phone" to "electronics", "smartphone" to "electronics", "tablet" to "electronics",
+    "laptop" to "electronics", "computer" to "electronics", "camera" to "electronics",
+    "audio" to "electronics", "headphone" to "electronics", "earphone" to "electronics",
+    "speaker" to "electronics", "television" to "electronics", "appliance" to "electronics",
+    "console" to "electronics", "wearable" to "electronics",
+    "fashion" to "fashion", "clothing" to "fashion", "cloth" to "fashion", "apparel" to "fashion",
+    "footwear" to "fashion", "shoe" to "fashion", "bag" to "fashion", "handbag" to "fashion",
+    "watch" to "fashion", "jewellery" to "fashion", "jewelry" to "fashion",
+    "beauty" to "fashion", "cosmetic" to "fashion", "eyewear" to "fashion",
+    "vehicles" to "vehicles", "vehicle" to "vehicles", "cars" to "vehicles", "car" to "vehicles",
+    "motorcycle" to "vehicles", "motorbike" to "vehicles", "bike" to "vehicles",
+    "bicycle" to "vehicles", "scooter" to "vehicles", "truck" to "vehicles",
+    "tractor" to "vehicles", "automotive" to "vehicles",
+    "furniture" to "others", "living" to "others", "grocery" to "others", "book" to "others",
+    "sports" to "others", "fitness" to "others", "pet" to "others", "toy" to "others",
+    "baby" to "others", "kid" to "others", "agriculture" to "others", "industrial" to "others",
+    "property" to "others", "rental" to "others", "service" to "others", "estate" to "others",
+)
+
+private val CATEGORY_WORD_SPLIT = Regex("[^a-z0-9]+")
+
 /**
- * Normalizes a raw category string ("Electronics", "e-acc", "Cars") to a canonical
- * marketplace key ("electronics", "fashion", "vehicles", "others").
- * Used so the wishlist's category filter matches the same keys the rest of the app uses.
+ * Normalizes a raw category string ("Electronics", "e-acc", "Cars", "Mobiles & Tablets",
+ * "Men's Clothing") to a canonical marketplace key ("electronics", "fashion", "vehicles",
+ * "others").
+ *
+ * Resolution order (strictest first, to prevent category bleed):
+ * 1. Exact canonical key.
+ * 2. Exact alias match (whole name, e.g. "mobiles", "spare-parts").
+ * 3. Whole-word keyword scan — a keyword only matches as a complete word, so
+ *    "Cardigan" never maps to "vehicles" via the "car" substring.
+ * 4. Fallback "others" (never misroutes into a concrete category).
  */
 internal fun normalizeMarketplaceCategoryKey(raw: String?): String {
-    val value = raw?.lowercase()?.trim().orEmpty()
-    return when {
-        value in setOf("electronics", "fashion", "vehicles", "others") -> value
-        value.contains("electron") || value.contains("phone") || value.contains("laptop") ||
-            value.contains("camera") || value.contains("audio") || value.contains("gadget") -> "electronics"
-        value.contains("fashion") || value.contains("cloth") || value.contains("apparel") ||
-            value.contains("shoe") || value.contains("bag") || value.contains("watch") -> "fashion"
-        value.contains("vehicle") || value.contains("car") || value.contains("bike") ||
-            value.contains("motor") || value.contains("cycle") || value.contains("truck") ||
-            value.contains("scooter") || value.contains("spare") -> "vehicles"
-        else -> "others"
+    val value = raw?.lowercase()?.trim()?.replace('’', '\'')?.orEmpty() ?: ""
+    if (value.isEmpty()) return "others"
+    if (value in CANONICAL_CATEGORY_KEYS) return value
+    CATEGORY_ALIASES[value]?.let { return it }
+    val words = value.split(CATEGORY_WORD_SPLIT).filter { it.isNotBlank() }
+    if (words.isNotEmpty()) {
+        for ((keyword, key) in CATEGORY_KEYWORDS) {
+            if (keyword in words) return key
+        }
     }
+    return "others"
+}
+
+/**
+ * Canonical marketplace key of a post — resolved from its category name (preferred)
+ * or category id. Server-side filters are authoritative; this is the client-side
+ * safety net that guarantees no cross-category bleed ever reaches the UI.
+ * Returns null when the post carries no category info at all (nothing to classify).
+ */
+internal fun com.zaruda.app.domain.model.Post.canonicalMarketplaceKey(): String? {
+    val source = categoryName?.takeIf { it.isNotBlank() } ?: categoryId
+    return source?.let { normalizeMarketplaceCategoryKey(it) }
 }
 
 data class WishlistState(
@@ -740,7 +821,7 @@ private fun WishlistListCard(
                 )
                 post.price?.let {
                     Text(
-                        text = "₹${"%,.0f".format(it)}",
+                        text = "₹" + "%,.0f".format(it),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -849,14 +930,35 @@ private fun WishlistGridCard(
                         Icon(Icons.Outlined.ImageNotSupported, contentDescription = null)
                     }
                 }
-                post.price?.let {
+                // Escrow Buyer Protection Trust Pill
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFF059669).copy(alpha = 0.90f),
+                    modifier = Modifier.align(Alignment.TopStart).padding(6.dp)
+                ) {
                     Text(
-                        text = "₹${"%,.0f".format(it)}",
-                        style = MaterialTheme.typography.labelLarge,
+                        text = "🛡️ Escrow",
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
-                        modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp),
                     )
+                }
+
+                post.price?.let {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.Black.copy(alpha = 0.70f),
+                        modifier = Modifier.align(Alignment.BottomStart).padding(6.dp)
+                    ) {
+                        Text(
+                            text = "₹" + "%,.0f".format(it),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
                 }
                 IconButton(
                     onClick = onRemove,

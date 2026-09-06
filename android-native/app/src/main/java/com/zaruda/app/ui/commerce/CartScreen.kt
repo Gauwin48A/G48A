@@ -490,7 +490,7 @@ fun CartScreen(
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                             Text(if (remaining == 0.0) "🎉" else "🚚", fontSize = 16.sp)
                                             Text(
-                                                text = if (remaining == 0.0) "You unlocked FREE Insured Delivery!" else "Add ₹${"%,.0f".format(remaining)} more for Free Insured Delivery",
+                                                text = if (remaining == 0.0) "You unlocked FREE Insured Delivery!" else "Add ₹" + "%,.0f".format(remaining) + " more for Free Insured Delivery",
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = if (remaining == 0.0) Color(0xFF15803D) else MaterialTheme.colorScheme.onSurface

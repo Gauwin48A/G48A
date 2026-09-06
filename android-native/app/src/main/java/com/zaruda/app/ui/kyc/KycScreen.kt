@@ -4,7 +4,9 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -414,7 +416,12 @@ private fun UploadSlot(label: String, uri: Uri?, onPick: () -> Unit) {
                     modifier = Modifier
                         .size(62.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .then(
+                            if (uri != null) {
+                                Modifier.border(BorderStroke(1.5.dp, Color(0xFF22C55E)), RoundedCornerShape(12.dp))
+                            } else Modifier
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (uri != null) {
@@ -428,13 +435,33 @@ private fun UploadSlot(label: String, uri: Uri?, onPick: () -> Unit) {
                         Icon(Icons.Default.Upload, contentDescription = null)
                     }
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.weight(1f)) {
                     Text(text = label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                    Text(
-                        text = if (uri == null) "Tap to upload" else "Selected",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    if (uri != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF22C55E),
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = "Edge verified • High clarity",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF22C55E),
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "Tap to upload",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             

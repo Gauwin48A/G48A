@@ -19,6 +19,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import com.zaruda.app.ui.theme.ColorTokens
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -68,6 +78,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -287,12 +298,240 @@ private fun notifStyle(type: String?): NotifIconStyle {
     }
 }
 
+/* ── Layer 1: Ambient Atmospheric Canvas Backdrop ─────────────────────────── */
+
+@Composable
+private fun NotificationsAtmosphericBackdrop(isDark: Boolean) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(230.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = if (isDark) {
+                        listOf(Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF020617))
+                    } else {
+                        listOf(Color(0xFF4F46E5), Color(0xFF4338CA), Color(0xFF312E81))
+                    }
+                )
+            )
+    ) {
+        // Ambient Glowing Aura Orbs
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF818CF8).copy(alpha = if (isDark) 0.35f else 0.45f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(size.width * 0.75f, 40.dp.toPx()),
+                    radius = 160.dp.toPx(),
+                )
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFFA855F7).copy(alpha = if (isDark) 0.25f else 0.35f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(size.width * 0.20f, 90.dp.toPx()),
+                    radius = 140.dp.toPx(),
+                )
+            )
+        }
+
+        // Dark top vignette scrim for status bar readability
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(90.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.50f),
+                            Color.Transparent,
+                        )
+                    )
+                )
+        )
+
+        // Bottom vignette scrim where backdrop blends into 32dp curved sheet
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(70.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.35f),
+                        )
+                    )
+                )
+        )
+    }
+}
+
+/* ── Layer 2: Floating Glassmorphic Top Bar ───────────────────────────────── */
+
+@Composable
+private fun NotificationsFloatingTopBar(
+    unreadCount: Int,
+    selectMode: Boolean,
+    hasItems: Boolean,
+    selectedCount: Int,
+    totalDisplay: Int,
+    isDark: Boolean,
+    onBack: (() -> Unit)?,
+    onToggleSelectMode: () -> Unit,
+    onSelectAll: () -> Unit,
+    onDeleteSelected: () -> Unit,
+    onMarkAllRead: () -> Unit,
+    onToggleSettings: () -> Unit,
+    onDeleteAll: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.88f),
+            border = BorderStroke(1.dp, if (isDark) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.08f)),
+            shadowElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                // Left: Back button + Title & Unread Badge
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (onBack != null) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(34.dp),
+                            onClick = onBack,
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = stringResource(R.string.notif_title),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                    )
+
+                    if (unreadCount > 0) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFF059669),
+                        ) {
+                            Text(
+                                text = "$unreadCount New",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
+                            )
+                        }
+                    }
+                }
+
+                // Right: Action buttons
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    if (selectMode) {
+                        TextButton(
+                            onClick = onSelectAll,
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                        ) {
+                            Text(
+                                if (selectedCount == totalDisplay) "Deselect" else "Select All",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        IconButton(
+                            onClick = onDeleteSelected,
+                            enabled = selectedCount > 0,
+                            modifier = Modifier.size(34.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "Delete",
+                                tint = if (selectedCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                        IconButton(
+                            onClick = onToggleSelectMode,
+                            modifier = Modifier.size(34.dp),
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = "Cancel", modifier = Modifier.size(18.dp))
+                        }
+                    } else {
+                        if (unreadCount > 0) {
+                            IconButton(
+                                onClick = onMarkAllRead,
+                                modifier = Modifier.size(34.dp),
+                            ) {
+                                Icon(Icons.Default.DoneAll, contentDescription = "Mark All Read", tint = Color(0xFF059669), modifier = Modifier.size(18.dp))
+                            }
+                        }
+                        IconButton(
+                            onClick = onToggleSelectMode,
+                            modifier = Modifier.size(34.dp),
+                        ) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = "Select Mode", modifier = Modifier.size(18.dp))
+                        }
+                        if (hasItems) {
+                            IconButton(
+                                onClick = onDeleteAll,
+                                modifier = Modifier.size(34.dp),
+                            ) {
+                                Icon(Icons.Default.DeleteSweep, contentDescription = "Delete All", modifier = Modifier.size(18.dp))
+                            }
+                        }
+                        IconButton(
+                            onClick = onToggleSettings,
+                            modifier = Modifier.size(34.dp),
+                        ) {
+                            Icon(Icons.Default.Settings, contentDescription = "Notification Settings", modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
     onOpenPost: (String) -> Unit,
     onAcceptOffer: (String) -> Unit = {},
     onOpenSale: (Int) -> Unit = {},
+    onBack: (() -> Unit)? = null,
     viewModel: NotificationsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -300,9 +539,12 @@ fun NotificationsScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showUnreadOnly by remember { mutableStateOf(false) }
     var selectedFilter by rememberSaveable { mutableStateOf("All") }
+    var showDeleteAllDialog by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
+    val isDark = ColorTokens.isDarkTheme()
+    val haptic = LocalHapticFeedback.current
 
-    val filterOptions = listOf("All", "Offers", "Inquiries", "System")
+    val filterOptions = listOf("All", "Orders & Escrow", "Offers", "Inquiries", "System")
 
     val displayItems = remember(state.items, searchQuery, showUnreadOnly, selectedFilter, state.snoozedItems) {
         state.items.filter { n ->
@@ -315,8 +557,9 @@ fun NotificationsScreen(
                     val t = n.type?.lowercase() ?: ""
                     when (selectedFilter) {
                         "Offers" -> t.contains("offer") || t.contains("price") || t.contains("deal")
+                        "Orders & Escrow" -> t.contains("order") || t.contains("sale") || t.contains("package") || t.contains("escrow") || t.contains("delivery")
                         "Inquiries" -> t.contains("message") || t.contains("chat") || t.contains("inquiry")
-                        "System" -> t.contains("security") || t.contains("auth") || t.contains("alert") || t.contains("system")
+                        "System" -> t.contains("security") || t.contains("auth") || t.contains("alert") || t.contains("system") || t.contains("wallet")
                         else -> true
                     }
                 })
@@ -351,277 +594,241 @@ fun NotificationsScreen(
         groups
     }
 
-    Scaffold(
-        // Top bar is the shared marketplace-style bar rendered by MainShell.
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
-            // Title + actions row (was the TopAppBar; sits directly below the shared top bar)
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.notif_title), fontWeight = FontWeight.Bold)
-                    if (unreadCount > 0) {
-                        Text(
-                            text = "$unreadCount unread",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
+    if (showDeleteAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllDialog = false },
+            title = { Text(stringResource(R.string.notif_delete_all_title)) },
+            text = { Text(stringResource(R.string.notif_delete_all_confirm, state.items.size)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.deleteAll()
+                    showDeleteAllDialog = false
+                }) {
+                    Text(stringResource(R.string.notif_delete_all), color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
                 }
-                if (state.selectMode) {
-                    TextButton(onClick = {
-                        if (state.selectedItems.size == displayItems.size) viewModel.deselectAll()
-                        else viewModel.selectAll()
-                    }) {
-                        Text(
-                            if (state.selectedItems.size == displayItems.size) "Deselect All" else "Select All",
-                            style = MaterialTheme.typography.labelMedium,
-                        )
-                    }
-                    IconButton(
-                        onClick = { viewModel.deleteSelected() },
-                        enabled = state.selectedItems.isNotEmpty(),
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete selected", tint = if (state.selectedItems.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    TextButton(onClick = { viewModel.toggleSelectMode() }) {
-                        Text("Cancel", style = MaterialTheme.typography.labelMedium)
-                    }
-                } else {
-                    IconButton(onClick = { viewModel.toggleSelectMode() }) {
-                        Icon(Icons.Default.CheckCircle, contentDescription = "Select")
-                    }
-                    IconButton(onClick = { viewModel.toggleSettings() }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                    if (unreadCount > 0) {
-                        TextButton(onClick = { viewModel.markAllRead() }) {
-                            Icon(
-                                Icons.Default.DoneAll,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.notif_mark_all_read), style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-                    if (state.items.isNotEmpty()) {
-                        var showDeleteAllDialog by remember { mutableStateOf(false) }
-                        IconButton(onClick = { showDeleteAllDialog = true }) {
-                            Icon(Icons.Default.DeleteSweep, contentDescription = "Delete all")
-                        }
-                        if (showDeleteAllDialog) {
-                            AlertDialog(
-                                onDismissRequest = { showDeleteAllDialog = false },
-                                title = { Text(stringResource(R.string.notif_delete_all_title)) },
-                                text = { Text(stringResource(R.string.notif_delete_all_confirm, state.items.size)) },
-                                confirmButton = { TextButton(onClick = { viewModel.deleteAll(); showDeleteAllDialog = false }) { Text(stringResource(R.string.notif_delete_all)) } },
-                                dismissButton = { TextButton(onClick = { showDeleteAllDialog = false }) { Text(stringResource(R.string.notif_cancel)) } },
-                            )
-                        }
-                    }
-                }
-            }
-        PullToRefreshBox(
-            isRefreshing = state.loading && state.items.isNotEmpty(),
-            onRefresh = { viewModel.load() },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+            },
+            dismissButton = { TextButton(onClick = { showDeleteAllDialog = false }) { Text(stringResource(R.string.notif_cancel)) } },
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        // ── Layer 1: Ambient Atmospheric Canvas Backdrop ──
+        NotificationsAtmosphericBackdrop(isDark = isDark)
+
+        // ── Layer 3: 32dp Curved Content Sheet ──
+        Column(
+            modifier = Modifier.fillMaxSize(),
         ) {
-            when {
-                state.loading && state.items.isEmpty() -> ListShimmer(
-                    count = 6,
-                    modifier = Modifier.fillMaxSize().padding(top = 8.dp),
-                )
+            // Hero Spacer allowing top backdrop aura to shine through
+            Spacer(modifier = Modifier.height(108.dp))
 
-                state.error != null && state.items.isEmpty() -> Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    AppErrorState(
-                        title = "Notifications unavailable",
-                        message = state.error ?: "Unable to load notifications",
-                        onRetry = { viewModel.load() },
-                        retryLabel = "Retry",
-                    )
-                }
-
-                else -> LazyColumn(
-                    contentPadding = PaddingValues(bottom = 90.dp),
+            Surface(
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Column(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    // Gradient hero header (web parity)
-                    item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().background(Brush.horizontalGradient(listOf(Color(0xFF3B82F6), Color(0xFF6366F1), Color(0xFFA855F7)))).padding(horizontal = 16.dp, vertical = 14.dp),
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Color.White.copy(alpha = 0.2f)), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Notifications, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
-                                }
-                                Column {
-                                    Text("Notifications", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                                    if (unreadCount > 0) Text("$unreadCount unread messages", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.85f))
-                                    else Text("You're all caught up", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.85f))
-                                }
-                            }
-                        }
-                    }
+                    // Tactile Drag Handle (Marketplace Standard)
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 12.dp, bottom = 6.dp)
+                            .width(44.dp)
+                            .height(4.5.dp)
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
+                            .align(Alignment.CenterHorizontally),
+                    )
 
-                    // Search bar
-                    item {
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            placeholder = { Text(stringResource(R.string.notif_search_hint)) },
-                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                            trailingIcon = {
-                                if (searchQuery.isNotBlank()) {
-                                    IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(Icons.Default.Close, contentDescription = "Clear")
-                                    }
-                                }
-                            },
-                            singleLine = true,
-                            shape = RoundedCornerShape(16.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                            ),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                        )
-                    }
-
-                    // Notification statistics card
-                    if (state.items.isNotEmpty()) {
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                                shape = RoundedCornerShape(14.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
-                            ) {
-                                Row(Modifier.fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("${state.items.size}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                                        Text("Total", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Text("$unreadCount", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFFEF4444))
-                                        Text("Unread", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        val readPct = if (state.items.isNotEmpty()) ((state.items.size - unreadCount) * 100 / state.items.size) else 0
-                                        Text("${readPct}%", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFF22C55E))
-                                        Text("Read Rate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Category filter chips
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            filterOptions.forEach { filter ->
-                                FilterChip(
-                                    selected = selectedFilter == filter,
-                                    onClick = { selectedFilter = filter },
-                                    label = { Text(filter) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                                    ),
-                                )
-                            }
-                        }
-                    }
-
-                    // Unread filter toggle
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Text(
-                                text = if (showUnreadOnly) "Showing unread only" else "All notifications",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
+                    // Category Filter Chips
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        filterOptions.forEach { filter ->
+                            FilterChip(
+                                selected = selectedFilter == filter,
+                                onClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    selectedFilter = filter
+                                },
+                                label = { Text(filter, fontSize = 12.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                ),
+                                shape = RoundedCornerShape(10.dp),
                             )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "Unread",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Switch(
-                                    checked = showUnreadOnly,
-                                    onCheckedChange = { showUnreadOnly = it },
-                                )
-                            }
                         }
                     }
 
-                    if (displayItems.isEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 64.dp),
+                    // Search Bar
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text(stringResource(R.string.notif_search_hint), fontSize = 13.sp) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                        trailingIcon = {
+                            if (searchQuery.isNotBlank()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+
+                    PullToRefreshBox(
+                        isRefreshing = state.loading && state.items.isNotEmpty(),
+                        onRefresh = { viewModel.load() },
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        when {
+                            state.loading && state.items.isEmpty() -> ListShimmer(
+                                count = 6,
+                                modifier = Modifier.fillMaxSize().padding(top = 8.dp),
+                            )
+
+                            state.error != null && state.items.isEmpty() -> Box(
+                                Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                AppEmptyState(
-                                    icon = Icons.Default.Notifications,
-                                    title = "All caught up",
-                                    subtitle = "New activity and offers will appear here.",
+                                AppErrorState(
+                                    title = "Notifications unavailable",
+                                    message = state.error ?: "Unable to load notifications",
+                                    onRetry = { viewModel.load() },
+                                    retryLabel = "Retry",
                                 )
                             }
-                        }
-                    } else {
-                        dateGrouped.forEach { (label, groupItems) ->
-                            item {
-                                SectionLabel(label)
-                            }
-                            items(groupItems, key = { it.stableId }) { notif ->
-                                SwipeToDismissNotification(
-                                    onDismiss = { viewModel.dismiss(notif.stableId) },
-                                ) {
-                                    NotificationRow(
-                                        notification = notif,
-                                        isUnread = !notif.isRead,
-                                        isExpanded = notif.stableId in state.expandedItems,
-                                        isSelected = state.selectMode && notif.stableId in state.selectedItems,
-                                        selectMode = state.selectMode,
-                                        onToggleExpand = { viewModel.toggleExpanded(notif.stableId) },
-                                        onClick = {
-                                            if (state.selectMode) {
-                                                viewModel.toggleSelected(notif.stableId)
-                                            } else {
-                                                viewModel.markRead(notif.stableId)
-                                                val type = notif.type?.lowercase() ?: ""
-                                                when {
-                                                    type.startsWith("sale") -> onOpenSale(saleTabForType(type))
-                                                    notif.postId != null -> onOpenPost(notif.postId)
+
+                            else -> LazyColumn(
+                                contentPadding = PaddingValues(bottom = 90.dp),
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                // Notification statistics card
+                                if (state.items.isNotEmpty()) {
+                                    item(key = "notif_stats") {
+                                        Card(
+                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                                            shape = RoundedCornerShape(14.dp),
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
+                                        ) {
+                                            Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    Text("${state.items.size}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                                                    Text("Total", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    Text("$unreadCount", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFFEF4444))
+                                                    Text("Unread", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                    val readPct = if (state.items.isNotEmpty()) ((state.items.size - unreadCount) * 100 / state.items.size) else 0
+                                                    Text("${readPct}%", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = Color(0xFF22C55E))
+                                                    Text("Read Rate", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                 }
                                             }
-                                        },
-                                        onAcceptOffer = { onAcceptOffer(notif.stableId) },
-                                        onSnooze = { viewModel.snooze(notif.stableId) },
-                                    )
+                                        }
+                                    }
+                                }
+
+                                // Unread filter toggle
+                                item(key = "unread_toggle") {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                    ) {
+                                        Text(
+                                            text = if (showUnreadOnly) "Showing unread only" else "All notifications",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = "Unread only",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Switch(
+                                                checked = showUnreadOnly,
+                                                onCheckedChange = { showUnreadOnly = it },
+                                            )
+                                        }
+                                    }
+                                }
+
+                                if (displayItems.isEmpty()) {
+                                    item(key = "empty_state") {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 64.dp),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            AppEmptyState(
+                                                icon = Icons.Default.Notifications,
+                                                title = "All caught up",
+                                                subtitle = "New escrow activity, offers, and notifications will appear here.",
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    dateGrouped.forEach { (label, groupItems) ->
+                                        item(key = "header_$label") {
+                                            SectionLabel(label)
+                                        }
+                                        items(groupItems, key = { it.stableId }) { notif ->
+                                            SwipeToDismissNotification(
+                                                onDismiss = { viewModel.dismiss(notif.stableId) },
+                                            ) {
+                                                NotificationRow(
+                                                    notification = notif,
+                                                    isUnread = !notif.isRead,
+                                                    isExpanded = notif.stableId in state.expandedItems,
+                                                    isSelected = state.selectMode && notif.stableId in state.selectedItems,
+                                                    selectMode = state.selectMode,
+                                                    onToggleExpand = { viewModel.toggleExpanded(notif.stableId) },
+                                                    onClick = {
+                                                        if (state.selectMode) {
+                                                            viewModel.toggleSelected(notif.stableId)
+                                                        } else {
+                                                            viewModel.markRead(notif.stableId)
+                                                            val type = notif.type?.lowercase() ?: ""
+                                                            when {
+                                                                type.startsWith("sale") -> onOpenSale(saleTabForType(type))
+                                                                notif.postId != null -> onOpenPost(notif.postId)
+                                                            }
+                                                        }
+                                                    },
+                                                    onAcceptOffer = { onAcceptOffer(notif.stableId) },
+                                                    onSnooze = { viewModel.snooze(notif.stableId) },
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -629,7 +836,29 @@ fun NotificationsScreen(
                 }
             }
         }
-        }
+
+        // ── Layer 2: Pinned Floating Glassmorphic Top Bar ──
+        NotificationsFloatingTopBar(
+            unreadCount = unreadCount,
+            selectMode = state.selectMode,
+            hasItems = state.items.isNotEmpty(),
+            selectedCount = state.selectedItems.size,
+            totalDisplay = displayItems.size,
+            isDark = isDark,
+            onBack = onBack,
+            onToggleSelectMode = { viewModel.toggleSelectMode() },
+            onSelectAll = {
+                if (state.selectedItems.size == displayItems.size) viewModel.deselectAll()
+                else viewModel.selectAll()
+            },
+            onDeleteSelected = { viewModel.deleteSelected() },
+            onMarkAllRead = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                viewModel.markAllRead()
+            },
+            onToggleSettings = { viewModel.toggleSettings() },
+            onDeleteAll = { showDeleteAllDialog = true },
+        )
     }
     
     // Settings dialog

@@ -1,6 +1,9 @@
 package com.zaruda.app.ui.account
 import com.zaruda.app.ui.theme.ColorTokens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.asPaddingValues
@@ -72,19 +75,147 @@ private val payoutBgGradient: Brush
         else Brush.verticalGradient(listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
     }
 
+/* ── Layer 1: Ambient Atmospheric Canvas Backdrop ─────────────────────────── */
+
 @Composable
-private fun PayoutTopBar(title: String, onBack: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth()
-            .padding(WindowInsets.statusBars.asPaddingValues())
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun PayoutAtmosphericBackdrop(isDark: Boolean) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(230.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = if (isDark) {
+                        listOf(Color(0xFF0F172A), Color(0xFF064E3B), Color(0xFF022C22))
+                    } else {
+                        listOf(Color(0xFF059669), Color(0xFF047857), Color(0xFF065F46))
+                    }
+                )
+            )
     ) {
-        IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = MaterialTheme.colorScheme.primary)
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF34D399).copy(alpha = if (isDark) 0.30f else 0.40f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(size.width * 0.8f, 50.dp.toPx()),
+                    radius = 160.dp.toPx(),
+                )
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF3B82F6).copy(alpha = if (isDark) 0.20f else 0.30f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(size.width * 0.2f, 90.dp.toPx()),
+                    radius = 140.dp.toPx(),
+                )
+            )
         }
-        Spacer(Modifier.width(8.dp))
-        Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(90.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Black.copy(alpha = 0.50f), Color.Transparent)
+                    )
+                )
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(70.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f))
+                    )
+                )
+        )
+    }
+}
+
+/* ── Layer 2: Floating Glassmorphic Top Bar ───────────────────────────────── */
+
+@Composable
+private fun PayoutFloatingTopBar(
+    title: String,
+    isDark: Boolean,
+    onBack: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.88f),
+            border = BorderStroke(1.dp, if (isDark) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.08f)),
+            shadowElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.size(34.dp),
+                        onClick = onBack,
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFF059669).copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.3f)),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text("🛡️", fontSize = 11.sp)
+                        Text(
+                            "Escrow Safe",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF059669),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -227,19 +358,105 @@ fun PayoutScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    Box(Modifier.fillMaxSize().background(payoutBgGradient)) {
-        Column(Modifier.fillMaxSize()) {
-            // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
+    val isDark = ColorTokens.isDarkTheme()
 
-            if (state.loading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        // Layer 1: Atmospheric Canvas Backdrop
+        PayoutAtmosphericBackdrop(isDark = isDark)
+
+        // Layer 3: 32dp Curved Content Sheet
+        Column(Modifier.fillMaxSize()) {
+            Spacer(modifier = Modifier.height(108.dp))
+
+            Surface(
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Tactile Drag Handle
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 12.dp, bottom = 8.dp)
+                            .width(44.dp)
+                            .height(4.5.dp)
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
+                            .align(Alignment.CenterHorizontally),
+                    )
+
+                    if (state.loading) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                        }
+                    } else {
+                        LazyColumn(
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp),
+                        ) {
+                            // ── Escrow Disbursement Security Badge ──
+                            item {
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = Color(0xFF059669).copy(alpha = 0.08f),
+                                    border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.25f)),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Row(
+                                        Modifier.padding(14.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        Text("🛡️", fontSize = 24.sp)
+                                        Column(Modifier.weight(1f)) {
+                                            Text(
+                                                "256-Bit Bank-Grade Payout Security",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp,
+                                                color = Color(0xFF059669),
+                                            )
+                                            Text(
+                                                "Direct RBI-compliant automated escrow disbursements. Payout credentials are never shared with buyers.",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                lineHeight = 15.sp,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // ── Instant Penny Drop Verification Guarantee ──
+                            item {
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = Color(0xFF3B82F6).copy(alpha = 0.08f),
+                                    border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.25f)),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Row(
+                                        Modifier.padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        Text("⚡", fontSize = 20.sp)
+                                        Column(Modifier.weight(1f)) {
+                                            Text(
+                                                "Instant Penny Drop Verification",
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 12.sp,
+                                                color = Color(0xFF2563EB),
+                                            )
+                                            Text(
+                                                "₹1 micro-deposit will verify your account name instantly upon linking before escrow funds are released.",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                     // ── How payouts work info card ──
                     item {
                         Surface(
@@ -582,6 +799,15 @@ fun PayoutScreen(
                 }
             }
         }
+        }
+        }
+
+        // Layer 2: Floating Glass Top Bar
+        PayoutFloatingTopBar(
+            title = "Payout Settings",
+            isDark = isDark,
+            onBack = onBack,
+        )
     }
 }
 

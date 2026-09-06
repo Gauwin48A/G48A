@@ -206,6 +206,9 @@ data class ProfileState(
     val profileActivity: List<com.zaruda.app.data.remote.dto.ProfileActivityItem> = emptyList(),
     val dataExportDone: Boolean = false,
     val lastLoadTimeMs: Long = 0L,
+    // Real analytics (null = not available yet — UI must never show invented numbers)
+    val profileViews: Int? = null,
+    val viewsTrend: List<Float>? = null,
 )
 
 data class UserReview(
@@ -224,6 +227,7 @@ class ProfileViewModel @Inject constructor(
     private val rewardsRepo: RewardsRepository,
     private val socialRepo: UserSocialRepository,
     private val uploadRepo: com.zaruda.app.data.repository.UploadRepository,
+    private val analyticsRepo: com.zaruda.app.data.repository.AnalyticsRepository,
     private val api: com.zaruda.app.data.remote.ZarudaApi,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProfileState())
@@ -270,6 +274,15 @@ class ProfileViewModel @Inject constructor(
                     // Fall back to old multi-call flow if /full endpoint is unavailable
                     loadViaLegacyFlow()
                 }
+            }
+
+            // Real seller analytics — never invent numbers; on failure the UI stays honest
+            when (val r = analyticsRepo.sellerStats()) {
+                is ApiResult.Success -> _state.value = _state.value.copy(
+                    profileViews = r.data.totalViews,
+                    viewsTrend = null, // per-day trend needs a series endpoint; summary only for now
+                )
+                is ApiResult.Failure -> {} // keep nulls — UI hides fake data
             }
 
             // Cache the successful state for instant display next time
@@ -1137,11 +1150,12 @@ fun ProfileScreen(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
 
-                                        // Escrow Verified Ribbon
+                                        // KYC status ribbon — reflects the user's REAL verification state
                                         Surface(
+                                            onClick = { if (user?.isKycVerified != true) onOpenKyc() },
                                             shape = RoundedCornerShape(20.dp),
-                                            color = Color(0xFF059669).copy(alpha = 0.12f),
-                                            border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.3f)),
+                                            color = if (user?.isKycVerified == true) Color(0xFF059669).copy(alpha = 0.12f) else Color(0xFFF59E0B).copy(alpha = 0.14f),
+                                            border = BorderStroke(1.dp, if (user?.isKycVerified == true) Color(0xFF059669).copy(alpha = 0.3f) else Color(0xFFF59E0B).copy(alpha = 0.4f)),
                                             modifier = Modifier.padding(vertical = 2.dp)
                                         ) {
                                             Row(
@@ -1149,12 +1163,17 @@ fun ProfileScreen(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                                             ) {
-                                                Icon(Icons.Filled.Verified, contentDescription = null, tint = Color(0xFF059669), modifier = Modifier.size(14.dp))
+                                                Icon(
+                                                    if (user?.isKycVerified == true) Icons.Filled.Verified else Icons.Default.Info,
+                                                    contentDescription = null,
+                                                    tint = if (user?.isKycVerified == true) Color(0xFF059669) else Color(0xFFB45309),
+                                                    modifier = Modifier.size(14.dp)
+                                                )
                                                 Text(
-                                                    text = "Verified Member",
+                                                    text = if (user?.isKycVerified == true) "KYC Verified" else "KYC Pending — tap to verify",
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.SemiBold,
-                                                    color = Color(0xFF059669)
+                                                    color = if (user?.isKycVerified == true) Color(0xFF059669) else Color(0xFFB45309)
                                                 )
                                             }
                                         }
@@ -1247,13 +1266,16 @@ fun ProfileScreen(
                                                 letterSpacing = 1.1.sp,
                                             )
                                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color(0xFF10B981), modifier = Modifier.size(14.dp))
-                                                Text("+24% Views", color = Color(0xFF10B981), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                // REAL views metric — hidden (never faked) until the analytics API supplies it
+                                                state.profileViews?.let { views ->
+                                                    Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = Color(0xFF10B981), modifier = Modifier.size(14.dp))
+                                                    Text("$views views", color = Color(0xFF10B981), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                }
                                             }
                                         }
 
-                                        // Canvas spline chart
-                                        Box(
+                                        // Canvas spline chart — hidden until real per-day analytics exist
+                                        if (state.viewsTrend != null) Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .height(96.dp)
@@ -1261,7 +1283,8 @@ fun ProfileScreen(
                                                 .background(if (darkTheme) Color(0xFF1E293B).copy(alpha = 0.5f) else Color(0xFFF1F5F9))
                                         ) {
                                             androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 12.dp)) {
-                                                val data = listOf(20f, 35f, 25f, 50f, 40f, 80f, 65f)
+                                                // Real views data when available; flat baseline otherwise (never a fake trend)
+                                                val data = state.viewsTrend ?: listOf(0f, 0f, 0f, 0f, 0f, 0f, 0f)
                                                 val maxData = data.maxOrNull() ?: 1f
                                                 val stepX = size.width / (data.size - 1)
                                                 val path = androidx.compose.ui.graphics.Path()
@@ -1313,7 +1336,8 @@ fun ProfileScreen(
                                                 }
                                             }
                                             Text(
-                                                "Profile Views: 315 this week",
+                                                state.profileViews?.let { "Profile views: $it" }
+                                                    ?: "View analytics appear once your listings get traffic",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
@@ -1739,7 +1763,44 @@ private fun AvatarWithRing(initial: Char, completionPercent: Int, size: Dp) {
     val ringTrack = Color.White.copy(alpha = 0.25f)
     val sweepAngle = 360f * completionPercent / 100f
 
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(size + 8.dp)) {
+    val infiniteTransition = rememberInfiniteTransition(label = "avatar_completion_glow")
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.85f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "avatar_glow_alpha",
+    )
+    val glowScale by infiniteTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "avatar_glow_scale",
+    )
+
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(size + 16.dp)) {
+        // Animated pulsing gradient ring if profile is 100% complete
+        if (completionPercent >= 100) {
+            Box(
+                modifier = Modifier
+                    .size((size + 8.dp) * glowScale)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFF10B981).copy(alpha = glowAlpha * 0.5f),
+                                Color(0xFF3B82F6).copy(alpha = glowAlpha * 0.25f),
+                                Color.Transparent,
+                            ),
+                        ),
+                    ),
+            )
+        }
         Canvas(modifier = Modifier.size(size)) {
             val strokeWidth = 4.dp.toPx()
             val inset = strokeWidth / 2f

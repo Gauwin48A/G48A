@@ -93,6 +93,7 @@ interface ZarudaApi {
         @Query("condition") condition: String? = null,
         @Query("subcategory") subcategory: String? = null,
         @Query("author") author: String? = null,
+        @Query("category_group") categoryGroup: String? = null,
     ): PostsResponse
 
     @GET("api/posts/{id}")

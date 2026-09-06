@@ -1,16 +1,19 @@
 package com.zaruda.app.ui.auth
 import com.zaruda.app.ui.theme.ColorTokens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.WarningAmber
@@ -25,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -100,6 +104,97 @@ class ResetPasswordViewModel @Inject constructor(
     }
 }
 
+// ── Layer 1: Ambient Glowing Aura Canvas ─────────────────────
+@Composable
+private fun ResetPasswordAtmosphericBackdrop(isDark: Boolean) {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        drawCircle(
+            color = Color(0xFF2563EB).copy(alpha = if (isDark) 0.15f else 0.22f),
+            radius = size.width * 0.45f,
+            center = Offset(size.width * 0.8f, size.height * 0.12f),
+        )
+        drawCircle(
+            color = Color(0xFF10B981).copy(alpha = if (isDark) 0.12f else 0.18f),
+            radius = size.width * 0.35f,
+            center = Offset(size.width * 0.15f, size.height * 0.28f),
+        )
+    }
+}
+
+// ── Layer 2: Floating Glass Top Bar ─────────────────────
+@Composable
+private fun ResetPasswordFloatingTopBar(
+    onBack: () -> Unit,
+    isDark: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = (if (isDark) Color(0xFF1E293B) else Color.White).copy(alpha = 0.88f),
+        border = BorderStroke(1.dp, (if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)).copy(alpha = 0.6f)),
+        shadowElevation = 6.dp,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable { onBack() }
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = if (isDark) Color.White else Color(0xFF1E293B),
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text = "Back to Login",
+                    color = if (isDark) Color.White else Color(0xFF1E293B),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFF059669).copy(alpha = 0.12f),
+                border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.3f)),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Shield,
+                        contentDescription = null,
+                        tint = Color(0xFF059669),
+                        modifier = Modifier.size(13.dp),
+                    )
+                    Text(
+                        text = "Escrow Safe",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF059669),
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun ResetPasswordScreen(
     token: String,
@@ -112,6 +207,7 @@ fun ResetPasswordScreen(
     var confirmPassword by rememberSaveable { mutableStateOf("") }
     var showPw by rememberSaveable { mutableStateOf(false) }
     var showConfirm by rememberSaveable { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     val darkTheme = ColorTokens.isDarkTheme()
     val pageGradient = Brush.verticalGradient(if (darkTheme) listOf(Color(0xFF0F1422), Color(0xFF161D2D), Color(0xFF1A2540)) else listOf(Color(0xFFF0F9FF), Color(0xFFEFF6FF), Color(0xFFE0E7FF)))
@@ -119,176 +215,205 @@ fun ResetPasswordScreen(
     val linkColor = if (darkTheme) Color(0xFF93C5FD) else Color(0xFF2563EB)
     val labelText = if (darkTheme) Color(0xFFE2E8F0) else Color(0xFF374151)
     val borderColor = if (darkTheme) Color(0xFF334155) else Color(0xFFE5E7EB)
+    val sheetContainerColor = if (darkTheme) Color(0xFF0F172A) else Color(0xFFF8FAFC)
 
     Box(modifier = Modifier.fillMaxSize().background(pageGradient)) {
-        Column(
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).imePadding()
-                .padding(WindowInsets.statusBars.asPaddingValues())
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp).clickable { onBack() },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = linkColor, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("Back to Login", color = linkColor, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            }
-            Spacer(Modifier.height(20.dp))
-            Surface(
-                modifier = Modifier.fillMaxWidth().widthIn(max = 460.dp)
-                    .shadow(16.dp, RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp), color = if (darkTheme) Color(0xFF1E293B) else Color.White,
-            ) {
-                Column(Modifier.fillMaxWidth()) {
-                    Column(
-                        Modifier.fillMaxWidth().background(brandGradient).padding(vertical = 26.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Box(
-                            Modifier.size(56.dp).clip(RoundedCornerShape(16.dp))
-                                .background(Color.White.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(
-                                if (state.success) Icons.Filled.CheckCircle else Icons.Filled.Lock,
-                                null, tint = Color.White, modifier = Modifier.size(28.dp),
-                            )
-                        }
-                        Spacer(Modifier.height(14.dp))
-                        Text(
-                            if (state.success) "Password Reset!" else "Reset Password",
-                            color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            if (state.success) "Redirecting to login…" else "Create a new secure password",
-                            color = Color(0xFFDBEAFE), fontSize = 13.sp,
-                        )
-                    }
-                    Column(
-                        Modifier.fillMaxWidth().padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
-                        state.error?.let { msg ->
-                            Row(
-                                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
-                                    .background(if (darkTheme) Color(0xFF451A03) else Color(0xFFFFFBEB)).padding(12.dp),
-                                verticalAlignment = Alignment.Top,
-                            ) {
-                                Icon(Icons.Filled.WarningAmber, null, tint = if (darkTheme) Color(0xFFFBBF24) else Color(0xFFB45309), modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text(msg, color = if (darkTheme) Color(0xFFFDE68A) else Color(0xFF92400E), fontSize = 12.sp)
-                            }
-                        }
-                        if (state.success) {
-                            Text(
-                                "Your password has been reset successfully.",
-                                color = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF6B7280), fontSize = 14.sp,
-                            )
-                            // Auto-redirect after 3 seconds
-                            LaunchedEffect(Unit) {
-                                kotlinx.coroutines.delay(3000)
-                                onGoToLogin()
-                            }
-                            GradientButton("Go to Login", brandGradient, true) { onGoToLogin() }
-                        } else {
-                            // Password requirements derived from password value
-                            val hasUpper = password.any { it.isUpperCase() }
-                            val hasLower = password.any { it.isLowerCase() }
-                            val hasDigit = password.any { it.isDigit() }
-                            val hasSpecial = password.any { it in "!@#\$%^&*" }
-                            val isLong = password.length >= 12
-                            val allMet = hasUpper && hasLower && hasDigit && hasSpecial && isLong
+        // ── Layer 1: Ambient Glowing Aura Canvas ─────────────────────
+        ResetPasswordAtmosphericBackdrop(isDark = darkTheme)
 
-                            Text("New Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
-                            OutlinedTextField(
-                                value = password, onValueChange = { password = it },
-                                placeholder = { Text("Enter new password", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
-                                singleLine = true, shape = RoundedCornerShape(12.dp),
-                                visualTransformation = if (showPw) VisualTransformation.None else PasswordVisualTransformation(),
-                                trailingIcon = {
-                                    IconButton(onClick = { showPw = !showPw }) {
-                                        Icon(if (showPw) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, null, tint = Color(0xFF6B7280))
-                                    }
-                                },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF3B82F6), unfocusedBorderColor = borderColor,
-                                    focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White, unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
-                                ),
-                                modifier = Modifier.fillMaxWidth().height(52.dp),
-                            )
-                            if (password.isNotEmpty()) {
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = if (darkTheme) Color(0xFF1E293B) else Color(0xFFF8FAFC),
+        Column(modifier = Modifier.fillMaxSize()) {
+            // ── Layer 2: Floating Glass Top Bar ─────────────────────
+            ResetPasswordFloatingTopBar(
+                onBack = onBack,
+                isDark = darkTheme,
+            )
+
+            // ── Layer 3: 32dp Curved Content Canvas ──────────────────
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = sheetContainerColor,
+                shadowElevation = 12.dp,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .imePadding()
+                        .padding(horizontal = 16.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    // Tactile Drag Handle Pill
+                    Box(
+                        modifier = Modifier
+                            .padding(bottom = 16.dp)
+                            .size(width = 36.dp, height = 4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                    )
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 460.dp)
+                            .shadow(16.dp, RoundedCornerShape(24.dp)),
+                        shape = RoundedCornerShape(24.dp), color = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                    ) {
+                        Column(Modifier.fillMaxWidth()) {
+                            Column(
+                                Modifier.fillMaxWidth().background(brandGradient).padding(vertical = 26.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Box(
+                                    Modifier.size(56.dp).clip(RoundedCornerShape(16.dp))
+                                        .background(Color.White.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center,
                                 ) {
-                                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        Text("Password requirements", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF64748B))
-                                        PasswordReqRow("12+ characters", isLong)
-                                        PasswordReqRow("Uppercase letter (A-Z)", hasUpper)
-                                        PasswordReqRow("Lowercase letter (a-z)", hasLower)
-                                        PasswordReqRow("Number (0-9)", hasDigit)
-                                        PasswordReqRow("Special character (!@#\$%^&*)", hasSpecial)
-                                    }
+                                    Icon(
+                                        if (state.success) Icons.Filled.CheckCircle else Icons.Filled.Lock,
+                                        null, tint = Color.White, modifier = Modifier.size(28.dp),
+                                    )
                                 }
+                                Spacer(Modifier.height(14.dp))
+                                Text(
+                                    if (state.success) "Password Reset!" else "Reset Password",
+                                    color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp,
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    if (state.success) "Redirecting to login…" else "Create a new secure password",
+                                    color = Color(0xFFDBEAFE), fontSize = 13.sp,
+                                )
                             }
-                            Text("Confirm Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
-                            OutlinedTextField(
-                                value = confirmPassword, onValueChange = { confirmPassword = it },
-                                placeholder = { Text("Confirm new password", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
-                                singleLine = true, shape = RoundedCornerShape(12.dp),
-                                visualTransformation = if (showConfirm) VisualTransformation.None else PasswordVisualTransformation(),
-                                trailingIcon = {
-                                    IconButton(onClick = { showConfirm = !showConfirm }) {
-                                        Icon(if (showConfirm) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, null, tint = Color(0xFF6B7280))
-                                    }
-                                },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF3B82F6), unfocusedBorderColor = borderColor,
-                                    focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White, unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
-                                ),
-                                modifier = Modifier.fillMaxWidth().height(52.dp),
-                            )
-                            // Instant red mismatch warning pill (live, before submit).
-                            if (confirmPassword.isNotBlank() && confirmPassword != password) {
-                                Surface(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = Color(0xFFEF4444).copy(alpha = if (darkTheme) 0.18f else 0.10f),
-                                ) {
+                            Column(
+                                Modifier.fillMaxWidth().padding(24.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                            ) {
+                                state.error?.let { msg ->
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                                            .background(if (darkTheme) Color(0xFF451A03) else Color(0xFFFFFBEB)).padding(12.dp),
+                                        verticalAlignment = Alignment.Top,
                                     ) {
-                                        Icon(
-                                            Icons.Filled.WarningAmber,
-                                            null,
-                                            tint = if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFDC2626),
-                                            modifier = Modifier.size(16.dp),
-                                        )
-                                        Text(
-                                            "Passwords do not match",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = if (darkTheme) Color(0xFFFECACA) else Color(0xFFB91C1C),
-                                        )
+                                        Icon(Icons.Filled.WarningAmber, null, tint = if (darkTheme) Color(0xFFFBBF24) else Color(0xFFB45309), modifier = Modifier.size(16.dp))
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(msg, color = if (darkTheme) Color(0xFFFDE68A) else Color(0xFF92400E), fontSize = 12.sp)
+                                    }
+                                }
+                                if (state.success) {
+                                    Text(
+                                        "Your password has been reset successfully.",
+                                        color = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF6B7280), fontSize = 14.sp,
+                                    )
+                                    // Auto-redirect after 3 seconds
+                                    LaunchedEffect(Unit) {
+                                        kotlinx.coroutines.delay(3000)
+                                        onGoToLogin()
+                                    }
+                                    GradientButton("Go to Login", brandGradient, true) { onGoToLogin() }
+                                } else {
+                                    // Password requirements derived from password value
+                                    val hasUpper = password.any { it.isUpperCase() }
+                                    val hasLower = password.any { it.isLowerCase() }
+                                    val hasDigit = password.any { it.isDigit() }
+                                    val hasSpecial = password.any { it in "!@#\$%^&*" }
+                                    val isLong = password.length >= 12
+                                    val allMet = hasUpper && hasLower && hasDigit && hasSpecial && isLong
+
+                                    Text("New Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
+                                    OutlinedTextField(
+                                        value = password, onValueChange = { password = it },
+                                        placeholder = { Text("Enter new password", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
+                                        singleLine = true, shape = RoundedCornerShape(12.dp),
+                                        visualTransformation = if (showPw) VisualTransformation.None else PasswordVisualTransformation(),
+                                        trailingIcon = {
+                                            IconButton(onClick = { showPw = !showPw }) {
+                                                Icon(if (showPw) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, null, tint = Color(0xFF6B7280))
+                                            }
+                                        },
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF3B82F6), unfocusedBorderColor = borderColor,
+                                            focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White, unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                                        ),
+                                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                                    )
+                                    if (password.isNotEmpty()) {
+                                        Surface(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = if (darkTheme) Color(0xFF1E293B) else Color(0xFFF8FAFC),
+                                        ) {
+                                            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                Text("Password requirements", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (darkTheme) Color(0xFF94A3B8) else Color(0xFF64748B))
+                                                PasswordReqRow("12+ characters", isLong)
+                                                PasswordReqRow("Uppercase letter (A-Z)", hasUpper)
+                                                PasswordReqRow("Lowercase letter (a-z)", hasLower)
+                                                PasswordReqRow("Number (0-9)", hasDigit)
+                                                PasswordReqRow("Special character (!@#\$%^&*)", hasSpecial)
+                                            }
+                                        }
+                                    }
+                                    Text("Confirm Password", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = labelText)
+                                    OutlinedTextField(
+                                        value = confirmPassword, onValueChange = { confirmPassword = it },
+                                        placeholder = { Text("Confirm new password", color = if (darkTheme) Color(0xFF64748B) else Color(0xFF94A3B8)) },
+                                        singleLine = true, shape = RoundedCornerShape(12.dp),
+                                        visualTransformation = if (showConfirm) VisualTransformation.None else PasswordVisualTransformation(),
+                                        trailingIcon = {
+                                            IconButton(onClick = { showConfirm = !showConfirm }) {
+                                                Icon(if (showConfirm) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, null, tint = Color(0xFF6B7280))
+                                            }
+                                        },
+                                        colors = OutlinedTextFieldDefaults.colors(
+                                            focusedBorderColor = if (darkTheme) Color(0xFF60A5FA) else Color(0xFF3B82F6), unfocusedBorderColor = borderColor,
+                                            focusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White, unfocusedContainerColor = if (darkTheme) Color(0xFF1E293B) else Color.White,
+                                        ),
+                                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                                    )
+                                    // Instant red mismatch warning pill (live, before submit).
+                                    if (confirmPassword.isNotBlank() && confirmPassword != password) {
+                                        Surface(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = Color(0xFFEF4444).copy(alpha = if (darkTheme) 0.18f else 0.10f),
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            ) {
+                                                Icon(
+                                                    Icons.Filled.WarningAmber,
+                                                    null,
+                                                    tint = if (darkTheme) Color(0xFFFCA5A5) else Color(0xFFDC2626),
+                                                    modifier = Modifier.size(16.dp),
+                                                )
+                                                Text(
+                                                    "Passwords do not match",
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = if (darkTheme) Color(0xFFFECACA) else Color(0xFFB91C1C),
+                                                )
+                                            }
+                                        }
+                                    }
+                                    val canSubmit = !state.loading && password.isNotBlank() && confirmPassword.isNotBlank() && allMet
+                                    GradientButton(
+                                        if (state.loading) "Resetting…" else "Reset Password",
+                                        brandGradient, canSubmit,
+                                    ) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        viewModel.submit(token, password, confirmPassword)
                                     }
                                 }
                             }
-                            val canSubmit = !state.loading && password.isNotBlank() && confirmPassword.isNotBlank() && allMet
-                            GradientButton(
-                                if (state.loading) "Resetting…" else "Reset Password",
-                                brandGradient, canSubmit,
-                            ) { viewModel.submit(token, password, confirmPassword) }
                         }
                     }
+                    Spacer(Modifier.height(24.dp))
                 }
             }
-            Spacer(Modifier.height(24.dp))
         }
 
         // CRED-style confetti celebration on successful reset.

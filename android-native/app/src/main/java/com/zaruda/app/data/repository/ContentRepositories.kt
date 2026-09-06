@@ -11,6 +11,7 @@ import com.zaruda.app.data.remote.dto.*
 import com.zaruda.app.domain.model.Category
 import com.zaruda.app.domain.model.Notification
 import com.zaruda.app.domain.model.Post
+import com.zaruda.app.ui.wishlist.canonicalMarketplaceKey
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -110,11 +111,63 @@ class PostsRepository @Inject constructor(
         condition: String? = null,
         subcategory: String? = null,
     ): ApiResult<List<Post>> {
-        val result = safeApiCall { api.posts(page, limit, categoryId, query, sort, condition, subcategory).allItems }
+        // ── Category-bleed guard ──────────────────────────────────────────────
+        // Canonical group keys ("electronics", "fashion", "vehicles", "others") are
+        // SENT AS category_group (server maps groups → all matching category ids),
+        // never as category — a group key must never be compared against p.category_id
+        // (numeric) and subcategory ids must never be compared against category_id
+        // (both are small integers → cross-category matches).
+        val canonicalGroups = setOf("electronics", "fashion", "vehicles", "others")
+        val requestedKey = categoryId?.trim()?.lowercase()
+        val effectiveCategory: String?
+        val effectiveGroup: String?
+        if (requestedKey != null && requestedKey in canonicalGroups) {
+            effectiveCategory = null
+            effectiveGroup = requestedKey
+        } else {
+            effectiveCategory = categoryId
+            effectiveGroup = null
+        }
+
+        val result = safeApiCall {
+            api.posts(
+                page = page, limit = limit, categoryId = effectiveCategory, query = query,
+                sort = sort, condition = condition, subcategory = subcategory,
+                categoryGroup = effectiveGroup,
+            ).allItems
+        }
         if (result is ApiResult.Success && page == 1) {
             // Cache page 1 results; evict entries older than TTL
             postDao.evictStale(System.currentTimeMillis() - CACHE_TTL_MS)
             postDao.insertAll(result.data.map { it.toEntity() })
+        }
+        if (result is ApiResult.Success && (effectiveCategory != null || effectiveGroup != null)) {
+            // Client-side safety net: a scoped fetch must NEVER surface posts from
+            // another category, even if a server filter silently no-ops.
+            val target = com.zaruda.app.ui.wishlist.normalizeMarketplaceCategoryKey(
+                effectiveCategory ?: effectiveGroup
+            )
+            val sub = subcategory?.trim()?.lowercase()?.takeIf { it.isNotBlank() && it != "all" }
+            // Only enforce subcategory by NAME — numeric values are server subcategory ids
+            // and must not be string-matched against post subcategory names.
+            val subName = sub?.takeIf { !it.all { ch -> ch.isDigit() } }
+            val filtered = result.data.filter { post ->
+                val postKey = post.canonicalMarketplaceKey() ?: return@filter true
+                if (postKey != target) return@filter false
+                if (subName != null && effectiveGroup != null) {
+                    // Explicit named-subcategory scope within a group fetch — enforce it too.
+                    val postSub = (post.subcategoryName ?: post.subcategory ?: "").lowercase()
+                    if (postSub.isNotEmpty() && subName !in postSub && postSub !in subName) return@filter false
+                }
+                true
+            }
+            if (filtered.size != result.data.size) {
+                android.util.Log.w(
+                    "PostsRepository",
+                    "Category bleed blocked: ${result.data.size - filtered.size} post(s) dropped for scope '$requestedKey'",
+                )
+            }
+            return ApiResult.Success(filtered)
         }
         if (result is ApiResult.Failure) {
             // Return cached posts as fallback on network failure

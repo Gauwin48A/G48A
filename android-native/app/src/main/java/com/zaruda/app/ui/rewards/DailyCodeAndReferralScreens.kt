@@ -1,54 +1,37 @@
 package com.zaruda.app.ui.rewards
 
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,17 +44,14 @@ import com.zaruda.app.core.userFacingMessage
 import com.zaruda.app.data.remote.dto.ReferralNode
 import com.zaruda.app.data.remote.dto.ReferralTreeResponse
 import com.zaruda.app.data.repository.ReferralTreeRepository
+import com.zaruda.app.ui.theme.ColorTokens
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.ui.text.drawText
 import java.util.Calendar
+import javax.inject.Inject
 
 data class DailyCodeState(
     val loading: Boolean = true,
@@ -134,121 +114,393 @@ class DailyCodeViewModel @Inject constructor(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun DailyCodeScreen(onBack: () -> Unit, viewModel: DailyCodeViewModel = hiltViewModel()) {
-    val state by viewModel.state.collectAsState()
-    val clipboardManager = LocalClipboardManager.current
+/* ── Layer 1: Ambient Atmospheric Canvas Backdrop ─────────────────────────── */
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Daily Code", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+@Composable
+private fun RewardsBackdrop(
+    isDark: Boolean,
+    primaryAura: Color = Color(0xFFF59E0B),
+    secondaryAura: Color = Color(0xFF10B981),
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(230.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = if (isDark) {
+                        listOf(Color(0xFF0F172A), Color(0xFF281C08), Color(0xFF0F172A))
+                    } else {
+                        listOf(Color(0xFFFFFBEB), Color(0xFFFEF3C7), Color(0xFFF8FAFC))
+                    }
+                )
             )
-        },
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-            if (state.loading) {
-                CircularProgressIndicator()
-            } else if (state.code != null) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-                    Text("Today's Code", fontSize = 14.sp, color = Color(0xFF64748B))
-                    Spacer(Modifier.height(12.dp))
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFF1D4ED8),
-                        shadowElevation = 8.dp,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Column(
-                            Modifier.padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(
-                                state.code.orEmpty(),
-                                fontSize = 36.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                letterSpacing = 4.sp,
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            state.reward?.let {
-                                Text("Reward: $it points", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        IconButton(onClick = { clipboardManager.setText(AnnotatedString(state.code.orEmpty())) }) {
-                            Icon(Icons.Default.ContentCopy, "Copy", tint = MaterialTheme.colorScheme.primary)
-                        }
-                        IconButton(onClick = { /* share intent */ }) {
-                            Icon(Icons.Default.Share, "Share", tint = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    state.expiresAt?.let {
-                        Text("Expires: ${it.take(10)}", fontSize = 12.sp, color = Color(0xFF94A3B8))
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    // ── Interactive code input + Redeem ──
-                    var inputCode by remember { mutableStateOf("") }
-                    OutlinedTextField(
-                        value = inputCode,
-                        onValueChange = { inputCode = it.uppercase() },
-                        label = { Text("Enter secret code") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+
+            // Aura 1 - Top Left Gold
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        primaryAura.copy(alpha = if (isDark) 0.32f else 0.42f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(canvasWidth * 0.20f, canvasHeight * 0.25f),
+                    radius = canvasWidth * 0.60f,
+                )
+            )
+
+            // Aura 2 - Top Right Emerald
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        secondaryAura.copy(alpha = if (isDark) 0.22f else 0.30f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(canvasWidth * 0.85f, canvasHeight * 0.35f),
+                    radius = canvasWidth * 0.50f,
+                )
+            )
+        }
+
+        // Dark top vignette scrim
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(90.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.45f),
+                            Color.Transparent,
+                        )
                     )
-                    Spacer(Modifier.height(8.dp))
-                    Button(
-                        onClick = {
-                            if (inputCode.isNotBlank()) {
-                                viewModel.redeemCode(inputCode.trim())
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth().height(44.dp),
-                        enabled = inputCode.isNotBlank() && !state.redeemLoading,
-                        shape = RoundedCornerShape(12.dp),
+                )
+        )
+
+        // Ambient bottom gradient scrim
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(70.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            if (isDark) Color(0xFF0F172A).copy(alpha = 0.80f) else Color(0xFFF8FAFC).copy(alpha = 0.85f),
+                        )
+                    )
+                )
+        )
+    }
+}
+
+/* ── Layer 2: Pinned Floating Glassmorphic Top Bar ────────────────────────── */
+
+@Composable
+private fun RewardsGlassTopBar(
+    title: String,
+    badgeText: String,
+    isDark: Boolean,
+    onBack: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.88f),
+            border = BorderStroke(1.dp, if (isDark) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.08f)),
+            shadowElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.size(36.dp),
+                        onClick = onBack,
                     ) {
-                        if (state.redeemLoading) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
-                        } else {
-                            Text("Redeem Code", fontWeight = FontWeight.Bold)
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                modifier = Modifier.size(18.dp),
+                            )
                         }
                     }
-                    state.redeemResult?.let {
-                        Spacer(Modifier.height(8.dp))
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (it.contains("🎉")) Color(0xFF10B981).copy(alpha = 0.12f) else Color(0xFFDC2626).copy(alpha = 0.12f),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(it, modifier = Modifier.padding(10.dp), style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.SemiBold, color = if (it.contains("🎉")) Color(0xFF059669) else Color(0xFFDC2626))
-                        }
-                    }
+
+                    Text(
+                        text = title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
-            } else {
-                Text("No daily code available", color = Color(0xFF64748B))
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFF59E0B).copy(alpha = 0.14f),
+                    border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f)),
+                ) {
+                    Text(
+                        text = badgeText,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFFD97706),
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                    )
+                }
             }
         }
     }
 }
 
-// ─── Referral Tree ──────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Daily Code Screen
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+fun DailyCodeScreen(onBack: () -> Unit, viewModel: DailyCodeViewModel = hiltViewModel()) {
+    val state by viewModel.state.collectAsState()
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val isDark = ColorTokens.isDark
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        // Layer 1: Ambient Backdrop
+        RewardsBackdrop(isDark = isDark, primaryAura = Color(0xFFF59E0B))
+
+        // Layer 3: 32dp Curved Content Sheet
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(modifier = Modifier.height(108.dp))
+
+            Surface(
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    // Tactile Drag Handle
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 12.dp, bottom = 12.dp)
+                            .width(44.dp)
+                            .height(4.5.dp)
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)),
+                    )
+
+                    if (state.loading) {
+                        Box(Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    } else if (state.code != null) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+                        ) {
+                            Text(
+                                "Today's Zaruda Drop",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.height(12.dp))
+
+                            // Golden Code Card
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = Color(0xFF1D4ED8),
+                                shadowElevation = 8.dp,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Column(
+                                    Modifier.padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    Text(
+                                        state.code.orEmpty(),
+                                        fontSize = 34.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color.White,
+                                        letterSpacing = 4.sp,
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                    state.reward?.let {
+                                        Surface(
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = Color.White.copy(alpha = 0.2f),
+                                        ) {
+                                            Text(
+                                                "🪙 +$it Zaruda Coins",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(16.dp))
+
+                            // Action buttons (Copy / Share)
+                            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                                Button(
+                                    onClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        clipboardManager.setText(AnnotatedString(state.code.orEmpty()))
+                                        Toast.makeText(context, "Code copied to clipboard!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                ) {
+                                    Icon(Icons.Default.ContentCopy, "Copy", modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Copy Code")
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        val sendIntent = android.content.Intent().apply {
+                                            action = android.content.Intent.ACTION_SEND
+                                            putExtra(android.content.Intent.EXTRA_TEXT, "Use my Zaruda daily code: ${state.code} to get +15 bonus coins!")
+                                            type = "text/plain"
+                                        }
+                                        context.startActivity(android.content.Intent.createChooser(sendIntent, "Share daily code"))
+                                    },
+                                    shape = RoundedCornerShape(12.dp),
+                                ) {
+                                    Icon(Icons.Default.Share, "Share", modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text("Share")
+                                }
+                            }
+
+                            Spacer(Modifier.height(12.dp))
+                            state.expiresAt?.let {
+                                Text("Expires today at midnight", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+
+                            Spacer(Modifier.height(24.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            Spacer(Modifier.height(20.dp))
+
+                            // Redeem Box
+                            Text(
+                                "Have a Promo or Referral Code?",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Spacer(Modifier.height(8.dp))
+
+                            var inputCode by remember { mutableStateOf("") }
+                            OutlinedTextField(
+                                value = inputCode,
+                                onValueChange = { inputCode = it.uppercase() },
+                                label = { Text("Enter secret promo code") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            Button(
+                                onClick = {
+                                    if (inputCode.isNotBlank()) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        viewModel.redeemCode(inputCode.trim())
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                enabled = inputCode.isNotBlank() && !state.redeemLoading,
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669)),
+                            ) {
+                                if (state.redeemLoading) {
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Color.White)
+                                } else {
+                                    Text("Redeem Reward", fontWeight = FontWeight.Bold)
+                                }
+                            }
+
+                            state.redeemResult?.let { resultMsg ->
+                                Spacer(Modifier.height(12.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFF059669).copy(alpha = 0.12f),
+                                    border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.35f)),
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Text(
+                                        resultMsg,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF059669),
+                                        modifier = Modifier.padding(12.dp),
+                                    )
+                                }
+                            }
+
+                            Spacer(Modifier.height(40.dp))
+                        }
+                    }
+                }
+            }
+        }
+
+        // Layer 2: Floating Glass Top Bar
+        RewardsGlassTopBar(
+            title = "Daily Drops",
+            badgeText = "🪙 +15 Coins",
+            isDark = isDark,
+            onBack = onBack,
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Referral Tree Screen
+// ─────────────────────────────────────────────────────────────────────────────
 
 data class ReferralState(
     val loading: Boolean = true,
-    val error: String? = null,
-    val activeTab: Int = 0,
     val directNodes: List<ReferralNode> = emptyList(),
     val indirectNodes: List<ReferralNode> = emptyList(),
     val totalDirect: Int = 0,
     val totalIndirect: Int = 0,
     val totalReferrals: Int = 0,
+    val error: String? = null,
 )
 
 @HiltViewModel
@@ -258,20 +510,13 @@ class ReferralTreeViewModel @Inject constructor(
     private val _state = MutableStateFlow(ReferralState())
     val state: StateFlow<ReferralState> = _state.asStateFlow()
 
-    init { load() }
-
-    fun setActiveTab(tab: Int) {
-        _state.value = _state.value.copy(activeTab = tab)
-    }
-
-    fun retry() {
-        _state.value = ReferralState(loading = true)
+    init {
         load()
     }
 
-    private fun load() {
+    fun load() {
+        _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
-            // Add timeout so the UI never hangs permanently
             val result = kotlinx.coroutines.withTimeoutOrNull(8000L) { repo.tree() }
                 ?: ApiResult.Failure(ApiError.Timeout)
 
@@ -312,123 +557,178 @@ class ReferralTreeViewModel @Inject constructor(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReferralTreeScreen(onBack: () -> Unit, viewModel: ReferralTreeViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val isDark = ColorTokens.isDark
 
-    Scaffold(
-        // Top bar is the shared marketplace-style bar rendered by MainShell (back arrow via topBarBack).
-    ) { padding ->
-        when {
-            state.loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CircularProgressIndicator()
-                    Text("Loading referral network...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            state.directNodes.isEmpty() && state.indirectNodes.isEmpty() -> Box(
-                Modifier.fillMaxSize().padding(padding).padding(32.dp),
-                contentAlignment = Alignment.Center
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        // Layer 1: Ambient Canvas Backdrop
+        RewardsBackdrop(isDark = isDark, primaryAura = Color(0xFF2563EB), secondaryAura = Color(0xFF059669))
+
+        // Layer 3: 32dp Curved Content Sheet
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(modifier = Modifier.height(108.dp))
+
+            Surface(
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxSize(),
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("\uD83D\uDC65", fontSize = 40.sp)
-                    Text("No referrals yet.", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text("Share your referral code to grow your network!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                }
-            }
-            else -> Column(Modifier.fillMaxSize().padding(padding).background(Color(0xFFF8FAFC))) {
-                // Summary header card
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF3B82F6)),
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                ) {
-                    Column(Modifier.padding(20.dp)) {
-                        Text("Your Referral Network", fontSize = 13.sp, color = Color.White.copy(alpha = 0.8f))
-                        Text("${state.totalReferrals} Members", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("${state.totalDirect} Direct • ${state.totalIndirect} Indirect", fontSize = 11.sp, color = Color.White.copy(alpha = 0.65f))
-                    }
-                }
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Tactile Drag Handle
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 12.dp, bottom = 10.dp)
+                            .width(44.dp)
+                            .height(4.5.dp)
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
+                            .align(Alignment.CenterHorizontally),
+                    )
 
-                // Hierarchical Node Graph
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White)
-                        .verticalScroll(rememberScrollState())
-                        .horizontalScroll(rememberScrollState())
-                ) {
-                    val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
-                    val primaryColor = Color(0xFF3B82F6)
-                    val secondaryColor = Color(0xFFDBEAFE)
-                    val textColor = Color(0xFF0F172A)
+                    when {
+                        state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                CircularProgressIndicator()
+                                Text("Mapping referral tree...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        state.directNodes.isEmpty() && state.indirectNodes.isEmpty() -> Box(
+                            Modifier.fillMaxSize().padding(32.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("👥", fontSize = 44.sp)
+                                Text("No referrals yet.", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                Text("Share your referral code to grow your network and earn tier coins!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            }
+                        }
+                        else -> Column(Modifier.fillMaxSize()) {
+                            // Summary Header Card
+                            Surface(
+                                shape = RoundedCornerShape(18.dp),
+                                color = if (isDark) Color(0xFF1E293B) else Color(0xFF2563EB),
+                                border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color.Transparent),
+                                shadowElevation = 4.dp,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(18.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Column {
+                                        Text("Your Referral Network", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                                        Text("${state.totalReferrals} Members", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text("${state.totalDirect} Direct (Tier 1) • ${state.totalIndirect} Indirect (Tier 2)", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                                    }
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = Color.White.copy(alpha = 0.2f),
+                                        modifier = Modifier.size(44.dp),
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Filled.People, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                                        }
+                                    }
+                                }
+                            }
 
-                    androidx.compose.foundation.Canvas(modifier = Modifier.size(600.dp, 600.dp).padding(32.dp)) {
-                        val nodeRadius = 24.dp.toPx()
-                        val levelHeight = 120.dp.toPx()
-                        
-                        // Draw lines first so they are behind nodes
-                        val rootCenter = androidx.compose.ui.geometry.Offset(size.width / 2, nodeRadius)
-                        
-                        // Calculate positions
-                        val directY = rootCenter.y + levelHeight
-                        val indirectY = directY + levelHeight
-                        
-                        val directs = state.directNodes
-                        val indirects = state.indirectNodes
-                        
-                        val directSpacing = if (directs.size > 1) size.width / directs.size else size.width
-                        val directCenters = directs.mapIndexed { index, _ -> 
-                            androidx.compose.ui.geometry.Offset((index + 0.5f) * directSpacing, directY)
-                        }
-                        
-                        val indirectSpacing = if (indirects.size > 1) size.width / indirects.size else size.width
-                        val indirectCenters = indirects.mapIndexed { index, _ -> 
-                            androidx.compose.ui.geometry.Offset((index + 0.5f) * indirectSpacing, indirectY)
-                        }
+                            // Hierarchical Node Graph Container
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(if (isDark) Color(0xFF0F172A) else Color.White)
+                                    .verticalScroll(rememberScrollState())
+                                    .horizontalScroll(rememberScrollState()),
+                            ) {
+                                val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
+                                val primaryColor = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB)
+                                val secondaryColor = Color(0xFF10B981)
+                                val textColor = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A)
 
-                        // Draw lines: Root -> Directs
-                        directCenters.forEach { center ->
-                            drawLine(color = primaryColor.copy(alpha = 0.3f), start = rootCenter, end = center, strokeWidth = 4f)
-                        }
-                        
-                        // Draw lines: Directs -> Indirects (Simulated, connecting to nearest direct)
-                        indirectCenters.forEach { indirectCenter ->
-                            val closestDirect = directCenters.minByOrNull { kotlin.math.abs(it.x - indirectCenter.x) } ?: rootCenter
-                            drawLine(color = primaryColor.copy(alpha = 0.15f), start = closestDirect, end = indirectCenter, strokeWidth = 2f)
-                        }
+                                Canvas(modifier = Modifier.size(600.dp, 560.dp).padding(32.dp)) {
+                                    val nodeRadius = 24.dp.toPx()
+                                    val levelHeight = 120.dp.toPx()
 
-                        // Draw Nodes function
-                        fun drawNode(center: androidx.compose.ui.geometry.Offset, name: String, color: Color) {
-                            drawCircle(color = color, radius = nodeRadius, center = center)
-                            drawCircle(color = Color.White, radius = nodeRadius * 0.9f, center = center)
-                            
-                            val textLayoutResult = textMeasurer.measure(name.take(1).uppercase(), androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color))
-                            val textOffset = androidx.compose.ui.geometry.Offset(center.x - textLayoutResult.size.width / 2, center.y - textLayoutResult.size.height / 2)
-                            
-                            drawText(textMeasurer, name.take(1).uppercase(), textOffset, androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color))
-                            val nameLayout = textMeasurer.measure(name, androidx.compose.ui.text.TextStyle(fontSize = 12.sp, color = textColor))
-                            drawText(textMeasurer, name, androidx.compose.ui.geometry.Offset(center.x - nameLayout.size.width / 2, center.y + nodeRadius + 8.dp.toPx()), androidx.compose.ui.text.TextStyle(fontSize = 12.sp, color = textColor))
-                        }
+                                    val rootCenter = Offset(size.width / 2, nodeRadius)
+                                    val directY = rootCenter.y + levelHeight
+                                    val indirectY = directY + levelHeight
 
-                        // Draw Root Node
-                        drawNode(rootCenter, "You", primaryColor)
-                        
-                        // Draw Direct Nodes
-                        directCenters.forEachIndexed { index, center ->
-                            drawNode(center, directs[index].name, primaryColor)
-                        }
-                        
-                        // Draw Indirect Nodes
-                        indirectCenters.forEachIndexed { index, center ->
-                            drawNode(center, indirects[index].name, Color(0xFF10B981))
+                                    val directs = state.directNodes
+                                    val indirects = state.indirectNodes
+
+                                    val directSpacing = if (directs.size > 1) size.width / directs.size else size.width
+                                    val directCenters = directs.mapIndexed { index, _ ->
+                                        Offset((index + 0.5f) * directSpacing, directY)
+                                    }
+
+                                    val indirectSpacing = if (indirects.size > 1) size.width / indirects.size else size.width
+                                    val indirectCenters = indirects.mapIndexed { index, _ ->
+                                        Offset((index + 0.5f) * indirectSpacing, indirectY)
+                                    }
+
+                                    // Lines: Root -> Directs
+                                    directCenters.forEach { center ->
+                                        drawLine(color = primaryColor.copy(alpha = 0.35f), start = rootCenter, end = center, strokeWidth = 4f)
+                                    }
+
+                                    // Lines: Directs -> Indirects
+                                    indirectCenters.forEach { indirectCenter ->
+                                        val closestDirect = directCenters.minByOrNull { kotlin.math.abs(it.x - indirectCenter.x) } ?: rootCenter
+                                        drawLine(color = secondaryColor.copy(alpha = 0.25f), start = closestDirect, end = indirectCenter, strokeWidth = 2.5f)
+                                    }
+
+                                    // Draw Nodes
+                                    fun drawNode(center: Offset, name: String, color: Color) {
+                                        drawCircle(color = color, radius = nodeRadius, center = center)
+                                        drawCircle(color = if (isDark) Color(0xFF1E293B) else Color.White, radius = nodeRadius * 0.88f, center = center)
+
+                                        val textLayoutResult = textMeasurer.measure(
+                                            name.take(1).uppercase(),
+                                            androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color),
+                                        )
+                                        val textOffset = Offset(center.x - textLayoutResult.size.width / 2, center.y - textLayoutResult.size.height / 2)
+                                        drawText(textMeasurer, name.take(1).uppercase(), textOffset, androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color))
+
+                                        val nameLayout = textMeasurer.measure(name, androidx.compose.ui.text.TextStyle(fontSize = 12.sp, color = textColor))
+                                        drawText(textMeasurer, name, Offset(center.x - nameLayout.size.width / 2, center.y + nodeRadius + 8.dp.toPx()), androidx.compose.ui.text.TextStyle(fontSize = 12.sp, color = textColor))
+                                    }
+
+                                    // Root Node
+                                    drawNode(rootCenter, "You", primaryColor)
+
+                                    // Direct Nodes
+                                    directCenters.forEachIndexed { index, center ->
+                                        drawNode(center, directs[index].name, primaryColor)
+                                    }
+
+                                    // Indirect Nodes
+                                    indirectCenters.forEachIndexed { index, center ->
+                                        drawNode(center, indirects[index].name, secondaryColor)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+
+        // Layer 2: Pinned Floating Glass Top Bar
+        RewardsGlassTopBar(
+            title = "Referral Network",
+            badgeText = "🌳 Network Tree",
+            isDark = isDark,
+            onBack = onBack,
+        )
     }
 }

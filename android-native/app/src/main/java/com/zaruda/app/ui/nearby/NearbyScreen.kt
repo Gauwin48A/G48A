@@ -296,7 +296,7 @@ private fun NearbyPostCard(post: Post, distanceKm: Double?, onClick: () -> Unit)
                         modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp),
                     ) {
                         Text(
-                            if (dist < 1.0) "${(dist * 1000).toInt()}m" else "${"%.1f".format(dist)}km",
+                            if (dist < 1.0) "${(dist * 1000).toInt()}m" else "%.1f".format(dist) + "km",
                             fontSize = 9.sp,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
@@ -309,7 +309,7 @@ private fun NearbyPostCard(post: Post, distanceKm: Double?, onClick: () -> Unit)
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(post.displayTitle, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 post.price?.let {
-                    Text("\u20B9${"%,.0f".format(it)}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text("₹" + "%,.0f".format(it), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     post.location?.let {

@@ -1149,7 +1149,7 @@ data class Review(
     @SerialName("reviewer_avatar") val reviewerAvatar: String? = null,
     val rating: Float = 0f,
     val comment: String? = null,
-    val response: String? = null,
+    @SerialName("seller_response") val response: String? = null,
     @SerialName("helpful_count") val helpfulCount: Int = 0,
     @SerialName("verified_purchase") val verifiedPurchase: Boolean = false,
     @SerialName("created_at") val createdAt: String? = null,
@@ -1168,6 +1168,8 @@ data class ReviewsResponse(
 @Serializable
 data class ReviewStats(
     val distribution: Map<String, Int> = emptyMap(),
+    @SerialName("totalReviews") val totalReviews: Int = 0,
+    @SerialName("averageRating") val averageRating: String = "0.0",
 )
 
 @Serializable

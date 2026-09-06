@@ -114,6 +114,13 @@ data class SoldPostsUiState(
     val boughtLoading: Boolean = false,
     val boughtError: String? = null,
     val totalBought: Int = 0,
+    // Public reviews about this user (Reviews tab)
+    val reviews: List<Review> = emptyList(),
+    val reviewStats: ReviewStats? = null,
+    val reviewsTotal: Int = 0,
+    val reviewAvg: Float = 0f,
+    val reviewsLoading: Boolean = false,
+    val reviewsError: String? = null,
 )
 
 private fun UserSoldPostV1.toSoldPostItem(): SoldPostItem = SoldPostItem(
@@ -137,6 +144,7 @@ class SoldPostsViewModel @Inject constructor(
     private val purchaseReviewRepo: PurchaseReviewRepositoryV1,
     private val tokenStore: TokenStore,
     private val localeManager: com.zaruda.app.core.LocaleManager,
+    private val api: com.zaruda.app.data.remote.ZarudaApi,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SoldPostsUiState())
     val state: StateFlow<SoldPostsUiState> = _state.asStateFlow()
@@ -184,6 +192,34 @@ class SoldPostsViewModel @Inject constructor(
             when (val r = repo.postsByAuthor(uid, limit = 100)) {
                 is ApiResult.Success -> _state.update { it.copy(activeLoading = false, activeListings = r.data) }
                 is ApiResult.Failure -> _state.update { it.copy(activeLoading = false) }
+            }
+        }
+    }
+
+    /** Load public reviews about this user via GET /api/reviews/user/{userId}. */
+    fun loadReviews() {
+        val uid = targetUserId ?: currentUserId ?: return
+        _state.update { it.copy(reviewsLoading = true) }
+        viewModelScope.launch {
+            try {
+                val r = api.userReviews(uid)
+                // Server shape: { reviews, stats: { totalReviews, averageRating, distribution } }
+                val statsAvg = r.stats?.averageRating?.toFloatOrNull() ?: 0f
+                val statsTotal = r.stats?.totalReviews ?: 0
+                _state.update {
+                    it.copy(
+                        reviewsLoading = false,
+                        reviews = r.reviews,
+                        reviewStats = r.stats,
+                        reviewsTotal = if (statsTotal > 0) statsTotal else r.totalReviews,
+                        reviewAvg = if (statsAvg > 0f) statsAvg else r.averageRating,
+                        reviewsError = null,
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(reviewsLoading = false, reviewsError = e.message)
+                }
             }
         }
     }
@@ -300,6 +336,7 @@ fun SoldPostsScreen(
         onBack = onBack,
         onOpenPost = onOpenPost,
         onRetry = viewModel::load,
+        viewModel = viewModel,
     )
 }
 
@@ -309,6 +346,7 @@ private fun SoldPostsListScreen(
     onBack: () -> Unit,
     onOpenPost: (String) -> Unit,
     onRetry: () -> Unit,
+    viewModel: SoldPostsViewModel,
 ) {
     var search by remember { mutableStateOf("") }
     var sortBy by remember { mutableStateOf("newest") }
@@ -376,9 +414,14 @@ private fun SoldPostsListScreen(
                         }
                     }
 
-                    // ── Trust page: two big buttons — Sold / Bought ──
+                    // ── Trust page tabs — Sold / Bought / Listings / Reviews ──
                     Text(
-                        if (activeTab == 0) "🛍️ Sold Posts — items ${state.seller?.sellerName ?: "this user"} has sold" else "🛒 Posts ${state.seller?.sellerName ?: "this user"} has bought",
+                        when (activeTab) {
+                            1 -> "🛒 Posts ${state.seller?.sellerName ?: "this user"} has bought"
+                            2 -> "📦 Live listings by ${state.seller?.sellerName ?: "this user"}"
+                            3 -> "⭐ Reviews & feedback about ${state.seller?.sellerName ?: "this user"}"
+                            else -> "🛍️ Sold Posts — items ${state.seller?.sellerName ?: "this user"} has sold"
+                        },
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -386,7 +429,7 @@ private fun SoldPostsListScreen(
                     )
                     Row(
                         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         OutlinedButton(
                             onClick = { activeTab = 0 },
@@ -396,8 +439,8 @@ private fun SoldPostsListScreen(
                             modifier = Modifier.weight(1f).height(58.dp),
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("🛍️ Sold", fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (activeTab == 0) Color(0xFF047857) else Color(0xFF475569))
-                                Text("${state.items.size} sales", fontSize = 10.sp, color = if (activeTab == 0) Color(0xFF047857) else Color(0xFF94A3B8))
+                                Text("🛍️ Sold", fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (activeTab == 0) Color(0xFF047857) else Color(0xFF475569))
+                                Text("${state.items.size} sales", fontSize = 9.sp, color = if (activeTab == 0) Color(0xFF047857) else Color(0xFF94A3B8))
                             }
                         }
                         OutlinedButton(
@@ -408,58 +451,93 @@ private fun SoldPostsListScreen(
                             modifier = Modifier.weight(1f).height(58.dp),
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("🛒 Bought", fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (activeTab == 1) Color(0xFF1D4ED8) else Color(0xFF475569))
-                                Text("${state.totalBought} purchases", fontSize = 10.sp, color = if (activeTab == 1) Color(0xFF1D4ED8) else Color(0xFF94A3B8))
+                                Text("🛒 Bought", fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (activeTab == 1) Color(0xFF1D4ED8) else Color(0xFF475569))
+                                Text("${state.totalBought} purchases", fontSize = 9.sp, color = if (activeTab == 1) Color(0xFF1D4ED8) else Color(0xFF94A3B8))
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                activeTab = 2
+                                viewModel.loadActiveListings()
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(if (activeTab == 2) 2.dp else 1.dp, if (activeTab == 2) Color(0xFF7C3AED) else Color(0xFFCBD5E1)),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = if (activeTab == 2) Color(0xFFF5F3FF) else Color.White),
+                            modifier = Modifier.weight(1f).height(58.dp),
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("📦 Listings", fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (activeTab == 2) Color(0xFF6D28D9) else Color(0xFF475569))
+                                Text("live now", fontSize = 9.sp, color = if (activeTab == 2) Color(0xFF6D28D9) else Color(0xFF94A3B8))
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                activeTab = 3
+                                viewModel.loadReviews()
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(if (activeTab == 3) 2.dp else 1.dp, if (activeTab == 3) Color(0xFFF59E0B) else Color(0xFFCBD5E1)),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = if (activeTab == 3) Color(0xFFFFFBEB) else Color.White),
+                            modifier = Modifier.weight(1f).height(58.dp),
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("⭐ Reviews", fontSize = 13.sp, fontWeight = FontWeight.Black, color = if (activeTab == 3) Color(0xFFB45309) else Color(0xFF475569))
+                                Text("${state.reviewsTotal} total", fontSize = 9.sp, color = if (activeTab == 3) Color(0xFFB45309) else Color(0xFF94A3B8))
                             }
                         }
                     }
-                    if (activeTab == 0) {
-                    OutlinedTextField(
-                        value = search, onValueChange = { search = it },
-                        placeholder = { Text(stringResource(R.string.commerce_search_sales)) },
-                        leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
-                        trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8)) } },
-                        singleLine = true, shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                    )
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        val sortOptions = listOf(
-                            "newest" to stringResource(R.string.commerce_sort_newest),
-                            "rating" to stringResource(R.string.commerce_sort_rating),
-                            "price_desc" to stringResource(R.string.commerce_sort_price_down),
-                            "views" to stringResource(R.string.commerce_sort_views),
-                        )
-                        sortOptions.forEach { (key, label) ->
-                            FilterChip(selected = sortBy == key, onClick = { sortBy = key },
-                                label = { Text(label, fontSize = 11.sp) }, shape = RoundedCornerShape(20.dp),
-                                colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
-                        }
-                    }
-                    if (displayed.isEmpty()) {
-                        EmptyState(icon = { Icon(Icons.Filled.Inventory, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
-                            title = stringResource(R.string.sold_empty), subtitle = stringResource(R.string.sold_empty_subtitle))
-                    } else LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        item {
-                            Text(
-                                stringResource(R.string.commerce_sales_count, displayed.size),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(bottom = 4.dp)
+                    when (activeTab) {
+                        0 -> {
+                            OutlinedTextField(
+                                value = search, onValueChange = { search = it },
+                                placeholder = { Text(stringResource(R.string.commerce_search_sales)) },
+                                leadingIcon = { Icon(Icons.Filled.Search, null, tint = Color(0xFF64748B)) },
+                                trailingIcon = { if (search.isNotBlank()) IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Close, null, tint = Color(0xFF94A3B8)) } },
+                                singleLine = true, shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color(0xFF3B82F6), unfocusedBorderColor = Color(0xFFE5E7EB), focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                             )
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                val sortOptions = listOf(
+                                    "newest" to stringResource(R.string.commerce_sort_newest),
+                                    "rating" to stringResource(R.string.commerce_sort_rating),
+                                    "price_desc" to stringResource(R.string.commerce_sort_price_down),
+                                    "views" to stringResource(R.string.commerce_sort_views),
+                                )
+                                sortOptions.forEach { (key, label) ->
+                                    FilterChip(selected = sortBy == key, onClick = { sortBy = key },
+                                        label = { Text(label, fontSize = 11.sp) }, shape = RoundedCornerShape(20.dp),
+                                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF2563EB), selectedLabelColor = Color.White))
+                                }
+                            }
+                            if (displayed.isEmpty()) {
+                                EmptyState(icon = { Icon(Icons.Filled.Inventory, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(64.dp)) },
+                                    title = stringResource(R.string.sold_empty), subtitle = stringResource(R.string.sold_empty_subtitle))
+                            } else {
+                                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    item {
+                                        Text(
+                                            stringResource(R.string.commerce_sales_count, displayed.size),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(bottom = 4.dp)
+                                        )
+                                    }
+                                    items(displayed, key = { it.saleId ?: it.post.stableId }) { item ->
+                                        PostListItemSold(item) { (item.post.id ?: item.post.postId)?.let(onOpenPost) }
+                                    }
+                                }
+                            }
                         }
-                        items(displayed, key = { it.saleId ?: it.post.stableId }) { item ->
-                            PostListItemSold(item) { (item.post.id ?: item.post.postId)?.let(onOpenPost) }
-                        }
-                    }
-                    } else {
-                        BoughtTab(state = state, onOpenPost = onOpenPost)
+                        1 -> BoughtTab(state = state, onOpenPost = onOpenPost)
+                        2 -> ListingsTab(state = state, onOpenPost = onOpenPost)
+                        else -> ReviewsTab(state = state, onOpenPost = onOpenPost)
                     }
                 }
             }
@@ -781,6 +859,192 @@ private fun ActiveListingCard(post: Post, onClick: () -> Unit) {
             }
             Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFFDCFCE7)) {
                 Text("ACTIVE", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color(0xFF16A34A), modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+            }
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Listings tab — the seller's currently-active marketplace listings
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ListingsTab(state: SoldPostsUiState, onOpenPost: (String) -> Unit) {
+    when {
+        state.activeLoading && state.activeListings.isEmpty() -> {
+            Box(Modifier.fillMaxSize().padding(top = 24.dp), contentAlignment = Alignment.TopCenter) {
+                CircularProgressIndicator(modifier = Modifier.size(28.dp))
+            }
+        }
+        state.activeListings.isEmpty() -> {
+            Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.TopCenter) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Filled.Storefront, null, modifier = Modifier.size(44.dp), tint = Color(0xFFCBD5E1))
+                    Text("No live listings", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(
+                        "This user has no active listings right now.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+        else -> LazyColumn(
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item {
+                Text(
+                    "${state.activeListings.size} active listing(s)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            items(state.activeListings, key = { it.stableId }) { post ->
+                ActiveListingCard(post) { (post.id ?: post.postId)?.let(onOpenPost) }
+            }
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Reviews tab — genuine seller/buyer feedback (GET /api/reviews/user/{userId})
+// ──────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun ReviewsTab(state: SoldPostsUiState, onOpenPost: (String) -> Unit) {
+    when {
+        state.reviewsLoading && state.reviews.isEmpty() -> {
+            Box(Modifier.fillMaxSize().padding(top = 24.dp), contentAlignment = Alignment.TopCenter) {
+                CircularProgressIndicator(modifier = Modifier.size(28.dp))
+            }
+        }
+        state.reviewsError != null && state.reviews.isEmpty() -> {
+            Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.TopCenter) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Filled.ErrorOutline, null, modifier = Modifier.size(40.dp), tint = Color(0xFFEF4444))
+                    Text("Couldn't load reviews", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(state.reviewsError, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                }
+            }
+        }
+        state.reviews.isEmpty() -> {
+            Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.TopCenter) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Filled.StarBorder, null, modifier = Modifier.size(44.dp), tint = Color(0xFFCBD5E1))
+                    Text("No reviews yet", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(
+                        "Feedback appears here after completed transactions. A profile with zero reviews means no verified deals yet — deal carefully.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+        else -> LazyColumn(
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item { ReviewRatingOverview(state) }
+            items(state.reviews, key = { it.stableId }) { review ->
+                ReviewCard(review)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReviewRatingOverview(state: SoldPostsUiState) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val starCount = state.reviewAvg.toInt().coerceIn(0, 5)
+                Text(String.format(java.util.Locale.US, "%.1f", state.reviewAvg), fontSize = 32.sp, fontWeight = FontWeight.Black, color = Color(0xFF92400E))
+                Text(if (starCount == 0) "—" else "★".repeat(starCount), fontSize = 14.sp, color = Color(0xFFF59E0B))
+                Text("${state.reviewsTotal} review(s)", fontSize = 10.sp, color = Color(0xFFB45309))
+            }
+            Spacer(Modifier.weight(1f))
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.weight(1.2f)) {
+                val dist = state.reviewStats?.distribution ?: emptyMap()
+                for (star in 5 downTo 1) {
+                    val count = dist[star.toString()] ?: 0
+                    val pct = if (state.reviewsTotal > 0) count.toFloat() / state.reviewsTotal else 0f
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("$star★", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFF92400E))
+                        Box(Modifier.weight(1f).height(6.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFFFDE68A))) {
+                            Box(Modifier.fillMaxWidth(pct).height(6.dp).clip(RoundedCornerShape(3.dp)).background(Color(0xFFF59E0B)))
+                        }
+                        Text("$count", fontSize = 10.sp, color = Color(0xFFB45309))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReviewCard(review: Review) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Box(
+                    modifier = Modifier.size(36.dp).clip(CircleShape).background(
+                        Brush.linearGradient(listOf(Color(0xFF2563EB), Color(0xFF7C3AED)))
+                    ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        (review.reviewerName ?: "U").take(1).uppercase(),
+                        fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White,
+                    )
+                }
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Text(review.reviewerName ?: "Anonymous", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (review.verifiedPurchase) {
+                            Icon(Icons.Filled.Verified, null, tint = Color(0xFF059669), modifier = Modifier.size(13.dp))
+                        }
+                    }
+                    review.createdAt?.take(10)?.let {
+                        Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                Text(
+                    "★".repeat(review.rating.toInt().coerceIn(0, 5)) + "☆".repeat((5 - review.rating.toInt().coerceIn(0, 5))),
+                    fontSize = 14.sp,
+                    color = Color(0xFFF59E0B),
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+            if (!review.comment.isNullOrBlank()) {
+                Text(review.comment, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+            }
+            // Seller's public reply to the review
+            if (!review.response.isNullOrBlank()) {
+                Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
+                    Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("Reply from seller", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text(review.response, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+            if (review.helpfulCount > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(Icons.Filled.ThumbUp, null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${review.helpfulCount} found this helpful", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }

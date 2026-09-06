@@ -15,6 +15,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -833,31 +834,101 @@ fun RewardsScreen(
                     )
 
                     var selectedTab by remember { mutableStateOf(0) }
-                    Column(modifier = Modifier.fillMaxSize()) {
-                    ScrollableTabRow(
-                        selectedTabIndex = selectedTab,
-                        edgePadding = 12.dp,
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        divider = {},
-                    ) {
-                        listOf(
-                            "Overview",
-                            stringResource(R.string.rewards_tab_earn),
-                            stringResource(R.string.rewards_tab_referrals),
-                            stringResource(R.string.rewards_tab_activity),
-                        ).forEachIndexed { index, title ->
-                            Tab(
-                                selected = selectedTab == index,
-                                onClick = { selectedTab = index },
-                                text = { Text(title, style = MaterialTheme.typography.labelMedium) },
+                    val pageBg = if (darkTheme) Color(0xFF0F1422) else Color(0xFFFFFBEB)
+                    val sheetBg = if (darkTheme) Color(0xFF0F172A) else Color(0xFFF8FAFC)
+
+                    Box(modifier = Modifier.fillMaxSize().background(pageBg)) {
+                        // ── Layer 1: Ambient Glowing Gold Canvas Aura ─────────────
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            drawCircle(
+                                color = Color(0xFFF59E0B).copy(alpha = if (darkTheme) 0.15f else 0.25f),
+                                radius = size.width * 0.45f,
+                                center = androidx.compose.ui.geometry.Offset(size.width * 0.2f, size.height * 0.10f)
+                            )
+                            drawCircle(
+                                color = Color(0xFF10B981).copy(alpha = if (darkTheme) 0.12f else 0.20f),
+                                radius = size.width * 0.35f,
+                                center = androidx.compose.ui.geometry.Offset(size.width * 0.85f, size.height * 0.20f)
                             )
                         }
-                    }
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
+
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            // ── Layer 2: Floating Glass Top Bar ───────────────────
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                                shape = RoundedCornerShape(24.dp),
+                                color = (if (darkTheme) Color(0xFF1E293B) else Color.White).copy(alpha = 0.88f),
+                                border = BorderStroke(1.dp, (if (darkTheme) Color(0xFF334155) else Color(0xFFE2E8F0)).copy(alpha = 0.6f)),
+                                shadowElevation = 4.dp,
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text("🏆 Zaruda Rewards", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = if (darkTheme) Color.White else Color(0xFF0F172A))
+                                    }
+
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Surface(
+                                            shape = RoundedCornerShape(20.dp),
+                                            color = Color(0xFFF59E0B).copy(alpha = 0.15f),
+                                            border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.4f)),
+                                        ) {
+                                            Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                Text("🪙 $userCoins", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFFD97706))
+                                            }
+                                        }
+
+                                        TextButton(
+                                            onClick = onOpenReferralTree,
+                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                                        ) {
+                                            Text("🌳 Tree Graph →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (darkTheme) Color(0xFF93C5FD) else Color(0xFF2563EB))
+                                        }
+                                    }
+                                }
+                            }
+
+                            // ── Layer 3: 32dp Curved Content Canvas ───────────────
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                                color = sheetBg,
+                                shadowElevation = 12.dp,
+                            ) {
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    ScrollableTabRow(
+                                        selectedTabIndex = selectedTab,
+                                        edgePadding = 12.dp,
+                                        containerColor = Color.Transparent,
+                                        divider = {},
+                                    ) {
+                                        listOf(
+                                            "Overview",
+                                            stringResource(R.string.rewards_tab_earn),
+                                            stringResource(R.string.rewards_tab_referrals),
+                                            stringResource(R.string.rewards_tab_activity),
+                                        ).forEachIndexed { index, title ->
+                                            Tab(
+                                                selected = selectedTab == index,
+                                                onClick = { selectedTab = index },
+                                                text = { Text(title, style = MaterialTheme.typography.labelMedium) },
+                                            )
+                                        }
+                                    }
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    ) {
                         // Action result toast
                         state.actionResult?.let { msg ->
                             item {
@@ -1945,6 +2016,9 @@ fun RewardsScreen(
             }
         }
     }
+}
+}
+}
 }
 
 // ──────────────────────────── Helpers ────────────────────────────────

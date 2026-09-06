@@ -84,7 +84,7 @@ val onboardingPages = listOf(
         description = "Connect directly with verified buyers and sellers in your city. Post ads in seconds and trade without middlemen.",
         bgImageUrl = "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=1200&q=80",
         icon = Icons.Default.Storefront,
-        highlights = listOf("⚡ Instant 30s Ad Listing", "📍 Verified City Neighbors", "💬 In-App Direct Chat"),
+        highlights = listOf("⚡ Instant 30s Ad Listing", "📍 Verified City Neighbors", "🛡️ In-App Escrow Protection"),
     ),
     OnboardingPage(
         badge = "SMART DISCOVERY & PRICING",
@@ -96,11 +96,11 @@ val onboardingPages = listOf(
     ),
     OnboardingPage(
         badge = "100% VERIFIED & SECURE",
-        title = "Safe Direct Trading",
-        description = "Every transaction backed by Aadhaar-verified badges and verified direct deals from local sellers.",
+        title = "Zero-Scam Escrow Trading",
+        description = "Every transaction backed by 100% Escrow Protection, physical inspection, and Aadhaar-verified sellers.",
         bgImageUrl = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
         icon = Icons.Default.Security,
-        highlights = listOf("🛡️ Verified Deals Only", "👤 Aadhaar Verified Sellers", "🤝 Zero Spam Guarantee"),
+        highlights = listOf("🛡️ 100% Escrow Protection", "👤 Aadhaar Verified Sellers", "🤝 Delivery Handover OTP"),
     ),
 )
 

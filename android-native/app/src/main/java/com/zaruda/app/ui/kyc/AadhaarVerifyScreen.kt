@@ -1,5 +1,7 @@
 package com.zaruda.app.ui.kyc
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -7,11 +9,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import com.zaruda.app.ui.theme.ColorTokens
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -213,34 +223,45 @@ fun AadhaarVerifyScreen(
     viewModel: AadhaarVerifyViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    val darkTheme = ColorTokens.isDark
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text("Aadhaar Verification", fontWeight = FontWeight.Bold)
-                        Text("Verify your identity securely", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        // ── Layer 1: Ambient Atmospheric Canvas Backdrop ──
+        AadhaarAtmosphericBackdrop(isDark = darkTheme)
+
+        // ── Layer 3: 32dp Curved Content Sheet ──
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxSize(),
         ) {
+            Spacer(modifier = Modifier.height(104.dp))
+
+            Surface(
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    // Tactile Drag Handle (Home Page Standard)
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 2.dp, bottom = 8.dp)
+                            .width(44.dp)
+                            .height(4.5.dp)
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
+                            .align(Alignment.CenterHorizontally),
+                    )
             // Hero card
             Box(
                 modifier = Modifier
@@ -454,8 +475,18 @@ fun AadhaarVerifyScreen(
                 AadhaarBenefit("🪙", "Earn Coins", "Get 50 bonus coins on successful verification")
             }
 
-            Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(24.dp))
+                }
+            }
         }
+
+        // ── Layer 2: Floating Glassmorphic Top Bar ──
+        AadhaarFloatingTopBar(
+            title = "Aadhaar Verification",
+            subtitle = "Verify your identity securely",
+            isDark = darkTheme,
+            onBack = onBack,
+        )
     }
 }
 
@@ -625,120 +656,304 @@ fun GetVerifiedScreen(onBack: () -> Unit, onDone: () -> Unit = {}, viewModel: Ge
     val state by viewModel.state.collectAsState()
     val stepLabels = listOf("Aadhaar", "OTP", "Details", "Done")
 
-    androidx.compose.material3.Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Get Verified", fontWeight = FontWeight.Bold) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
-        },
-        containerColor = Color(0xFFF0FDF4),
-    ) { padding ->
+    val darkTheme = ColorTokens.isDark
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
+        // ── Layer 1: Ambient Atmospheric Canvas Backdrop ──
+        AadhaarAtmosphericBackdrop(isDark = darkTheme)
+
+        // ── Layer 3: 32dp Curved Content Sheet ──
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxSize(),
         ) {
-            // Step progress bar
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                stepLabels.forEachIndexed { i, label ->
-                    val done = i < state.step
-                    val active = i == state.step
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                        Box(Modifier.size(28.dp).clip(CircleShape).background(
-                            when { done -> Color(0xFF22C55E); active -> Color(0xFF1D4ED8); else -> Color(0xFFE2E8F0) }
-                        ), contentAlignment = Alignment.Center) {
-                            if (done) Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            else Text("${i + 1}", color = if (active) Color.White else Color(0xFF94A3B8), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(104.dp))
+
+            Surface(
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Column(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    // Tactile Drag Handle (Home Page Standard)
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 2.dp, bottom = 8.dp)
+                            .width(44.dp)
+                            .height(4.5.dp)
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
+                            .align(Alignment.CenterHorizontally),
+                    )
+
+                    // Step progress bar
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        stepLabels.forEachIndexed { i, label ->
+                            val done = i < state.step
+                            val active = i == state.step
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
+                                Box(Modifier.size(28.dp).clip(CircleShape).background(
+                                    when { done -> Color(0xFF22C55E); active -> Color(0xFF1D4ED8); else -> Color(0xFFE2E8F0) }
+                                ), contentAlignment = Alignment.Center) {
+                                    if (done) Icon(Icons.Default.CheckCircle, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                    else Text("${i + 1}", color = if (active) Color.White else Color(0xFF94A3B8), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                }
+                                Text(label, style = MaterialTheme.typography.labelSmall, color = when { done -> Color(0xFF22C55E); active -> Color(0xFF1D4ED8); else -> Color(0xFF94A3B8) })
+                            }
+                            if (i < stepLabels.lastIndex) HorizontalDivider(Modifier.weight(1f).padding(bottom = 12.dp), color = if (done) Color(0xFF22C55E) else Color(0xFFE2E8F0))
                         }
-                        Text(label, style = MaterialTheme.typography.labelSmall, color = when { done -> Color(0xFF22C55E); active -> Color(0xFF1D4ED8); else -> Color(0xFF94A3B8) })
                     }
-                    if (i < stepLabels.lastIndex) HorizontalDivider(Modifier.weight(1f).padding(bottom = 12.dp), color = if (done) Color(0xFF22C55E) else Color(0xFFE2E8F0))
-                }
-            }
 
-            state.error?.let { err ->
-                Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFEE2E2)) {
-                    Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Default.Warning, null, tint = Color(0xFFDC2626)); Text(err, style = MaterialTheme.typography.bodySmall, color = Color(0xFFDC2626), modifier = Modifier.weight(1f))
-                    }
-                }
-            }
-
-            when (state.step) {
-                0 -> {
-                    // Step 1 — Enter Aadhaar
-                    Text("Enter your Aadhaar Number", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("Your Aadhaar details are used only for KYC verification and are never stored.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
-                    OutlinedTextField(
-                        value = state.aadhaar, onValueChange = { viewModel.setAadhaar(it) },
-                        label = { Text("Aadhaar Number (12 digits)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true, shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = state.aadhaar.isNotBlank() && state.aadhaar.length != 12,
-                        supportingText = { if (state.aadhaar.isNotBlank() && state.aadhaar.length != 12) Text("Must be 12 digits") },
-                    )
-                    Button(
-                        onClick = { viewModel.clearError(); viewModel.requestOtp() },
-                        enabled = state.aadhaar.length == 12 && !state.loading,
-                        shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D4ED8)),
-                    ) {
-                        if (state.loading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-                        else Text("Send OTP", fontWeight = FontWeight.SemiBold)
-                    }
-                }
-                1 -> {
-                    // Step 2 — Enter OTP
-                    Text("Enter OTP", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("A 6-digit OTP was sent to the mobile linked to Aadhaar ${state.aadhaar.take(4)}XXXX${state.aadhaar.takeLast(4)}.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
-                    Text("Transaction ID: ${state.txnId}", style = MaterialTheme.typography.labelSmall, color = Color(0xFF94A3B8))
-                    OutlinedTextField(
-                        value = state.otp, onValueChange = { viewModel.setOtp(it) },
-                        label = { Text("6-digit OTP") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(),
-                    )
-                    Button(
-                        onClick = { viewModel.clearError(); viewModel.verifyOtp() },
-                        enabled = state.otp.length == 6 && !state.loading,
-                        shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D4ED8)),
-                    ) {
-                        if (state.loading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-                        else Text("Verify OTP", fontWeight = FontWeight.SemiBold)
-                    }
-                    TextButton(onClick = { viewModel.requestOtp() }) { Text("Resend OTP") }
-                }
-                2 -> {
-                    // Step 3 — Capture details
-                    Text("Your Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("Please confirm the details linked to your Aadhaar.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
-                    OutlinedTextField(value = state.fullName, onValueChange = { viewModel.setFullName(it) }, label = { Text("Full Name *") }, singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = state.dob, onValueChange = { viewModel.setDob(it) }, label = { Text("Date of Birth * (YYYY-MM-DD)") }, singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                    OutlinedTextField(value = state.address, onValueChange = { viewModel.setAddress(it) }, label = { Text("Address") }, minLines = 2, maxLines = 4, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
-                    Button(
-                        onClick = { viewModel.clearError(); viewModel.submitDetails() },
-                        enabled = state.fullName.isNotBlank() && state.dob.isNotBlank() && !state.loading,
-                        shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D4ED8)),
-                    ) {
-                        if (state.loading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-                        else Text("Submit & Verify", fontWeight = FontWeight.SemiBold)
-                    }
-                }
-                else -> {
-                    // Step 4 — Done
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Icon(Icons.Default.VerifiedUser, null, tint = Color(0xFF22C55E), modifier = Modifier.size(72.dp))
-                            Text("Identity Verified!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
-                            Text("Your KYC is complete. You can now list items and unlock full marketplace features.", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B), textAlign = TextAlign.Center)
-                            Button(onClick = onDone, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E))) {
-                                Text("Continue", fontWeight = FontWeight.SemiBold)
+                    state.error?.let { err ->
+                        Surface(shape = RoundedCornerShape(10.dp), color = Color(0xFFFEE2E2)) {
+                            Row(Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Icon(Icons.Default.Warning, null, tint = Color(0xFFDC2626)); Text(err, style = MaterialTheme.typography.bodySmall, color = Color(0xFFDC2626), modifier = Modifier.weight(1f))
                             }
                         }
+                    }
+
+                    when (state.step) {
+                        0 -> {
+                            // Step 1 — Enter Aadhaar
+                            Text("Enter your Aadhaar Number", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text("Your Aadhaar details are used only for KYC verification and are never stored.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
+                            OutlinedTextField(
+                                value = state.aadhaar, onValueChange = { viewModel.setAadhaar(it) },
+                                label = { Text("Aadhaar Number (12 digits)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true, shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                isError = state.aadhaar.isNotBlank() && state.aadhaar.length != 12,
+                                supportingText = { if (state.aadhaar.isNotBlank() && state.aadhaar.length != 12) Text("Must be 12 digits") },
+                            )
+                            Button(
+                                onClick = { viewModel.clearError(); viewModel.requestOtp() },
+                                enabled = state.aadhaar.length == 12 && !state.loading,
+                                shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D4ED8)),
+                            ) {
+                                if (state.loading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                                else Text("Send OTP", fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                        1 -> {
+                            // Step 2 — Enter OTP
+                            Text("Enter OTP", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text("A 6-digit OTP was sent to the mobile linked to Aadhaar ${state.aadhaar.take(4)}XXXX${state.aadhaar.takeLast(4)}.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
+                            Text("Transaction ID: ${state.txnId}", style = MaterialTheme.typography.labelSmall, color = Color(0xFF94A3B8))
+                            OutlinedTextField(
+                                value = state.otp, onValueChange = { viewModel.setOtp(it) },
+                                label = { Text("6-digit OTP") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                                singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(),
+                            )
+                            Button(
+                                onClick = { viewModel.clearError(); viewModel.verifyOtp() },
+                                enabled = state.otp.length == 6 && !state.loading,
+                                shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D4ED8)),
+                            ) {
+                                if (state.loading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                                else Text("Verify OTP", fontWeight = FontWeight.SemiBold)
+                            }
+                            TextButton(onClick = { viewModel.requestOtp() }) { Text("Resend OTP") }
+                        }
+                        2 -> {
+                            // Step 3 — Capture details
+                            Text("Your Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text("Please confirm the details linked to your Aadhaar.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF64748B))
+                            OutlinedTextField(value = state.fullName, onValueChange = { viewModel.setFullName(it) }, label = { Text("Full Name *") }, singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
+                            OutlinedTextField(value = state.dob, onValueChange = { viewModel.setDob(it) }, label = { Text("Date of Birth * (YYYY-MM-DD)") }, singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                            OutlinedTextField(value = state.address, onValueChange = { viewModel.setAddress(it) }, label = { Text("Address") }, minLines = 2, maxLines = 4, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
+                            Button(
+                                onClick = { viewModel.clearError(); viewModel.submitDetails() },
+                                enabled = state.fullName.isNotBlank() && state.dob.isNotBlank() && !state.loading,
+                                shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D4ED8)),
+                            ) {
+                                if (state.loading) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                                else Text("Submit & Verify", fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                        else -> {
+                            // Step 4 — Done
+                            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Icon(Icons.Default.VerifiedUser, null, tint = Color(0xFF22C55E), modifier = Modifier.size(72.dp))
+                                    Text("Identity Verified!", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
+                                    Text("Your KYC is complete. You can now list items and unlock full marketplace features.", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF64748B), textAlign = TextAlign.Center)
+                                    Button(onClick = onDone, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E))) {
+                                        Text("Continue", fontWeight = FontWeight.SemiBold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Layer 2: Floating Glassmorphic Top Bar ──
+        AadhaarFloatingTopBar(
+            title = "Get Verified",
+            subtitle = "Step ${state.step + 1} of 4 • KYC Escrow",
+            isDark = darkTheme,
+            onBack = onBack,
+        )
+    }
+}
+
+/* ── Layer 1: Ambient Atmospheric Canvas Backdrop ─────────────────────────── */
+
+@Composable
+private fun AadhaarAtmosphericBackdrop(isDark: Boolean) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(230.dp)
+            .background(
+                Brush.verticalGradient(
+                    colors = if (isDark) {
+                        listOf(Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF020617))
+                    } else {
+                        listOf(Color(0xFF1D4ED8), Color(0xFF2563EB), Color(0xFF1E40AF))
+                    }
+                )
+            )
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF38BDF8).copy(alpha = if (isDark) 0.35f else 0.45f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(size.width * 0.75f, 40.dp.toPx()),
+                    radius = 160.dp.toPx(),
+                )
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF818CF8).copy(alpha = if (isDark) 0.25f else 0.35f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(size.width * 0.20f, 90.dp.toPx()),
+                    radius = 140.dp.toPx(),
+                )
+            )
+        }
+
+        // Top scrim for status bar readability
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(90.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Black.copy(alpha = 0.50f), Color.Transparent)
+                    )
+                )
+        )
+
+        // Bottom vignette scrim blending into 32dp curved sheet
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(70.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f))
+                    )
+                )
+        )
+    }
+}
+
+/* ── Layer 2: Floating Glassmorphic Top Bar ───────────────────────────────── */
+
+@Composable
+private fun AadhaarFloatingTopBar(
+    title: String,
+    subtitle: String,
+    isDark: Boolean,
+    onBack: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.88f),
+            border = BorderStroke(1.dp, if (isDark) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.08f)),
+            shadowElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        subtitle,
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                // Trust badge
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFF059669).copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.3f)),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.VerifiedUser,
+                            contentDescription = null,
+                            tint = Color(0xFF059669),
+                            modifier = Modifier.size(12.dp),
+                        )
+                        Text(
+                            "UIDAI Safe",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF059669),
+                        )
                     }
                 }
             }

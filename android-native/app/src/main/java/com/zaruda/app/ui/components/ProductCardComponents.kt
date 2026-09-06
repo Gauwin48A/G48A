@@ -92,7 +92,7 @@ fun PriceDropTag(
         ) {
             Icon(Icons.Default.TrendingDown, null, tint = Color(0xFFDC2626), modifier = Modifier.size(12.dp))
             Text(
-                "\u20B9${"%,.0f".format(originalPrice)} \u2192 \u20B9${"%,.0f".format(currentPrice)}",
+                "₹" + "%,.0f".format(originalPrice) + " → ₹" + "%,.0f".format(currentPrice),
                 fontSize = 10.sp,
                 color = Color(0xFF991B1B),
                 fontWeight = FontWeight.SemiBold,
