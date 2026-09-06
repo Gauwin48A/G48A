@@ -107,3 +107,8 @@ SCRIPT_MIGRATION_REPORT.md
 /client/test-results/
 /client/playwright-report/
 /_ui/
+
+# QA/verification artifacts (transient screenshots & temp scripts)
+screen_*.png
+rw_scan.js
+brace_scan.js
