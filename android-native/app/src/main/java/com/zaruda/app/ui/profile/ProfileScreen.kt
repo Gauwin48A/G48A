@@ -1367,11 +1367,11 @@ private fun AuthenticatedProfileView(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    val trustVal = state.trustScore?.trustScore?.toInt() ?: 94
+                    val trustVal = state.trustScore?.trustScore?.toInt()
                     KpiCard(
                         title = "Trust Score",
-                        value = "$trustVal/100",
-                        subtitle = "Safe Trader",
+                        value = trustVal?.let { "$it/100" } ?: "—",
+                        subtitle = if (trustVal == null) "Verify to build" else "Keep it up",
                         icon = Icons.Outlined.Shield,
                         accent = Color(0xFF8B5CF6),
                         modifier = Modifier.weight(1f),
@@ -1390,9 +1390,9 @@ private fun AuthenticatedProfileView(
                     )
                 }
 
-                // ── 3. Seller Studio Hub ──
+                // ── 3. Selling ──
                 Text(
-                    text = "SELLER & BUSINESS STUDIO",
+                    text = "SELLING",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
@@ -1408,34 +1408,26 @@ private fun AuthenticatedProfileView(
                 ) {
                     Column {
                         ProfileMenuRow(
-                            icon = Icons.Outlined.Storefront,
-                            title = "My Listings & Ads",
-                            subtitle = "Manage active posts, prices & renewals",
-                            onClick = onOpenMyPosts,
+                            icon = Icons.Outlined.LocalShipping,
+                            title = "My Sales",
+                            subtitle = "Orders, offers & secure payments",
+                            onClick = onOpenSaleUndone,
                             isDark = isDark
                         )
                         HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFF1F5F9))
                         ProfileMenuRow(
                             icon = Icons.Outlined.AccountBalance,
-                            title = "Bank Account & Payouts",
-                            subtitle = "Manage direct settlement bank details",
+                            title = "Bank & Payouts",
+                            subtitle = "Where your sales money arrives",
                             onClick = onOpenPayout,
-                            isDark = isDark
-                        )
-                        HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFF1F5F9))
-                        ProfileMenuRow(
-                            icon = Icons.Outlined.LocalShipping,
-                            title = "Sales & Escrow Orders",
-                            subtitle = "View buyer payments held in ICICI Escrow",
-                            onClick = onOpenSaleUndone,
                             isDark = isDark
                         )
                     }
                 }
 
-                // ── 4. Buyer Hub ──
+                // ── 4. Buying ──
                 Text(
-                    text = "BUYER HUB & ORDERS",
+                    text = "BUYING",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
@@ -1452,25 +1444,25 @@ private fun AuthenticatedProfileView(
                     Column {
                         ProfileMenuRow(
                             icon = Icons.Outlined.ReceiptLong,
-                            title = "My Purchases & Escrow Tracking",
-                            subtitle = "Track deliveries & approve release of funds",
+                            title = "My Purchases",
+                            subtitle = "Orders & secure payments",
                             onClick = onOpenOrders,
                             isDark = isDark
                         )
                         HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFF1F5F9))
                         ProfileMenuRow(
                             icon = Icons.Outlined.History,
-                            title = "Recently Viewed Listings",
-                            subtitle = "Quickly resume exploring previous products",
+                            title = "Recently Viewed",
+                            subtitle = "Pick up where you left off",
                             onClick = onOpenRecentlyViewed,
                             isDark = isDark
                         )
                     }
                 }
 
-                // ── 5. Rewards, Security & App Settings ──
+                // ── 5. Settings ──
                 Text(
-                    text = "SETTINGS & COMMUNITY",
+                    text = "SETTINGS",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold,
@@ -1486,33 +1478,17 @@ private fun AuthenticatedProfileView(
                 ) {
                     Column {
                         ProfileMenuRow(
-                            icon = Icons.Outlined.AccountTree,
-                            title = "Referral Network & Tree Graph",
-                            subtitle = "Earn cash & coins from 3 levels of invited friends",
-                            onClick = onOpenReferralTree,
-                            isDark = isDark
-                        )
-                        HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFF1F5F9))
-                        ProfileMenuRow(
                             icon = Icons.Outlined.Security,
-                            title = "Account Security & Biometrics",
-                            subtitle = "Passkeys, 2FA & active login devices",
+                            title = "Account & Security",
+                            subtitle = "Password, 2FA & devices",
                             onClick = onOpenSecurity,
                             isDark = isDark
                         )
                         HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFF1F5F9))
                         ProfileMenuRow(
-                            icon = Icons.Outlined.Translate,
-                            title = "App Language",
-                            subtitle = "Change display language",
-                            onClick = onOpenLanguage,
-                            isDark = isDark
-                        )
-                        HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFF1F5F9))
-                        ProfileMenuRow(
                             icon = Icons.Outlined.HelpOutline,
-                            title = "Help & 24/7 Support",
-                            subtitle = "Safety center, dispute resolution & FAQs",
+                            title = "Help & Support",
+                            subtitle = "FAQs & contact support",
                             onClick = onOpenHelp,
                             isDark = isDark
                         )
@@ -1536,7 +1512,7 @@ private fun AuthenticatedProfileView(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(Icons.AutoMirrored.Filled.ExitToApp, null, modifier = Modifier.size(18.dp))
-                        Text("Sign Out of Account", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Sign Out", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                 }
 
