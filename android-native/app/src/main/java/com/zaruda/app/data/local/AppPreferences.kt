@@ -97,4 +97,17 @@ class AppPreferences @Inject constructor(private val context: Context) {
     suspend fun saveRecentSearches(queries: List<String>) {
         context.dataStore.edit { it[recentSearchesKey] = queries.take(10).joinToString("|") }
     }
+
+    // Per-category recent searches — category-scoped search pages show their own history
+    private fun categorySearchKey(categoryKey: String) =
+        stringPreferencesKey("recent_searches_${categoryKey.lowercase().trim()}_json")
+
+    suspend fun getRecentSearchesFor(categoryKey: String): List<String> = try {
+        val raw = context.dataStore.data.first()[categorySearchKey(categoryKey)] ?: ""
+        if (raw.isBlank()) emptyList() else raw.split("|").take(10)
+    } catch (_: Throwable) { emptyList() }
+
+    suspend fun saveRecentSearchesFor(categoryKey: String, queries: List<String>) {
+        context.dataStore.edit { it[categorySearchKey(categoryKey)] = queries.take(10).joinToString("|") }
+    }
 }

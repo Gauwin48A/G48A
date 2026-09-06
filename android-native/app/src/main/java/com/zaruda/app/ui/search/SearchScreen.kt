@@ -133,12 +133,29 @@ class SearchViewModel @Inject constructor(
     private var categoryNames: List<String> = emptyList()
 
     private var job: Job? = null
+    private var lastScopedCategory: String? = null
+
+    private suspend fun persisted2(): List<String> = prefs.getRecentSearches()
 
     init {
         viewModelScope.launch {
             // Restore recent searches from DataStore
             val persisted = prefs.getRecentSearches()
             if (persisted.isNotEmpty()) _state.value = _state.value.copy(recentQueries = persisted)
+        }
+        viewModelScope.launch {
+            // Watch the scope: when a category scope is set, swap in that category's recents
+            _state.collect { s ->
+                val scoped = s.selectedCategory
+                if (scoped != lastScopedCategory) {
+                    lastScopedCategory = scoped
+                    val perCategory = scoped?.let { prefs.getRecentSearchesFor(it) } ?: emptyList()
+                    val global = if (perCategory.isEmpty()) prefs.getRecentSearches() else emptyList()
+                    _state.value = _state.value.copy(
+                        recentQueries = if (scoped != null) perCategory else (global.ifEmpty { persisted2() }),
+                    )
+                }
+            }
         }
         viewModelScope.launch {
             when (val r = savedSearchesRepo.list()) {
@@ -266,12 +283,16 @@ class SearchViewModel @Inject constructor(
         when (val result = repo.feed(query = query, categoryId = _state.value.selectedCategory)) {
             is ApiResult.Success -> {
                 val ranked = rankSearchResults(result.data, query)
-                // Persist to recent queries (keep last 10, deduplicate)
+                // Persist to recent queries (keep last 10, deduplicate) — scoped searches
+                // go to that category's own history so recents stay category-specific
                 val trimmed = query.trim()
                 val updated = (_state.value.recentQueries.filter { it != trimmed } + trimmed).takeLast(10).reversed()
                 _state.value = _state.value.copy(loading = false, items = ranked, searched = true, recentQueries = updated)
-                // Persist to DataStore
-                viewModelScope.launch { prefs.saveRecentSearches(updated) }
+                // Persist to DataStore (per-category bucket when scoped)
+                viewModelScope.launch {
+                    val scope = _state.value.selectedCategory
+                    if (scope != null) prefs.saveRecentSearchesFor(scope, updated) else prefs.saveRecentSearches(updated)
+                }
             }
             is ApiResult.Failure -> _state.value = _state.value.copy(loading = false, searched = true, error = result.error.message)
         }
@@ -369,12 +390,18 @@ class SearchViewModel @Inject constructor(
     fun removeRecentQuery(q: String) {
         val updated = _state.value.recentQueries.filter { it != q }
         _state.value = _state.value.copy(recentQueries = updated)
-        viewModelScope.launch { prefs.saveRecentSearches(updated) }
+        viewModelScope.launch {
+            val scope = _state.value.selectedCategory
+            if (scope != null) prefs.saveRecentSearchesFor(scope, updated) else prefs.saveRecentSearches(updated)
+        }
     }
 
     fun clearAllRecentSearches() {
         _state.value = _state.value.copy(recentQueries = emptyList())
-        viewModelScope.launch { prefs.saveRecentSearches(emptyList()) }
+        viewModelScope.launch {
+            val scope = _state.value.selectedCategory
+            if (scope != null) prefs.saveRecentSearchesFor(scope, emptyList()) else prefs.saveRecentSearches(emptyList())
+        }
     }
 }
 
@@ -393,6 +420,7 @@ fun SearchScreen(
     val scope = rememberCoroutineScope()
 
     // Lock the category scope once (category-app search must never go cross-category)
+    val scopeLabel = scopedCategory?.replaceFirstChar { it.uppercase() }
     LaunchedEffect(scopedCategory) {
         if (!scopedCategory.isNullOrBlank()) viewModel.setScopedCategory(scopedCategory)
     }
@@ -446,18 +474,49 @@ fun SearchScreen(
         ImageZoomDialog(imageUrls = zoomImages, onDismiss = { zoomImages = emptyList() })
     }
 
-    val placeholderHints = remember {
-        listOf(
-            "Search 'iPhone 15 Pro'...",
-            "Search 'Royal Enfield Himalayan'...",
-            "Search 'Laptops under ₹50k'...",
-            "Search 'Sony Alpha Cameras'...",
-            "Search 'Designer Sarees & Kurtis'...",
-            "Search verified local listings...",
-        )
+    // Category-specific rotating hints when scoped; general hints otherwise
+    val placeholderHints = remember(scopedCategory) {
+        when (scopeLabel?.lowercase()) {
+            "fashion" -> listOf(
+                "Search 'Designer Sarees'...",
+                "Search 'Levi's Jeans'...",
+                "Search 'Nike Sneakers'...",
+                "Search 'Michael Kors Bag'...",
+                "Search in Fashion...",
+            )
+            "electronics" -> listOf(
+                "Search 'iPhone 15 Pro'...",
+                "Search 'Laptops under ₹50k'...",
+                "Search 'Sony Alpha Cameras'...",
+                "Search 'PS5 Console'...",
+                "Search in Electronics...",
+            )
+            "vehicles" -> listOf(
+                "Search 'Royal Enfield Himalayan'...",
+                "Search 'Honda Activa'...",
+                "Search 'Cars under 5 lakh'...",
+                "Search 'Spare Parts'...",
+                "Search in Vehicles...",
+            )
+            "others" -> listOf(
+                "Search 'IKEA Shelf'...",
+                "Search 'Basmati Rice 5kg'...",
+                "Search 'Study Table'...",
+                "Search in Others...",
+            )
+            else -> listOf(
+                "Search 'iPhone 15 Pro'...",
+                "Search 'Royal Enfield Himalayan'...",
+                "Search 'Laptops under ₹50k'...",
+                "Search 'Sony Alpha Cameras'...",
+                "Search 'Designer Sarees & Kurtis'...",
+                "Search verified local listings...",
+            )
+        }
     }
     var currentHintIndex by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(scopedCategory) {
+        currentHintIndex = 0
         while (true) {
             delay(3000)
             currentHintIndex = (currentHintIndex + 1) % placeholderHints.size
@@ -481,6 +540,35 @@ fun SearchScreen(
                 modifier = Modifier.fillMaxSize(),
             ) {
                 Column(modifier = Modifier.fillMaxSize().padding(top = 12.dp)) {
+                    // Active category-scope banner — makes the scope obvious and removable
+                    if (scopeLabel != null) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Icon(Icons.Default.Category, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                Text(
+                                    "Searching in $scopeLabel only",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                TextButton(onClick = { viewModel.setScopedCategory(null); viewModel.setCategory(null) }) {
+                                    Text("All categories", fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    }
+
                     // Category-Scoped Trust Ribbon
                     val isCategoryOne = state.selectedCategory?.let { cat ->
                         cat == "1" || cat.lowercase().contains("electronic") || cat.lowercase().contains("gadget") || cat.lowercase().contains("mobile")
@@ -928,7 +1016,13 @@ fun SearchScreen(
                                 }
                                 item {
                                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        val trending = listOf("iPhone", "MacBook", "Sneakers", "Car", "Laptop", "Watch", "Camera", "Bike", "Fridge", "TV")
+                                        val trending = when (scopeLabel?.lowercase()) {
+                                            "fashion" -> listOf("Saree", "Kurti", "Sneakers", "Handbag", "Watch", "Jeans", "Lehenga", "Heels")
+                                            "electronics" -> listOf("iPhone", "MacBook", "PS5", "Camera", "Headphones", "Smart TV", "Tablet", "Speaker")
+                                            "vehicles" -> listOf("Bike", "Scooter", "Car", "Himalayan", "Activa", "Spare Parts", "Bicycle", "Tractor")
+                                            "others" -> listOf("Fridge", "Sofa", "Study Table", "Books", "Cycle", "Pets", "Furniture", "Grocery")
+                                            else -> listOf("iPhone", "MacBook", "Sneakers", "Car", "Laptop", "Watch", "Camera", "Bike", "Fridge", "TV")
+                                        }
                                         items(trending) { topic ->
                                             Surface(onClick = { viewModel.onQueryChange(topic); viewModel.search(topic) }, shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.primaryContainer) {
                                                 Row(Modifier.padding(horizontal = 14.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {

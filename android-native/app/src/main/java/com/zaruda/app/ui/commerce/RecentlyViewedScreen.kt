@@ -1,5 +1,18 @@
 package com.zaruda.app.ui.commerce
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.material.icons.filled.VerifiedUser
+import com.zaruda.app.ui.theme.ColorTokens
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -397,152 +410,70 @@ fun RecentlyViewedScreen(
     }
     val groupOrder = listOf("Today", "Yesterday", "Earlier")
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(text = if (state.isMultiSelectMode) "Select Items" else "Recently Viewed", fontWeight = FontWeight.Bold)
-                        if (state.isMultiSelectMode && state.selectedItems.isNotEmpty()) {
-                            Text(
-                                text = "${state.selectedItems.size} selected",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        } else if (state.posts.isNotEmpty()) {
-                            // state.posts is already scoped by the ViewModel; filteredItems adds
-                            // search/sort — use it so the count always matches what is shown.
-                            val displayCount = filteredItems.size
-                            Text(
-                                text = "$displayCount item${if (displayCount != 1) "s" else ""}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (state.isMultiSelectMode) {
-                            viewModel.toggleMultiSelect()
-                        } else {
-                            onBack()
-                        }
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    if (state.isMultiSelectMode) {
-                        TextButton(
-                            onClick = { viewModel.selectAll() },
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
+    val isDark = currentThemeMode == ThemeMode.DARK || (currentThemeMode == ThemeMode.SYSTEM && isSystemInDarkTheme())
+    val haptic = LocalHapticFeedback.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // ── Layer 1: Atmospheric Canvas Backdrop ──
+        RecentlyViewedAtmosphericBackdrop(isDark = isDark)
+
+        // ── Layer 3: 32dp Curved Content Sheet ──
+        Column(modifier = Modifier.fillMaxSize()) {
+            Spacer(modifier = Modifier.height(104.dp))
+
+            Surface(
+                shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
+                color = MaterialTheme.colorScheme.background,
+                shadowElevation = 8.dp,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Tactile Drag Handle (Home Page Standard)
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 10.dp, bottom = 6.dp)
+                            .width(44.dp)
+                            .height(4.5.dp)
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f))
+                            .align(Alignment.CenterHorizontally),
+                    )
+
+                    // Escrow Protection Ribbon
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFF059669).copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, Color(0xFF059669).copy(alpha = 0.22f)),
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text("Select All", style = MaterialTheme.typography.labelMedium)
-                        }
-                        TextButton(
-                            onClick = { viewModel.clearSelection() },
-                            colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
-                        ) {
-                            Text("Clear", style = MaterialTheme.typography.labelMedium)
-                        }
-                    } else {
-                        if (state.posts.isNotEmpty()) {
-                            TextButton(
-                                onClick = { viewModel.clearAll() },
-                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                            ) {
-                                Icon(Icons.Default.DeleteSweep, contentDescription = "Clear All", modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(2.dp))
-                                Text("Clear All", style = MaterialTheme.typography.labelMedium)
-                            }
-                            IconButton(onClick = { viewModel.toggleMultiSelect() }) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = "Multi-select")
-                            }
-                        }
-                        IconButton(onClick = { gridMode = !gridMode }) {
-                            Icon(
-                                imageVector = if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
-                                contentDescription = "Toggle view",
+                            Text("🛡️", fontSize = 14.sp)
+                            Text(
+                                "100% Escrow Insured Browsing • Inspected items with buyer refund protection",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF059669),
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
-                        // Overflow menu (three dots) — consistent with ZarudaTopBar
-                        var showOverflow by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { showOverflow = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More options")
-                            }
-                            DropdownMenu(
-                                expanded = showOverflow,
-                                onDismissRequest = { showOverflow = false },
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Wishlist") },
-                                    leadingIcon = { Icon(Icons.Default.BookmarkAdd, null, modifier = Modifier.size(18.dp)) },
-                                    onClick = { showOverflow = false; onWishlist() },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Rewards") },
-                                    leadingIcon = { Icon(Icons.Default.EmojiEvents, null, modifier = Modifier.size(18.dp)) },
-                                    onClick = { showOverflow = false; onRewards() },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Cart") },
-                                    leadingIcon = { Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(18.dp)) },
-                                    onClick = { showOverflow = false; onCart() },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Notifications") },
-                                    leadingIcon = { Icon(Icons.Default.Notifications, null, modifier = Modifier.size(18.dp)) },
-                                    onClick = { showOverflow = false; onNotifications() },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(if (currentThemeMode == ThemeMode.DARK) "Light Mode" else "Dark Mode") },
-                                    leadingIcon = {
-                                        Icon(
-                                            if (currentThemeMode == ThemeMode.DARK) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
-                                            null,
-                                            modifier = Modifier.size(18.dp),
-                                        )
-                                    },
-                                    onClick = { showOverflow = false; onToggleTheme() },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Language") },
-                                    leadingIcon = { Icon(Icons.Default.Language, null, modifier = Modifier.size(18.dp)) },
-                                    onClick = { showOverflow = false; onLanguage() },
-                                )
-                            }
-                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1E3A8A),
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White,
-                ),
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-        floatingActionButton = {
-            if (state.isMultiSelectMode && state.selectedItems.isNotEmpty()) {
-                ExtendedFloatingActionButton(
-                    text = { Text("Remove ${state.selectedItems.size}") },
-                    icon = { Icon(Icons.Default.DeleteSweep, contentDescription = null) },
-                    onClick = { viewModel.bulkRemove() },
-                    containerColor = MaterialTheme.colorScheme.error,
-                )
-            }
-        },
-    ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = state.refreshing,
-            onRefresh = { viewModel.load() },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-        ) {
+
+                    PullToRefreshBox(
+                        isRefreshing = state.refreshing,
+                        onRefresh = { viewModel.load() },
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
             when {
                 state.loading -> ListShimmer(count = 6, modifier = Modifier.fillMaxSize().padding(top = 8.dp))
 
@@ -696,6 +627,338 @@ fun RecentlyViewedScreen(
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+                }
+            }
+        }
+
+        // ── Layer 2: Floating Glassmorphic Top Bar ──
+        RecentlyViewedFloatingTopBar(
+            title = if (state.isMultiSelectMode) "Select Items" else "Recently Viewed",
+            subtitle = if (state.isMultiSelectMode && state.selectedItems.isNotEmpty()) {
+                "${state.selectedItems.size} selected"
+            } else if (state.posts.isNotEmpty()) {
+                val displayCount = filteredItems.size
+                if (displayCount != 1) "$displayCount items" else "$displayCount item"
+            } else "Explore your history",
+            isDark = isDark,
+            isMultiSelectMode = state.isMultiSelectMode,
+            hasPosts = state.posts.isNotEmpty(),
+            gridMode = gridMode,
+            currentThemeMode = currentThemeMode,
+            onBack = {
+                if (state.isMultiSelectMode) {
+                    viewModel.toggleMultiSelect()
+                } else {
+                    onBack()
+                }
+            },
+            onSelectAll = { viewModel.selectAll() },
+            onClearSelection = { viewModel.clearSelection() },
+            onClearAll = { viewModel.clearAll() },
+            onToggleMultiSelect = { viewModel.toggleMultiSelect() },
+            onToggleGridMode = { gridMode = !gridMode },
+            onWishlist = onWishlist,
+            onRewards = onRewards,
+            onCart = onCart,
+            onNotifications = onNotifications,
+            onToggleTheme = onToggleTheme,
+            onLanguage = onLanguage,
+        )
+
+        // Bulk Delete FAB when multi-select is active
+        if (state.isMultiSelectMode && state.selectedItems.isNotEmpty()) {
+            ExtendedFloatingActionButton(
+                text = { Text("Remove ${state.selectedItems.size}") },
+                icon = { Icon(Icons.Default.DeleteSweep, contentDescription = null) },
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    viewModel.bulkRemove()
+                },
+                containerColor = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(20.dp),
+            )
+        }
+    }
+}
+
+/* ── Layer 1: Atmospheric Canvas Backdrop ─────────────────────────────────── */
+
+@Composable
+private fun RecentlyViewedAtmosphericBackdrop(
+    isDark: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val bgGradient = if (isDark) {
+        listOf(
+            Color(0xFF060D1A),
+            Color(0xFF0F172A),
+            Color(0xFF0B192C),
+        )
+    } else {
+        listOf(
+            Color(0xFF1E3A8A),
+            Color(0xFF1E40AF),
+            Color(0xFF172554),
+        )
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(240.dp)
+            .background(Brush.verticalGradient(bgGradient))
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            // Ambient glowing orbs
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF38BDF8).copy(alpha = if (isDark) 0.28f else 0.40f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(size.width * 0.85f, 40.dp.toPx()),
+                    radius = 180.dp.toPx(),
+                )
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF6366F1).copy(alpha = if (isDark) 0.20f else 0.32f),
+                        Color.Transparent,
+                    ),
+                    center = Offset(size.width * 0.15f, 80.dp.toPx()),
+                    radius = 150.dp.toPx(),
+                )
+            )
+        }
+
+        // Top scrim for status bar readability
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(90.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Black.copy(alpha = 0.45f), Color.Transparent)
+                    )
+                )
+        )
+
+        // Bottom vignette scrim blending into 32dp curved sheet
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(70.dp)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.30f))
+                    )
+                )
+        )
+    }
+}
+
+/* ── Layer 2: Floating Glassmorphic Top Bar ───────────────────────────────── */
+
+@Composable
+private fun RecentlyViewedFloatingTopBar(
+    title: String,
+    subtitle: String,
+    isDark: Boolean,
+    isMultiSelectMode: Boolean,
+    hasPosts: Boolean,
+    gridMode: Boolean,
+    currentThemeMode: ThemeMode,
+    onBack: () -> Unit,
+    onSelectAll: () -> Unit,
+    onClearSelection: () -> Unit,
+    onClearAll: () -> Unit,
+    onToggleMultiSelect: () -> Unit,
+    onToggleGridMode: () -> Unit,
+    onWishlist: () -> Unit,
+    onRewards: () -> Unit,
+    onCart: () -> Unit,
+    onNotifications: () -> Unit,
+    onToggleTheme: () -> Unit,
+    onLanguage: () -> Unit,
+) {
+    val haptic = LocalHapticFeedback.current
+    var showOverflow by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.90f),
+            border = BorderStroke(1.dp, if (isDark) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.08f)),
+            shadowElevation = 6.dp,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onBack()
+                    },
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Spacer(Modifier.width(6.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        subtitle,
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+
+                if (isMultiSelectMode) {
+                    TextButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onSelectAll()
+                        },
+                    ) {
+                        Text("All", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    }
+                    TextButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onClearSelection()
+                        },
+                    ) {
+                        Text("Clear", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    if (hasPosts) {
+                        IconButton(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onClearAll()
+                            },
+                            modifier = Modifier.size(34.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.DeleteSweep,
+                                contentDescription = "Clear All",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(19.dp),
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                onToggleMultiSelect()
+                            },
+                            modifier = Modifier.size(34.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = "Multi-select",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(19.dp),
+                            )
+                        }
+                    }
+                    IconButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            onToggleGridMode()
+                        },
+                        modifier = Modifier.size(34.dp),
+                    ) {
+                        Icon(
+                            imageVector = if (gridMode) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                            contentDescription = "Toggle view",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(19.dp),
+                        )
+                    }
+                    Box {
+                        IconButton(
+                            onClick = { showOverflow = true },
+                            modifier = Modifier.size(34.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "More options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(19.dp),
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showOverflow,
+                            onDismissRequest = { showOverflow = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Wishlist") },
+                                leadingIcon = { Icon(Icons.Default.BookmarkAdd, null, modifier = Modifier.size(18.dp)) },
+                                onClick = { showOverflow = false; onWishlist() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Rewards") },
+                                leadingIcon = { Icon(Icons.Default.EmojiEvents, null, modifier = Modifier.size(18.dp)) },
+                                onClick = { showOverflow = false; onRewards() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Cart") },
+                                leadingIcon = { Icon(Icons.Default.ShoppingCart, null, modifier = Modifier.size(18.dp)) },
+                                onClick = { showOverflow = false; onCart() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Notifications") },
+                                leadingIcon = { Icon(Icons.Default.Notifications, null, modifier = Modifier.size(18.dp)) },
+                                onClick = { showOverflow = false; onNotifications() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(if (currentThemeMode == ThemeMode.DARK) "Light Mode" else "Dark Mode") },
+                                leadingIcon = {
+                                    Icon(
+                                        if (currentThemeMode == ThemeMode.DARK) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
+                                        null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                },
+                                onClick = { showOverflow = false; onToggleTheme() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Language") },
+                                leadingIcon = { Icon(Icons.Default.Language, null, modifier = Modifier.size(18.dp)) },
+                                onClick = { showOverflow = false; onLanguage() },
+                            )
                         }
                     }
                 }

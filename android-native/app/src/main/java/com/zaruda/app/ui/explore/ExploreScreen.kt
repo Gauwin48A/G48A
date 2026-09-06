@@ -2475,7 +2475,9 @@ private fun AllPostsBrowse(
                             stringResource(R.string.explore_search_placeholder)
                         }
 
-                        // Search Bar + Filter Button (inside curved sheet)
+                        // Search Bar + Filter Button (inside curved sheet).
+                        // Tapping the field opens the FULL category-scoped search page
+                        // (recents + suggestions + ranked results stay inside this category).
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -2501,7 +2503,16 @@ private fun AllPostsBrowse(
                                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
                                 ),
-                                modifier = Modifier.weight(1f).height(46.dp).onFocusChanged { searchFocused = it.isFocused },
+                                modifier = Modifier.weight(1f).height(46.dp)
+                                    .onFocusChanged {
+                                        searchFocused = it.isFocused
+                                        if (it.isFocused) {
+                                            // Hand off to the dedicated scoped search page
+                                            focusManager.clearFocus()
+                                            onOpenSearch(state.searchQuery)
+                                        }
+                                    },
+                                readOnly = false,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                                 keyboardActions = KeyboardActions(
                                     onSearch = {

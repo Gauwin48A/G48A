@@ -148,6 +148,10 @@ import com.zaruda.app.ui.post.MyPostsScreen
 import com.zaruda.app.ui.profile.EditProfileScreen
 import com.zaruda.app.ui.profile.ProfileScreen
 import com.zaruda.app.ui.profile.ProfileViewModel
+import com.zaruda.app.ui.profile.OrderHistoryScreen
+import com.zaruda.app.ui.profile.OrderDetailScreen
+import com.zaruda.app.ui.profile.AddressBookScreen
+import com.zaruda.app.ui.profile.AddressFormScreen
 import com.zaruda.app.ui.rewards.RewardsScreen
 import com.zaruda.app.ui.rewards.ReferralTreeScreen
 import com.zaruda.app.ui.search.SearchScreen
@@ -696,7 +700,6 @@ fun ZarudaApp(
                 composable(Routes.REWARDS) {
                     MainShell(navController = navController, selected = BottomTab.REWARDS) {
                         RewardsScreen(
-                            isAuthenticated = isAuthenticated,
                             onSignInRequired = {
                                 navController.navigate(Routes.AUTH_GRAPH) {
                                     popUpTo(Routes.MAIN_GRAPH) { inclusive = true }
@@ -730,7 +733,7 @@ fun ZarudaApp(
                             onOpenPayout = { navController.navigate(Routes.PAYOUT) { launchSingleTop = true } },
                             onOpenAccountDelete = { navController.navigate(Routes.ACCOUNT_DELETE) { launchSingleTop = true } },
                             onOpenPost = { id -> navController.navigate(Routes.postDetail(id)) { launchSingleTop = true } },
-                            onOpenOrders = { navController.navigate(Routes.BOUGHT_POSTS) { launchSingleTop = true } },
+                            onOpenOrders = { navController.navigate(Routes.ORDER_HISTORY) { launchSingleTop = true } },
                             onOpenSaleUndone = { navController.navigate(Routes.REPOST) { launchSingleTop = true } },
                             onOpenRecentlyViewed = { navController.navigate(Routes.RECENTLY_VIEWED) { launchSingleTop = true } },
                             onOpenEditProfile = { navController.navigate(Routes.EDIT_PROFILE) { launchSingleTop = true } },
@@ -764,6 +767,48 @@ fun ZarudaApp(
                 // Settings Route
                 composable("settings") {
                     com.zaruda.app.ui.profile.SettingsScreen(onBack = { navController.popBackStack() })
+                }
+
+                // Profile Sub-Screens
+                composable(Routes.ORDER_HISTORY) {
+                    OrderHistoryScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenOrderDetail = { orderId ->
+                            navController.navigate(Routes.orderDetail(orderId)) { launchSingleTop = true }
+                        },
+                    )
+                }
+
+                composable(Routes.ORDER_DETAIL) { backStackEntry ->
+                    val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+                    OrderDetailScreen(
+                        orderId = orderId,
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+
+                composable(Routes.ADDRESS_BOOK) {
+                    AddressBookScreen(
+                        onBack = { navController.popBackStack() },
+                        onAddAddress = { navController.navigate(Routes.ADDRESS_ADD) { launchSingleTop = true } },
+                        onEditAddress = { addressId ->
+                            navController.navigate(Routes.addressEdit(addressId)) { launchSingleTop = true }
+                        },
+                    )
+                }
+
+                composable(Routes.ADDRESS_ADD) {
+                    AddressFormScreen(
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+
+                composable(Routes.ADDRESS_EDIT) { backStackEntry ->
+                    val addressId = backStackEntry.arguments?.getString("addressId")
+                    AddressFormScreen(
+                        addressId = addressId,
+                        onBack = { navController.popBackStack() },
+                    )
                 }
 
                 // MORE redirect to settings page
