@@ -134,7 +134,7 @@ private fun StaticPagesAtmosphericBackdrop(
 @Composable
 private fun StaticPagesFloatingTopBar(
     title: String,
-    badgeText: String = "🛡️ Zaruda Escrow",
+    badgeText: String = "🛡️ Verified Escrow",
     isDark: Boolean,
     onBack: () -> Unit,
 ) {
@@ -336,7 +336,7 @@ fun AboutUsScreen(onBack: () -> Unit) {
         // Layer 2: Pinned Floating Glassmorphic Top Bar
         StaticPagesFloatingTopBar(
             title = stringResource(R.string.about_title),
-            badgeText = "🛡️ About Zaruda",
+            badgeText = "🛡️ About Us",
             isDark = isDark,
             onBack = onBack,
         )

@@ -1225,12 +1225,12 @@ async function ensureSubscriptionTables() {
       {
         slug: "silver", name: "Silver", billing: "half-yearly", sort: 4, price: 1200, days: 180,
         description: "Up to 200 posts for 6 months",
-        features: ["📦 Up to 200 Posts", "⏱️ 30 Days Visibility/Post", "📸 1 Photo per Post", "✍️ 1 Post Per Day", "🚀 Boosts & Featured", "✅ Verified Badge", "🔝 Priority Search", "📊 Full Analytics", "🎁 7-Day Free Trial"],
+        features: ["📦 Up to 200 Posts", "⏱️ 30 Days Visibility/Post", "📸 1 Photo per Post", "✍️ 1 Post Per Day", "🚀 Boosts & Featured", "✅ Verified Badge", "🔝 Priority Search", "📊 Full Analytics"],
       },
       {
         slug: "gold", name: "Gold", billing: "yearly", sort: 5, price: 1500, days: 270,
         description: "Up to 500 posts for 9 months",
-        features: ["📦 Up to 500 Posts", "⏱️ 30 Days Visibility/Post", "📸 1 Photo per Post", "✍️ 1 Post Per Day", "🥇 Gold Badge", "🔝 Top Search Priority", "📊 Full Analytics", "🎁 7-Day Free Trial"],
+        features: ["📦 Up to 500 Posts", "⏱️ 30 Days Visibility/Post", "📸 1 Photo per Post", "✍️ 1 Post Per Day", "🥇 Gold Badge", "🔝 Top Search Priority", "📊 Full Analytics"],
       },
       {
         slug: "premium", name: "Premium", billing: "yearly", sort: 6, price: 1800, days: 365,
@@ -1245,7 +1245,6 @@ async function ensureSubscriptionTables() {
           "🚀 10 Boosts + 10 Featured + 10 Spotlights/Month",
           "🔝 Top of Feed Priority",
           "📊 Full Analytics Dashboard",
-          "🎁 14-Day Free Trial",
         ],
       },
     ];
@@ -1259,6 +1258,27 @@ async function ensureSubscriptionTables() {
          WHERE NOT EXISTS (SELECT 1 FROM subscription_plans WHERE slug = $2::text OR LOWER(plan_name) = LOWER($1::text))`,
         [p.name, p.slug, p.description, p.price, p.days, JSON.stringify(p.features), p.billing, p.sort]
       );
+    }
+
+    // Free trials are removed from the product — strip any legacy "Free Trial"
+    // feature strings from already-seeded rows (seed above skips existing rows).
+    try {
+      const withTrial = await runQuery(
+        `SELECT plan_id, features FROM subscription_plans WHERE features::text ILIKE '%free trial%'`
+      );
+      for (const row of withTrial.rows) {
+        const cleaned = (Array.isArray(row.features) ? row.features : [])
+          .filter((f) => typeof f !== "string" || !f.toLowerCase().includes("free trial"));
+        await runQuery(`UPDATE subscription_plans SET features = $2::jsonb WHERE plan_id = $1`, [
+          row.plan_id,
+          JSON.stringify(cleaned),
+        ]);
+      }
+      if (withTrial.rows.length > 0) {
+        logger.info(`[SchemaGuard] Stripped free-trial features from ${withTrial.rows.length} plan(s)`);
+      }
+    } catch (trialErr) {
+      logger.warn("[SchemaGuard] Free-trial feature cleanup skipped", { message: trialErr.message });
     }
 
     return true;

@@ -333,6 +333,27 @@ class TiersViewModel @Inject constructor(
 
 
 // ──────────────────────────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────────────────
+// Tier key resolution — themes/payment key off slugs ("silver"/"gold"...),
+// but server rows may carry DB ids. Resolve by slug first, then plan name.
+// ──────────────────────────────────────────────────────────────────────────
+
+internal fun resolveTierKey(id: String?, name: String?): String {
+    val known = setOf("starter", "basic", "bronze", "silver", "gold", "premium")
+    val idKey = id?.trim()?.lowercase().orEmpty()
+    if (idKey in known) return idKey
+    val n = name?.trim()?.lowercase().orEmpty()
+    return when {
+        n.contains("starter") -> "starter"
+        n.contains("basic") -> "basic"
+        n.contains("bronze") -> "bronze"
+        n.contains("silver") -> "silver"
+        n.contains("gold") -> "gold"
+        n.contains("premium") -> "premium"
+        else -> idKey
+    }
+}
+
 // Main Screen — AAB design + all current features
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -443,7 +464,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                     items(state.tiers, key = { it.id ?: it.name ?: "" }) { tier ->
                         TierCard(
                             tier = tier,
-                            perPostCost = when (tier.id) {
+                            perPostCost = when (resolveTierKey(tier.id, tier.name)) {
                                 "basic" -> "₹500/post"
                                 "bronze" -> "₹8.50/post"
                                 "silver" -> "₹6/post"
@@ -454,7 +475,7 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
                             },
                             coinBalance = state.coinBalance,
                             coinsToApply = state.coinsToApply,
-                            maxDiscountPct = when (tier.id?.lowercase()) { "premium", "silver", "gold" -> 30; else -> 50 },
+                            maxDiscountPct = when (resolveTierKey(tier.id, tier.name)) { "premium", "silver", "gold" -> 30; else -> 50 },
                             isLoading = state.subscribeLoading == tier.id,
                             onSelect = {
                                 val tId = tier.id ?: ""
@@ -470,9 +491,6 @@ fun TierSelectionScreen(onBack: () -> Unit, viewModel: TiersViewModel = hiltView
 
                     // ── Feature Comparison Table (NEW — not in AAB) ──────
                     item { ComparisonTable() }
-
-                    // ── Promo Code (NEW — not in AAB) ───────────────────
-                    item { PromoCodeSection() }
 
                     // ── Non-refundable notice ───────────────────────────
                     item {
@@ -605,7 +623,7 @@ private data class PlanTheme(
 @Composable
 private fun TierCard(tier: Tier, perPostCost: String, coinBalance: Int, coinsToApply: Int = 0, maxDiscountPct: Int, isLoading: Boolean, onSelect: () -> Unit, onCoinsChange: (Int) -> Unit = {}) {
     val isDark = ColorTokens.isDark
-    val tierId = tier.id?.lowercase() ?: ""
+    val tierId = resolveTierKey(tier.id, tier.name)
     // Color tokens map for each tier — dark-mode aware via ColorTokens (EXACT AAB)
     val theme = when (tierId) {
         "starter" -> PlanTheme(
@@ -856,6 +874,8 @@ private fun TierCard(tier: Tier, perPostCost: String, coinBalance: Int, coinsToA
 
 @Composable
 private fun ComparisonTable(modifier: Modifier = Modifier) {
+    // Collapsed by default — plan cards above already carry the key info.
+    var expanded by remember { mutableStateOf(false) }
     val headerBg = ColorTokens.CardSurface
     val cellBg = ColorTokens.Background
     val borderColor = ColorTokens.Divider
@@ -885,133 +905,87 @@ private fun ComparisonTable(modifier: Modifier = Modifier) {
         FeatureRow("Per-Post Cost", listOf("Free", "₹500", "₹8.50", "₹6", "₹3", "Free")),
     )
 
-    Column(modifier.padding(horizontal = 4.dp)) {
-        Text("Compare Plans", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = textHeading)
-        Spacer(Modifier.height(4.dp))
-        Text("See what each plan offers at a glance", fontSize = 13.sp, color = textMuted)
-        Spacer(Modifier.height(16.dp))
-
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = cellBg,
-            border = BorderStroke(1.dp, borderColor),
-            shadowElevation = 2.dp,
-        ) {
-            Column {
-                Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-                    Box(Modifier.width(100.dp).background(headerBg).padding(horizontal = 8.dp, vertical = 10.dp)) {
-                        Text("Feature", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = textHeading)
-                    }
-                    plans.forEachIndexed { idx, name ->
-                        Box(
-                            Modifier.width(72.dp).background(if (planIds[idx] == "gold") highlightBg else headerBg)
-                                .padding(horizontal = 4.dp, vertical = 10.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(name, fontWeight = FontWeight.Bold, fontSize = 10.sp, color = textHeading)
-                                if (planIds[idx] == "gold") Text("★", fontSize = 8.sp, color = ColorTokens.AmberText)
-                            }
-                        }
-                    }
-                }
-
-                HorizontalDivider(color = borderColor)
-
-                rows.forEach { row ->
-                    Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
-                        Box(Modifier.width(100.dp).padding(horizontal = 8.dp, vertical = 8.dp)) {
-                            Text(row.label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = textBody)
-                        }
-                        row.values.forEachIndexed { idx, value ->
-                            Box(
-                                Modifier.width(72.dp).background(if (planIds[idx] == "gold") highlightBg else Color.Transparent)
-                                    .padding(horizontal = 4.dp, vertical = 8.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    value,
-                                    fontSize = 10.sp,
-                                    fontWeight = if (value == "✓" || value == "∞") FontWeight.Bold else FontWeight.Normal,
-                                    color = when {
-                                        value == "✓" -> ColorTokens.VerifiedGreen
-                                        value == "—" -> textMuted
-                                        value == "∞" -> ColorTokens.VerifiedGreen
-                                        else -> textBody
-                                    },
-                                    textAlign = TextAlign.Center,
-                                )
-                            }
-                        }
-                    }
-                    HorizontalDivider(color = borderColor.copy(alpha = 0.5f))
-                }
-            }
-        }
-    }
-}
-
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Promo Code Section (NEW)
-// ──────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun PromoCodeSection() {
-    var promoCode by remember { mutableStateOf("") }
-    var promoApplied by remember { mutableStateOf(false) }
-    var promoError by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = ColorTokens.CardSurface,
-        border = BorderStroke(1.dp, ColorTokens.Divider),
-        modifier = Modifier.fillMaxWidth(),
+        color = cellBg,
+        border = BorderStroke(1.dp, borderColor),
+        shadowElevation = 2.dp,
+        modifier = modifier.fillMaxWidth().animateContentSize(),
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(Icons.Default.LocalOffer, null, tint = ColorTokens.AmberText, modifier = Modifier.size(20.dp))
-                Text("Have a promo code?", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = ColorTokens.TextHeading)
-            }
-            Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = promoCode,
-                    onValueChange = { promoCode = it.uppercase(); promoError = null },
-                    placeholder = { Text("Enter code", color = ColorTokens.TextMuted) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = ColorTokens.AmberText,
-                        unfocusedBorderColor = ColorTokens.Divider,
-                        focusedContainerColor = ColorTokens.CardSurface,
-                        unfocusedContainerColor = ColorTokens.CardSurface,
-                    ),
-                    modifier = Modifier.weight(1f).height(48.dp),
+        Column(Modifier.clickable { expanded = !expanded }) {
+            // Collapsed header row — tap to expand/collapse the full matrix.
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Default.TableChart, null, tint = ColorTokens.AmberText, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Compare Plans", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = textHeading)
+                    Text(
+                        if (expanded) "Tap to hide the full comparison" else "See what each plan offers, side by side",
+                        fontSize = 12.sp, color = textMuted,
+                    )
+                }
+                Icon(
+                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    null, tint = ColorTokens.TextSecondary,
                 )
-                Button(
-                    onClick = {
-                        scope.launch {
-                            promoApplied = false; promoError = null; delay(800)
-                            val validCodes = listOf("LAUNCH50", "WELCOME20", "SILVER10", "BRONZE15")
-                            if (promoCode in validCodes) promoApplied = true else promoError = "Invalid promo code"
+            }
+
+            if (expanded) {
+                HorizontalDivider(color = borderColor)
+                Column {
+                    Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                        Box(Modifier.width(100.dp).background(headerBg).padding(horizontal = 8.dp, vertical = 10.dp)) {
+                            Text("Feature", fontWeight = FontWeight.Bold, fontSize = 11.sp, color = textHeading)
                         }
-                    },
-                    enabled = promoCode.isNotBlank() && !promoApplied,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = ColorTokens.AmberText,
-                        disabledContainerColor = ColorTokens.AmberText.copy(alpha = 0.4f),
-                    ),
-                    modifier = Modifier.height(48.dp),
-                ) {
-                    if (promoApplied) Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                    else Text("Apply", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                        plans.forEachIndexed { idx, name ->
+                            Box(
+                                Modifier.width(72.dp).background(if (planIds[idx] == "gold") highlightBg else headerBg)
+                                    .padding(horizontal = 4.dp, vertical = 10.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(name, fontWeight = FontWeight.Bold, fontSize = 10.sp, color = textHeading)
+                                    if (planIds[idx] == "gold") Text("★", fontSize = 8.sp, color = ColorTokens.AmberText)
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = borderColor)
+
+                    rows.forEach { row ->
+                        Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                            Box(Modifier.width(100.dp).padding(horizontal = 8.dp, vertical = 8.dp)) {
+                                Text(row.label, fontSize = 11.sp, fontWeight = FontWeight.Medium, color = textBody)
+                            }
+                            row.values.forEachIndexed { idx, value ->
+                                Box(
+                                    Modifier.width(72.dp).background(if (planIds[idx] == "gold") highlightBg else Color.Transparent)
+                                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        value,
+                                        fontSize = 10.sp,
+                                        fontWeight = if (value == "✓" || value == "∞") FontWeight.Bold else FontWeight.Normal,
+                                        color = when {
+                                            value == "✓" -> ColorTokens.VerifiedGreen
+                                            value == "—" -> textMuted
+                                            value == "∞" -> ColorTokens.VerifiedGreen
+                                            else -> textBody
+                                        },
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+                            }
+                        }
+                        HorizontalDivider(color = borderColor.copy(alpha = 0.5f))
+                    }
                 }
             }
-            if (promoApplied) { Spacer(Modifier.height(8.dp)); Text("✅ Promo code applied! Discount will show at checkout.", fontSize = 12.sp, color = ColorTokens.VerifiedGreen) }
-            promoError?.let { Spacer(Modifier.height(4.dp)); Text(it, fontSize = 12.sp, color = ColorTokens.RedText) }
         }
     }
 }

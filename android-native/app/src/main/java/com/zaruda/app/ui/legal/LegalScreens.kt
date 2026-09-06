@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -305,12 +306,53 @@ private val helpCategories = listOf(
     "Community & Rewards", "Safety & Disputes", "App & Technical",
 )
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+// ──────────────────────────────────────────────────────────────────────────
+// Help & Support ViewModel — loads the user's real complaint tickets
+// ──────────────────────────────────────────────────────────────────────────
+
+@HiltViewModel
+class HelpSupportViewModel @Inject constructor(
+    private val repo: UserSocialRepository,
+    private val tokenStore: com.zaruda.app.data.local.TokenStore,
+) : ViewModel() {
+    private val _tickets = MutableStateFlow<List<ComplaintRecord>?>(null)
+    val tickets: StateFlow<List<ComplaintRecord>?> = _tickets.asStateFlow()
+
+    private val _ticketsLoading = MutableStateFlow(false)
+    val ticketsLoading: StateFlow<Boolean> = _ticketsLoading.asStateFlow()
+
+    init { refresh() }
+
+    fun refresh() {
+        if (tokenStore.accessToken.value == null) {
+            _tickets.value = null
+            return
+        }
+        viewModelScope.launch {
+            _ticketsLoading.value = true
+            _tickets.value = when (val r = repo.myComplaints()) {
+                is ApiResult.Success -> r.data.complaints
+                is ApiResult.Failure -> emptyList()
+            }
+            _ticketsLoading.value = false
+        }
+    }
+}
+
 @Composable
-fun HelpSupportScreen(onBack: () -> Unit) {
+fun HelpSupportScreen(
+    onBack: () -> Unit,
+    onOpenFeedback: () -> Unit = {},
+    onOpenComplaints: () -> Unit = {},
+    viewModel: HelpSupportViewModel = hiltViewModel(),
+) {
     val isDark = ColorTokens.isDark
     val context = LocalContext.current
     var query by rememberSaveable { mutableStateOf("") }
     var category by rememberSaveable { mutableStateOf("All") }
+    val tickets by viewModel.tickets.collectAsState()
+    val ticketsLoading by viewModel.ticketsLoading.collectAsState()
 
     val filtered = remember(query, category) {
         helpFaqs.filter { faq ->
@@ -322,7 +364,7 @@ fun HelpSupportScreen(onBack: () -> Unit) {
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* Start chat */ },
+                onClick = onOpenFeedback,
                 containerColor = ColorTokens.Primary,
                 contentColor = Color.White
             ) {
@@ -366,26 +408,63 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 100.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        // Ticket Tracker Section
+                        // Ticket Tracker Section — real complaints from GET /complaints/my
                         Surface(
                             shape = RoundedCornerShape(16.dp),
                             color = ColorTokens.SurfaceVariant.copy(alpha = 0.5f),
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Column(Modifier.padding(18.dp)) {
-                                Text("Your Open Tickets", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.OnSurface)
-                                Spacer(Modifier.height(12.dp))
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(ColorTokens.Background).padding(12.dp)
-                                ) {
-                                    Icon(Icons.Filled.ReportProblem, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
-                                    Spacer(Modifier.width(12.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text("Missing Refund", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                                        Text("Waiting on Support • Updated 2h ago", fontSize = 11.sp, color = ColorTokens.OnSurfaceVariant)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Your Open Tickets", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ColorTokens.OnSurface, modifier = Modifier.weight(1f))
+                                    TextButton(onClick = onOpenComplaints, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
+                                        Text("View all", fontSize = 12.sp)
                                     }
-                                    Icon(Icons.Filled.ChevronRight, null, tint = ColorTokens.OnSurfaceVariant)
+                                    IconButton(onClick = { viewModel.refresh() }, enabled = !ticketsLoading) {
+                                        if (ticketsLoading) {
+                                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                        } else {
+                                            Icon(Icons.Filled.Refresh, contentDescription = "Refresh tickets", tint = ColorTokens.OnSurfaceVariant, modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.height(8.dp))
+                                when {
+                                    tickets == null -> {
+                                        Text(
+                                            "Sign in to see your complaint tickets and their live status.",
+                                            fontSize = 12.sp, color = ColorTokens.OnSurfaceVariant,
+                                        )
+                                    }
+                                    tickets!!.isEmpty() -> {
+                                        Text(
+                                            "No open tickets — if anything goes wrong with a deal, raise a complaint from the transaction screen.",
+                                            fontSize = 12.sp, color = ColorTokens.OnSurfaceVariant,
+                                        )
+                                    }
+                                    else -> {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            tickets!!.take(3).forEach { ticket ->
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(ColorTokens.Background).padding(12.dp)
+                                                ) {
+                                                    Icon(Icons.Filled.ReportProblem, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp))
+                                                    Spacer(Modifier.width(12.dp))
+                                                    Column(modifier = Modifier.weight(1f)) {
+                                                        Text(ticket.subject ?: "Support ticket", fontWeight = FontWeight.SemiBold, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                        Text(
+                                            listOfNotNull(
+                                                ticket.status?.replaceFirstChar { it.uppercase() },
+                                                ticket.referenceId?.let { "Ref: $it" },
+                                            ).joinToString(" • ").ifEmpty { "In review" },
+                                            fontSize = 11.sp, color = ColorTokens.OnSurfaceVariant,
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -401,8 +480,8 @@ fun HelpSupportScreen(onBack: () -> Unit) {
                         Spacer(Modifier.height(4.dp))
                         Text("Guides, answers and direct support for everything on the platform.", fontSize = 13.sp, color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
                         Spacer(Modifier.height(12.dp))
-                        HelpContactRow(Icons.Filled.Comment, "In-app Feedback — More → Feedback", onClick = null)
-                        HelpContactRow(Icons.Filled.Report, "Complaints & disputes — More → Complaints", onClick = null)
+                        HelpContactRow(Icons.Filled.Comment, "In-app Feedback — raise suggestions & rate features", onClick = onOpenFeedback)
+                        HelpContactRow(Icons.Filled.Report, "Complaints & disputes — track and raise tickets", onClick = onOpenComplaints)
                     }
                 }
 

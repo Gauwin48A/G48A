@@ -1477,7 +1477,11 @@ fun ZarudaApp(
             }
 
             composable(Routes.HELP_SUPPORT) {
-                HelpSupportScreen(onBack = safePopBack)
+                HelpSupportScreen(
+                    onBack = safePopBack,
+                    onOpenFeedback = { navController.navigate(Routes.FEEDBACK) { launchSingleTop = true } },
+                    onOpenComplaints = { navController.navigate(Routes.COMPLAINTS) { launchSingleTop = true } },
+                )
             }
 
             composable(Routes.ADMIN_PANEL) {

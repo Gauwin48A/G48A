@@ -583,7 +583,10 @@ class TiersRepository @Inject constructor(private val api: ZarudaApi) {
     suspend fun list(): ApiResult<List<Tier>> = safeApiCall {
         api.getSubscriptionPlans().plans.map { plan ->
             Tier(
-                id = plan.id,
+                // Use the slug ("silver"/"gold"...) — card themes and the payment
+                // endpoint key off slugs, not DB plan_ids. Name-lowercase is the
+                // fallback so legacy rows without a slug still resolve.
+                id = plan.slug ?: plan.name?.lowercase() ?: plan.id,
                 name = plan.name,
                 price = plan.priceINR.toDouble(),
                 currency = "INR",
