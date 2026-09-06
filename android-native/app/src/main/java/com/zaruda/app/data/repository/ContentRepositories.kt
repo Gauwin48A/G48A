@@ -591,7 +591,9 @@ class TiersRepository @Inject constructor(private val api: ZarudaApi) {
                 price = plan.priceINR.toDouble(),
                 currency = "INR",
                 duration = plan.durationDays,
-                features = plan.features,
+                // Free trials are removed from the product — filter server-side
+                // leftovers so they never render even before the DB is cleaned.
+                features = plan.features.filterNot { it.contains("free trial", ignoreCase = true) },
                 popular = false,
             )
         }

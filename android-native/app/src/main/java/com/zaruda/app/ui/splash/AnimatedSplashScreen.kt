@@ -141,11 +141,11 @@ fun AnimatedSplashScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "Z",
-                            fontSize = 68.sp,
-                            fontWeight = FontWeight.Black,
-                            color = Color.White,
+                        Icon(
+                            imageVector = Icons.Filled.Storefront,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(64.dp),
                         )
                         Text(
                             text = "✦",
@@ -161,11 +161,12 @@ fun AnimatedSplashScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            // Editorial Brand Header
+            // Editorial Brand Header — brand name intentionally generic until
+            // the final app-name decision (see /DECISIONS.md at repo root).
             Text(
-                text = "Z A R U D A",
+                text = "M A R K E T P L A C E",
                 color = Color.White,
-                fontSize = 32.sp,
+                fontSize = 28.sp,
                 fontWeight = FontWeight.Black,
                 letterSpacing = 6.sp,
             )
@@ -177,7 +178,7 @@ fun AnimatedSplashScreen(
                 enter = fadeIn(tween(600)) + scaleIn(initialScale = 0.85f, animationSpec = tween(600)),
             ) {
                 Text(
-                    text = "Marketplace • Deals & Direct Sellers",
+                    text = "Deals & Direct Sellers • Verified",
                     color = Color.White.copy(alpha = 0.9f),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,

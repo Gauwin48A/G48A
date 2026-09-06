@@ -241,7 +241,7 @@ async function getChainEarnedPoints(userId) {
         SELECT COALESCE(SUM(amount), 0)::int AS total
         FROM coin_transactions
         WHERE user_id::text = $1
-          AND type LIKE 'referral_l%'
+          AND action LIKE 'referral_l%'
       `,
       [userId],
     );
@@ -257,10 +257,10 @@ async function getReferralLedgerSnapshot(userId) {
     const result = await runQuery(
       `
         SELECT
-          COUNT(*) FILTER (WHERE type = 'referral_l1')::int AS qualified_bonus_entries,
-          COUNT(*) FILTER (WHERE type LIKE 'referral_l%' AND type != 'referral_l1')::int AS chain_reward_entries,
+          COUNT(*) FILTER (WHERE action = 'referral_l1')::int AS qualified_bonus_entries,
+          COUNT(*) FILTER (WHERE action LIKE 'referral_l%' AND action != 'referral_l1')::int AS chain_reward_entries,
           MAX(created_at) FILTER (
-            WHERE type LIKE 'referral_l%'
+            WHERE action LIKE 'referral_l%'
           ) AS last_referral_reward_at
         FROM coin_transactions
         WHERE user_id::text = $1
@@ -290,10 +290,10 @@ async function getLeaderboardHistory(userId, limit = 5) {
   try {
     const result = await runQuery(
       `
-        SELECT type AS action, amount AS points, description, created_at
+        SELECT action, amount AS points, description, created_at
         FROM coin_transactions
         WHERE user_id::text = $1
-          AND type IN ('leaderboard_top_seller', 'leaderboard_top_buyer')
+          AND action IN ('leaderboard_top_seller', 'leaderboard_top_buyer')
         ORDER BY created_at DESC
         LIMIT $2
       `,
@@ -515,31 +515,31 @@ exports.getRewardsByUser = async (req, res) => {
           runQuery(
             `
               SELECT
-                COUNT(*) FILTER (WHERE type IN ('sale', 'first_sale'))::int AS sales_count,
-                COUNT(*) FILTER (WHERE type = 'purchase')::int AS purchases_count,
+                COUNT(*) FILTER (WHERE action IN ('sale', 'first_sale'))::int AS sales_count,
+                COUNT(*) FILTER (WHERE action = 'purchase')::int AS purchases_count,
                 COUNT(*) FILTER (
-                  WHERE type LIKE 'referral_l%'
+                  WHERE action LIKE 'referral_l%'
                 )::int AS referrals_count,
-                COUNT(*) FILTER (WHERE type IN ('post', 'first_listing'))::int AS posts_count,
-                COUNT(*) FILTER (WHERE type = 'daily_checkin')::int AS visits_count,
+                COUNT(*) FILTER (WHERE action IN ('post', 'first_listing'))::int AS posts_count,
+                COUNT(*) FILTER (WHERE action = 'daily_checkin')::int AS visits_count,
                 COUNT(*) FILTER (
-                  WHERE type IN ('sale', 'first_sale')
+                  WHERE action IN ('sale', 'first_sale')
                     AND created_at >= NOW() - INTERVAL '1 day'
                 )::int AS sales_today,
                 COUNT(*) FILTER (
-                  WHERE type = 'purchase'
+                  WHERE action = 'purchase'
                     AND created_at >= NOW() - INTERVAL '1 day'
                 )::int AS purchases_today,
                 COUNT(*) FILTER (
-                  WHERE type LIKE 'referral_l%'
+                  WHERE action LIKE 'referral_l%'
                     AND created_at >= NOW() - INTERVAL '1 day'
                 )::int AS referrals_today,
                 COUNT(*) FILTER (
-                  WHERE type IN ('post', 'first_listing')
+                  WHERE action IN ('post', 'first_listing')
                     AND created_at >= NOW() - INTERVAL '1 day'
                 )::int AS posts_today,
                 COUNT(*) FILTER (
-                  WHERE type = 'daily_checkin'
+                  WHERE action = 'daily_checkin'
                     AND created_at >= NOW() - INTERVAL '1 day'
                 )::int AS visits_today
               FROM coin_transactions
@@ -755,7 +755,7 @@ exports.getRewardLog = async (req, res) => {
           `
             SELECT
               user_id,
-              type AS action,
+              action,
               amount AS points,
               description,
               created_at

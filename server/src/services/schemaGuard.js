@@ -1281,6 +1281,18 @@ async function ensureSubscriptionTables() {
       logger.warn("[SchemaGuard] Free-trial feature cleanup skipped", { message: trialErr.message });
     }
 
+    // Reviews schema compatibility — the app and rating flows reference
+    // reviewer/reviewee/post columns that older installs never received.
+    try {
+      await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reviewee_id TEXT`);
+      await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS post_id TEXT`);
+      await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS comment TEXT`);
+      await runQuery(`ALTER TABLE reviews ADD COLUMN IF NOT EXISTS verified_purchase BOOLEAN DEFAULT false`);
+      await runQuery(`CREATE INDEX IF NOT EXISTS idx_reviews_reviewee ON reviews(reviewee_id)`);
+    } catch (reviewErr) {
+      logger.warn("[SchemaGuard] Reviews schema compatibility skipped", { message: reviewErr.message });
+    }
+
     return true;
   } catch (error) {
     logger.warn("[SchemaGuard] Unable to auto-provision Subscription tables", { message: error.message });
