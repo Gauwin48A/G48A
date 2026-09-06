@@ -157,7 +157,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
     throw new Error("Recipient email is required");
   }
 
-  const finalSubject = normalize(subject) || "MHub Notification";
+  const finalSubject = normalize(subject) || process.env.APP_NAME || "Account Notification";
   const finalText = normalize(text);
   const finalHtml = normalize(html);
 
@@ -257,7 +257,7 @@ const sendPasswordResetEmail = async ({
 const sendEmailOTP = async (email, otp) =>
   sendEmail({
     to: email,
-    subject: "Your MHub verification code",
+    subject: "Your verification code",
     text: `Your verification code is ${otp}. It expires in 10 minutes.`,
     html: `<p>Your verification code is <strong>${otp}</strong>. It expires in 10 minutes.</p>`,
   });

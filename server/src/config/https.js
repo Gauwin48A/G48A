@@ -184,7 +184,7 @@ async function generateDevCerts() {
         execSync(`openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
             -keyout ${path.join(certDir, 'privkey.pem')} \
             -out ${path.join(certDir, 'fullchain.pem')} \
-            -subj "/CN=localhost/O=MHub Development"`,
+            -subj "/CN=localhost/O=Local Dev"`,
             { stdio: 'inherit' }
         );
         logger.info('✅ Development certificates generated in /server/certs/');

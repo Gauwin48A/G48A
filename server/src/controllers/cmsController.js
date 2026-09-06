@@ -119,7 +119,8 @@ exports.getSupportInfo = async (_req, res) => {
 
     return res.json({
       success: true,
-      platformName: "Zaruda Marketplace",
+      // Brand name env-driven — final app name not decided yet (see /DECISIONS.md)
+      platformName: process.env.APP_NAME ? `${process.env.APP_NAME} Marketplace` : "Marketplace",
       companyLegalName: companyName,
       hasCustomSupportEmail: Boolean(supportEmail),
       supportEmail: supportEmail,

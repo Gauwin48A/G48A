@@ -471,7 +471,7 @@ const checkDeviceBinding = async (userId, req) => {
       if (DEVICE_BINDING_STRICT) {
         return {
           allowed: false,
-          error: "This device is permanently registered with another account. Each device can only be used with one MHub account. Contact support if you believe this is an error.",
+          error: "This device is permanently registered with another account. Each device can only be used with one account. Contact support if you believe this is an error.",
           code: "DEVICE_ALREADY_BOUND",
         };
       }

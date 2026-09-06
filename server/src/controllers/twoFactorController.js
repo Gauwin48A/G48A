@@ -431,9 +431,11 @@ exports.setup2FA = async (req, res) => {
         .json({ error: "2FA is already enabled. Disable it first to reset." });
     }
 
+    // Brand name intentionally env-driven (APP_NAME) — final name not decided yet.
+    const appLabel = process.env.APP_NAME || "Marketplace";
     const secret = speakeasy.generateSecret({
-      name: `MHub:${req.user.email || req.user.username || "User"}`,
-      issuer: "MHub",
+      name: `${appLabel}:${req.user.email || req.user.username || "User"}`,
+      issuer: appLabel,
       length: 32,
     });
 

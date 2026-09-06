@@ -171,5 +171,5 @@ exports.getMyRewards = async (req, res) => {
  * POST /rewards/redeem — Redeems coins (deprecated stub, replaced by coins controller redeems)
  */
 exports.redeemRewards = async (req, res) => {
-  res.status(400).json({ error: "Points redemption is deprecated. Please spend your coins directly in the MHub Store." });
+  res.status(400).json({ error: "Points redemption is deprecated. Please spend your coins directly in the Rewards Store." });
 };

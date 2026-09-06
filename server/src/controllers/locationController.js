@@ -26,7 +26,7 @@ const serverReverseGeocode = async (lat, lon) => {
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve(null), 5000);
     https
-      .get(url, { headers: { "User-Agent": "MHub/1.0 (contact@mhub.app)" } }, (res) => {
+      .get(url, { headers: { "User-Agent": `${process.env.APP_NAME || "MarketplaceApp"}/1.0 (contact@mhub.app)` } }, (res) => {
         let data = "";
         res.on("data", (chunk) => (data += chunk));
         res.on("end", () => {
@@ -67,7 +67,7 @@ const fetchIndiaPostDetails = async (pincode) => {
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve(null), INDIA_POST_TIMEOUT_MS);
     https
-      .get(url, { headers: { "User-Agent": "MHub/1.0" } }, (res) => {
+      .get(url, { headers: { "User-Agent": `${process.env.APP_NAME || "MarketplaceApp"}/1.0` } }, (res) => {
         let data = "";
         res.on("data", (chunk) => (data += chunk));
         res.on("end", () => {

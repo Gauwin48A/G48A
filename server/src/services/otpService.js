@@ -149,7 +149,7 @@ const verifyOTP = async (userId, code, purpose = "sale_confirm") => {
  */
 const sendOTP = async (channel, destination, otp, options = {}) => {
   const message =
-    `Your MHub verification code is: ${otp}. Valid for ${OTP_EXPIRY_MINUTES} minutes. Do not share this code.`;
+    `Your verification code is: ${otp}. Valid for ${OTP_EXPIRY_MINUTES} minutes. Do not share this code.`;
 
   const flow = String(options.flow || "unknown");
   const purpose = String(options.purpose || "generic");
@@ -272,10 +272,12 @@ const sendOTP = async (channel, destination, otp, options = {}) => {
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       const sendGridResult = await sgMail.send({
         to: destination,
-        from: process.env.SENDGRID_FROM || "noreply@mhub.app",
-        subject: "Your MHub Verification Code",
+        from: process.env.SENDGRID_FROM || "noreply@zaruda.app", // TODO(branding): address pending final app-name decision (see /DECISIONS.md)
+        subject: process.env.APP_NAME
+          ? `Your ${process.env.APP_NAME} Verification Code`
+          : "Your Verification Code",
         text: message,
-        html: `<p style="font-family:sans-serif">Your MHub code is: <strong style="font-size:24px;letter-spacing:4px">${otp}</strong></p><p>Valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`,
+        html: `<p style="font-family:sans-serif">Your verification code is: <strong style="font-size:24px;letter-spacing:4px">${otp}</strong></p><p>Valid for ${OTP_EXPIRY_MINUTES} minutes.</p>`,
       });
       logger.info(`[OTP] SendGrid email sent to ${destination}`);
       const sendGridMessageId =
@@ -306,7 +308,9 @@ const sendOTP = async (channel, destination, otp, options = {}) => {
       const smtpResult = await transporter.sendMail({
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: destination,
-        subject: "Your MHub Verification Code",
+        subject: process.env.APP_NAME
+          ? `Your ${process.env.APP_NAME} Verification Code`
+          : "Your Verification Code",
         text: message,
       });
       logger.info(`[OTP] SMTP email sent to ${destination}`);

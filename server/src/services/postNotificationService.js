@@ -36,7 +36,7 @@ async function notifyPostSaleDone({ postId, sellerId, buyerId = null, salePrice 
     // 1. Notify Seller
     await emitNotification(String(sellerId), {
       title: `🛍️ Listing Marked Sold: ${postTitle}`,
-      message: `Your post "${postTitle}" has been marked as sold on Zaruda marketplace.`,
+      message: `Your post "${postTitle}" has been marked as sold on the marketplace.`,
       type: "sale_done",
       sender_id: String(sellerId),
       image_url: postImage,
@@ -121,7 +121,7 @@ async function notifyPostReposted({ postId, sellerId, expiresAt = null }) {
     // 1. Notify Seller
     await emitNotification(String(sellerId), {
       title: `🚀 Listing Reposted: ${postTitle}`,
-      message: `Your post "${postTitle}" has been reactivated and is back live on Zaruda with renewed visibility!`,
+      message: `Your post "${postTitle}" has been reactivated and is back live on the marketplace with renewed visibility!`,
       type: "repost_success",
       sender_id: String(sellerId),
       image_url: postImage,
