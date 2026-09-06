@@ -7,15 +7,20 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.BiasAlignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -64,16 +69,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
-// ── Demo user mock posts for rich testing ──
-private val DEMO_USER_POSTS: List<Post> = listOf(
-    Post(id="demo_p1", title="iPhone 15 Pro Max 256GB – Natural Titanium", description="Brand new sealed. AppleCare+ eligible. Face ID, A17 Pro chip, 48MP camera.", price=119000.0, originalPrice=159900.0, imageUrl="https://picsum.photos/seed/demo_iphone15/400/300", category="electronics", subcategory="Phones", brand="Apple", condition="New", city="Mumbai", location="Mumbai, MH", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=342, likeCount=28, createdAt="2024-03-15", sellerVerified=true, isNegotiable=true),
-    Post(id="demo_p2", title="Samsung Galaxy Book4 Pro 360 – 16\" 16GB/512GB", description="3 months old. Intel Core Ultra 7, AMOLED touchscreen, S-Pen included. Original box.", price=98000.0, imageUrl="https://picsum.photos/seed/demo_galaxybook/400/300", category="electronics", subcategory="Laptops", brand="Samsung", condition="Like New", city="Bengaluru", location="Bengaluru, KA", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=215, likeCount=19, createdAt="2024-02-20", sellerVerified=true),
-    Post(id="demo_p3", title="Sony WH-1000XM5 – Midnight Blue ANC Headphones", description="1 month old. Flawless ANC, 30hr battery. Carry case included. Original cables.", price=18900.0, imageUrl="https://picsum.photos/seed/demo_sonyxm5/400/300", category="electronics", subcategory="Audio", brand="Sony", condition="Like New", city="Delhi", location="Delhi, DL", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=156, likeCount=18, createdAt="2024-03-01"),
-    Post(id="demo_p4", title="Canon EOS R6 Mark II – Body + 24-105mm Kit Lens", description="6 months old. 24.2MP, 4K 60fps, IBIS. Includes extra battery and 128GB SD card.", price=185000.0, imageUrl="https://picsum.photos/seed/demo_canonr6/400/300", category="electronics", subcategory="Cameras", brand="Canon", condition="Used", city="Pune", location="Pune, MH", sellerName="Demo User", userId="demo_user", userName="Demo User", status="sold", viewCount=490, likeCount=45, createdAt="2024-01-10"),
-    Post(id="demo_p6", title="Nike Air Force 1 Low White – UK 9 Brand New", description="Deadstock, never worn. Original box. 100% authentic.", price=8500.0, imageUrl="https://picsum.photos/seed/demo_af1/400/300", category="fashion", subcategory="Shoes", brand="Nike", condition="New", city="Mumbai", location="Mumbai, MH", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=620, likeCount=74, createdAt="2024-03-20"),
-    Post(id="demo_p11", title="Honda Activa 6G – Pearl White 2022", description="8,500 km driven. First owner. All service records. New battery installed.", price=68000.0, imageUrl="https://picsum.photos/seed/demo_activa/400/300", category="vehicles", subcategory="Scooters", brand="Honda", condition="Used", city="Pune", location="Pune, MH", sellerName="Demo User", userId="demo_user", userName="Demo User", status="active", viewCount=318, likeCount=38, createdAt="2024-03-18"),
-)
-
 @Stable
 data class MyPostsState(
     val loading: Boolean = false,
@@ -119,10 +114,12 @@ class MyPostsViewModel @Inject constructor(
                     )
                 }
                 else -> {
+                    // Empty or failed — show empty state, never fake listings.
                     _state.value = _state.value.copy(
                         loading = false,
                         refreshing = false,
-                        items = DEMO_USER_POSTS,
+                        items = emptyList(),
+                        error = if (result is ApiResult.Failure) result.error.message else null,
                     )
                 }
             }
@@ -209,30 +206,36 @@ fun MyPostsScreen(
                 .padding(padding)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                // ── Layer 1: Atmospheric Aurora Mesh Backdrop ──
+                // ── Layer 1: 3A Crisp Scenic Tirumala Konda Backdrop ──
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(230.dp)
-                        .background(
-                            Brush.verticalGradient(
-                                if (isDark) listOf(Color(0xFF0F172A), Color(0xFF0C2442), Color(0xFF0F172A))
-                                else listOf(Color(0xFFE0F2FE), Color(0xFFEFF6FF), Color(0xFFF8FAFC))
-                            )
-                        )
+                        .height(260.dp)
                 ) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        drawCircle(
-                            color = Color(0xFF0284C7).copy(alpha = if (isDark) 0.16f else 0.20f),
-                            radius = size.width * 0.45f,
-                            center = Offset(size.width * 0.15f, size.height * 0.25f)
-                        )
-                        drawCircle(
-                            color = Color(0xFF10B981).copy(alpha = if (isDark) 0.12f else 0.18f),
-                            radius = size.width * 0.35f,
-                            center = Offset(size.width * 0.85f, size.height * 0.35f)
-                        )
-                    }
+                    Image(
+                        painter = painterResource(id = R.drawable.tirumala_konda_bg),
+                        contentDescription = "Scenic Background",
+                        contentScale = ContentScale.Crop,
+                        alignment = BiasAlignment(0f, 0.25f),
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = if (isDark) listOf(
+                                        Color(0xFF0F172A).copy(alpha = 0.55f),
+                                        Color(0xFF0F172A).copy(alpha = 0.85f),
+                                        Color(0xFF0F172A)
+                                    ) else listOf(
+                                        Color(0xFF0284C7).copy(alpha = 0.25f),
+                                        Color(0xFFF8FAFC).copy(alpha = 0.70f),
+                                        Color(0xFFF8FAFC)
+                                    )
+                                )
+                            )
+                    )
                 }
 
                 Column(modifier = Modifier.fillMaxSize()) {
@@ -243,9 +246,9 @@ fun MyPostsScreen(
                             .statusBarsPadding()
                             .padding(horizontal = 14.dp, vertical = 6.dp),
                         shape = RoundedCornerShape(24.dp),
-                        color = (if (isDark) Color(0xFF1E293B) else Color.White).copy(alpha = 0.90f),
-                        border = BorderStroke(1.dp, (if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)).copy(alpha = 0.6f)),
-                        shadowElevation = 4.dp,
+                        color = (if (isDark) Color(0xFF1E293B) else Color.White).copy(alpha = 0.92f),
+                        border = BorderStroke(1.dp, (if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)).copy(alpha = 0.7f)),
+                        shadowElevation = 6.dp,
                     ) {
                         Row(
                             modifier = Modifier
@@ -256,12 +259,15 @@ fun MyPostsScreen(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                IconButton(onClick = onBack, modifier = Modifier.size(32.dp)) {
+                                IconButton(onClick = onBack, modifier = Modifier.size(36.dp)) {
                                     Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = MaterialTheme.colorScheme.onSurface)
                                 }
-                                Text("📦 My Listings", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = if (isDark) Color.White else Color(0xFF0F172A))
+                                Column {
+                                    Text("🏠 My Home", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = if (isDark) Color.White else Color(0xFF0F172A))
+                                    Text("Manage & Track Listings", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
                             }
 
                             Button(
@@ -278,7 +284,7 @@ fun MyPostsScreen(
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
-                                    Text("New Listing", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                    Text("Post Ad", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
                             }
                         }
@@ -362,29 +368,58 @@ fun MyPostsScreen(
                                 )
                             }
 
-                            // ── 3. Filter Chips Row ──
+                            // ── 3. Search Bar ──
                             item {
-                                LazyRow(
+                                OutlinedTextField(
+                                    value = state.searchQuery,
+                                    onValueChange = { viewModel.setSearchQuery(it) },
+                                    placeholder = { Text("Search your listings by title or location...", fontSize = 13.sp) },
+                                    leadingIcon = { Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                    trailingIcon = {
+                                        if (state.searchQuery.isNotBlank()) {
+                                            IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                                                Icon(Icons.Default.Close, null)
+                                            }
+                                        }
+                                    },
+                                    singleLine = true,
+                                    shape = RoundedCornerShape(16.dp),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = if (isDark) Color(0xFF1E293B) else Color.White,
+                                        unfocusedContainerColor = if (isDark) Color(0xFF1E293B) else Color.White,
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedBorderColor = if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0),
+                                    ),
+                                )
+                            }
+
+                            // ── 4. Filter Chips Row ──
+                            item {
+                                Row(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState())
                                 ) {
                                     val filters = listOf(
-                                        null to "All ($totalCount)",
-                                        "active" to "Active ($activeCount)",
-                                        "sold" to "Sold ($soldCount)",
-                                        "bought" to "Purchased (${state.boughtItems.size})"
+                                        null to "🌟 All ($totalCount)",
+                                        "active" to "🟢 Active ($activeCount)",
+                                        "sold" to "✅ Sold ($soldCount)",
+                                        "bought" to "🛍️ Purchased (${state.boughtItems.size})"
                                     )
-                                    items(filters) { (key, label) ->
+                                    filters.forEach { (key, label) ->
                                         val isSelected = state.statusFilter == key
                                         Surface(
                                             onClick = { viewModel.setFilter(key) },
                                             shape = RoundedCornerShape(20.dp),
                                             color = if (isSelected) Color(0xFF2563EB) else (if (isDark) Color(0xFF1E293B) else Color.White),
                                             border = BorderStroke(1.dp, if (isSelected) Color(0xFF2563EB) else (if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0))),
+                                            shadowElevation = if (isSelected) 3.dp else 0.dp
                                         ) {
                                             Text(
                                                 label,
-                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
                                                 fontSize = 12.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                 color = if (isSelected) Color.White else (if (isDark) Color.White else Color(0xFF0F172A))
@@ -655,7 +690,7 @@ private fun ModernListingItemCard(
                             border = BorderStroke(1.dp, if (isElectronics) Color(0xFF2563EB).copy(alpha = 0.3f) else Color(0xFF10B981).copy(alpha = 0.3f))
                         ) {
                             Text(
-                                if (isElectronics) "🛡️ Category 1 Escrow" else "⚡ Direct Deal",
+                                if (isElectronics) "🛡️ Platform Escrow Eligible" else "⚡ Direct Deal",
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,

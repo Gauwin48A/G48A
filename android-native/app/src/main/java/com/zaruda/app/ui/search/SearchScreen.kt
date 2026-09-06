@@ -1301,13 +1301,6 @@ private fun SearchResultCard(
     onInterested: () -> Unit
 ) {
     var wishlisted by remember { mutableStateOf(false) }
-    val isElectronics = post.categoryId == "1" || 
-        (post.category?.lowercase()?.contains("electronic") == true) || 
-        (post.categoryName?.lowercase()?.contains("electronic") == true) ||
-        (post.category?.lowercase()?.contains("mobile") == true) ||
-        (post.categoryName?.lowercase()?.contains("mobile") == true) ||
-        (post.category?.lowercase()?.contains("gadget") == true) ||
-        (post.categoryName?.lowercase()?.contains("gadget") == true)
 
     Card(
         onClick = onClick,
@@ -1555,10 +1548,12 @@ private fun SearchResultCard(
                         }
                     }
 
+                    // Card CTA is always "View Details" — escrow ("Buy with Platform")
+                    // lives ONLY in the Cart and ONLY for Electronics items.
                     Surface(
                         onClick = onClick,
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isElectronics) Color(0xFF059669) else MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .weight(1.2f)
                             .height(38.dp),
@@ -1568,15 +1563,9 @@ private fun SearchResultCard(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            if (isElectronics) {
-                                Icon(Icons.Default.Shield, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Buy with Platform", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            } else {
-                                Icon(Icons.Default.Visibility, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("View Details", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            }
+                            Icon(Icons.Default.Visibility, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("View Details", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }

@@ -1098,12 +1098,12 @@ private fun ExploreHeroBackdrop(categoryKey: String?) {
     val context = LocalContext.current
     val normalizedKey = categoryKey?.lowercase()?.trim()
 
-    val imageUrl = when {
+    val imageUrl: Any = when {
         normalizedKey == "electronics" -> "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1200&auto=format&fit=crop&q=85"
         normalizedKey == "vehicles" -> "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&auto=format&fit=crop&q=85"
         normalizedKey == "fashion" -> "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&auto=format&fit=crop&q=85"
         normalizedKey == "lifestyle" || normalizedKey == "furniture" || normalizedKey == "home" -> "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=1200&auto=format&fit=crop&q=85"
-        else -> "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&auto=format&fit=crop&q=85"
+        else -> com.zaruda.app.R.drawable.tirumala_konda_bg
     }
 
     val title = when {
@@ -3671,8 +3671,6 @@ fun AllPostCard(
     val context = LocalContext.current
     var showPostMenu by remember { mutableStateOf(false) }
 
-    val isElectronics = post.category?.lowercase()?.contains("electron") == true
-
     Card(
         onClick = onClick,
         shape = RoundedCornerShape(18.dp),
@@ -3969,10 +3967,12 @@ fun AllPostCard(
                         }
                     }
 
+                    // Card CTA is always "View Details" — escrow ("Buy with Platform")
+                    // lives ONLY in the Cart and ONLY for Electronics items.
                     Surface(
                         onClick = onClick,
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isElectronics) Color(0xFF059669) else MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1.2f).height(38.dp),
                     ) {
                         Row(
@@ -3980,15 +3980,9 @@ fun AllPostCard(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            if (isElectronics) {
-                                Icon(Icons.Default.Shield, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Buy with Platform", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            } else {
-                                Icon(Icons.Default.Visibility, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("View Details", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            }
+                            Icon(Icons.Default.Visibility, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("View Details", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }
