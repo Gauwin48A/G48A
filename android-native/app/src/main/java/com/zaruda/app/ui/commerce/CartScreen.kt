@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ImageNotSupported
+import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.*
 import androidx.compose.material3.AlertDialog
@@ -47,6 +48,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import com.zaruda.app.R
+import com.zaruda.app.ui.components.AppEmptyIllustration
 import com.zaruda.app.ui.components.AppEmptyState
 import com.zaruda.app.ui.components.AppErrorState
 import com.zaruda.app.ui.components.ListShimmer
@@ -466,10 +468,12 @@ fun CartScreen(
                                     .padding(vertical = 64.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                AppEmptyState(
+                                AppEmptyIllustration(
                                     icon = Icons.Default.ShoppingCart,
-                                    title = "Your shortlist is empty",
-                                    subtitle = "Save items you're interested in from any category",
+                                    accentIcon = Icons.Default.VerifiedUser,
+                                    accentIcon2 = Icons.Outlined.LocalOffer,
+                                    title = "Your cart is empty",
+                                    subtitle = "Add Electronics listings with Add to Cart and buy them securely here",
                                 )
                             }
                         }

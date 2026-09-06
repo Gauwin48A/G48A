@@ -38,6 +38,7 @@ import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
@@ -92,6 +93,7 @@ import com.zaruda.app.core.ApiResult
 import com.zaruda.app.data.repository.CartRepository
 import com.zaruda.app.data.repository.WishlistRepository
 import com.zaruda.app.domain.model.Post
+import com.zaruda.app.ui.components.AppEmptyIllustration
 import com.zaruda.app.ui.components.AppEmptyState
 import com.zaruda.app.ui.components.AppErrorState
 import com.zaruda.app.ui.components.ListShimmer
@@ -637,13 +639,15 @@ fun WishlistScreen(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 64.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                AppEmptyState(
+                                AppEmptyIllustration(
                                     icon = Icons.Default.Bookmark,
+                                    accentIcon = Icons.Default.Search,
+                                    accentIcon2 = Icons.Default.FavoriteBorder,
                                     title = if (categoryKey != null) "No items saved in this category" else "Nothing saved yet",
                                     subtitle = if (categoryKey != null)
                                         "Items you save in ${categoryKey.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }} will appear here."
                                     else
-                                        "Tap the save icon on listings to add them here.",
+                                        "Tap the bookmark icon on listings to add them here.",
                                 )
                             }
                         }

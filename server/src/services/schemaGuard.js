@@ -388,6 +388,332 @@ async function ensureTransactionsOffersTables() {
   }
 }
 
+/**
+ * Provision tables referenced by live code but defined NOWHERE (no init.sql,
+ * no migration, no controller-level CREATE). Without these, their endpoints
+ * 500 exactly like the cart did. Idempotent — safe on every startup.
+ */
+async function ensureMissingOperationalTables() {
+  try {
+    // UPI direct-payment ledger (paymentController.js). NOT the Razorpay
+    // payment_transactions table — this one backs the manual/UPI flow.
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS payments (
+        id BIGSERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+        payment_method VARCHAR(40),
+        transaction_id VARCHAR(120),
+        upi_id VARCHAR(120),
+        status VARCHAR(24) NOT NULL DEFAULT 'pending',
+        plan_purchased VARCHAR(80),
+        purchase_type VARCHAR(40),
+        boost_type VARCHAR(40),
+        post_id TEXT,
+        metadata JSONB,
+        retry_count INT DEFAULT 0,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery("CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id)");
+    await runQuery("CREATE INDEX IF NOT EXISTS idx_payments_txid ON payments(transaction_id)");
+
+    // Listing drafts (routes/posts.js)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS post_drafts (
+        id BIGSERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        draft_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery("CREATE INDEX IF NOT EXISTS idx_post_drafts_user ON post_drafts(user_id)");
+
+    // Post report/abuse tracking (postController.js) — upsert keyed on (post_id, reporter_id)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS post_reports (
+        id BIGSERIAL PRIMARY KEY,
+        post_id TEXT NOT NULL,
+        reporter_id TEXT NOT NULL,
+        reason VARCHAR(120),
+        details TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery(
+      "CREATE UNIQUE INDEX IF NOT EXISTS uq_post_reports_post_reporter ON post_reports(post_id, reporter_id)"
+    );
+
+    // Feed/seller analytics rollups (feedController.js, sellerAnalyticsController.js)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS post_metrics (
+        id BIGSERIAL PRIMARY KEY,
+        post_id TEXT NOT NULL,
+        impression_count INT NOT NULL DEFAULT 0,
+        view_count INT NOT NULL DEFAULT 0,
+        like_count INT NOT NULL DEFAULT 0,
+        last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery("CREATE INDEX IF NOT EXISTS idx_post_metrics_post ON post_metrics(post_id)");
+
+    // Seller analytics upsert cache (analyticsController.js)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS seller_analytics (
+        user_id INT PRIMARY KEY,
+        total_views BIGINT DEFAULT 0,
+        total_inquiries BIGINT DEFAULT 0,
+        total_offers BIGINT DEFAULT 0,
+        total_sales BIGINT DEFAULT 0,
+        total_revenue DECIMAL(14,2) DEFAULT 0,
+        conversion_rate DECIMAL(6,2) DEFAULT 0,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    // Recent-search memory for the marketplace search page (routes/users.js)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS search_history (
+        id BIGSERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        query TEXT NOT NULL,
+        searched_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery("CREATE INDEX IF NOT EXISTS idx_search_history_user ON search_history(user_id, searched_at DESC)");
+
+    // OTP persistence (otpService.js — falls back to memory when missing)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS otp_store (
+        id BIGSERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        otp_hash TEXT NOT NULL,
+        purpose VARCHAR(40),
+        expires_at TIMESTAMPTZ NOT NULL,
+        attempts INT NOT NULL DEFAULT 0,
+        is_used BOOLEAN NOT NULL DEFAULT false,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery("CREATE INDEX IF NOT EXISTS idx_otp_store_user ON otp_store(user_id, purpose)");
+
+    // Failed-login counters for the suspicious-login cron (cronJobs.js)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS login_audit (
+        id BIGSERIAL PRIMARY KEY,
+        user_id TEXT,
+        success BOOLEAN NOT NULL DEFAULT true,
+        ip_address TEXT,
+        latitude DOUBLE PRECISION,
+        longitude DOUBLE PRECISION,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery("CREATE INDEX IF NOT EXISTS idx_login_audit_user_time ON login_audit(user_id, created_at DESC)");
+
+    // Follow graph (profileController.js queries "follows" — migration 087
+    // created "user_follows" instead, a name mismatch).
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS follows (
+        id BIGSERIAL PRIMARY KEY,
+        follower_id TEXT NOT NULL,
+        following_id TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery(
+      "CREATE UNIQUE INDEX IF NOT EXISTS uq_follows_pair ON follows(follower_id, following_id)"
+    );
+    await runQuery("CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id)");
+
+    // Aadhaar KYC results (aadhaar.js). No FK — users PK is user_id INT and
+    // this table stores TEXT ids (migration 020's users(id) FK can't work).
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS user_kyc (
+        id BIGSERIAL PRIMARY KEY,
+        user_id TEXT UNIQUE NOT NULL,
+        kyc_status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+        masked_aadhaar VARCHAR(20),
+        kyc_ref_token VARCHAR(100),
+        full_name VARCHAR(150),
+        dob DATE,
+        gender VARCHAR(10),
+        full_address TEXT,
+        house_number VARCHAR(100),
+        street VARCHAR(255),
+        locality VARCHAR(255),
+        district VARCHAR(100),
+        state VARCHAR(100),
+        pincode VARCHAR(10),
+        verified_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    // KYC document uploads reviewed in the admin console (adminDocController.js)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS verification_documents (
+        document_id BIGSERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        filename TEXT,
+        original_name TEXT,
+        file_size BIGINT,
+        status VARCHAR(24) NOT NULL DEFAULT 'pending',
+        reviewed_by TEXT,
+        review_notes TEXT,
+        reviewed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    // Contact-book sync (routes/contacts.js)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS user_contacts (
+        id BIGSERIAL PRIMARY KEY,
+        owner_id TEXT NOT NULL,
+        name TEXT,
+        phone VARCHAR(20),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery("CREATE INDEX IF NOT EXISTS idx_user_contacts_owner ON user_contacts(owner_id)");
+
+    // Rating audit trail (ratingService.js)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS rating_history (
+        id BIGSERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        old_rating DECIMAL(4,2),
+        new_rating DECIMAL(4,2),
+        change_type VARCHAR(40),
+        severity VARCHAR(20),
+        reason TEXT,
+        reference_id TEXT,
+        metadata JSONB,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery("CREATE INDEX IF NOT EXISTS idx_rating_history_user ON rating_history(user_id, created_at DESC)");
+
+    // Channel creator program (routes/channels.js)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS creator_applications (
+        id BIGSERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        display_name VARCHAR(120),
+        category VARCHAR(80),
+        description TEXT,
+        reason TEXT,
+        social_links JSONB,
+        photo_url TEXT,
+        status VARCHAR(24) NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    // Channel reels (routes/channels.js)
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS creator_reels (
+        id BIGSERIAL PRIMARY KEY,
+        channel_id TEXT NOT NULL,
+        owner_id TEXT NOT NULL,
+        video_url TEXT NOT NULL,
+        thumbnail_url TEXT,
+        caption TEXT,
+        duration_seconds INT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Unable to provision missing operational tables", {
+      message: error.message,
+    });
+    return false;
+  }
+}
+
+/**
+ * Run pending SQL migrations from database/migrations (tracked in
+ * schema_migrations). Files containing destructive ops (DROP/TRUNCATE/DELETE)
+ * or CREATE INDEX CONCURRENTLY are skipped — they need deliberate manual runs
+ * and can break startup if applied blindly. Statement-level failures are
+ * logged and skipped so one bad statement can't abort the rest.
+ */
+async function runPendingMigrations() {
+  const MIGRATIONS_DIR = path.join(__dirname, "..", "..", "database", "migrations");
+  try {
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        filename TEXT PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    const applied = new Set(
+      (await runQuery("SELECT filename FROM schema_migrations")).rows.map((r) => r.filename),
+    );
+
+    let files = [];
+    if (fs.existsSync(MIGRATIONS_DIR)) {
+      files = fs
+        .readdirSync(MIGRATIONS_DIR)
+        .filter((f) => f.endsWith(".sql"))
+        .sort();
+    }
+
+    let appliedCount = 0;
+    let skippedUnsafe = 0;
+    for (const file of files) {
+      if (applied.has(file)) continue;
+      const raw = fs.readFileSync(path.join(MIGRATIONS_DIR, file), "utf8");
+      const content = raw.toUpperCase();
+      if (
+        /\bDROP\s+TABLE\b/.test(content) ||
+        /\bTRUNCATE\b/.test(content) ||
+        /\bDELETE\s+FROM\b/.test(content) ||
+        /\bCONCURRENTLY\b/.test(content)
+      ) {
+        skippedUnsafe += 1;
+        continue;
+      }
+
+      const statements = splitSqlStatements(raw);
+      let failed = 0;
+      for (const stmt of statements) {
+        try {
+          await runQuery(stmt);
+        } catch (err) {
+          failed += 1;
+          logger.warn(`[SchemaGuard] Migration ${file} statement failed (continuing)`, {
+            message: err.message,
+          });
+        }
+      }
+      // Record even with per-statement failures — idempotent IF NOT EXISTS SQL
+      // won't re-fail on the next startup, and blocking on it would retry
+      // forever.
+      await runQuery(
+        "INSERT INTO schema_migrations (filename) VALUES ($1) ON CONFLICT (filename) DO NOTHING",
+        [file],
+      );
+      appliedCount += 1;
+    }
+
+    if (appliedCount > 0 || skippedUnsafe > 0) {
+      logger.info(
+        `[SchemaGuard] Migrations: ${appliedCount} applied, ${skippedUnsafe} skipped (destructive/concurrent)`,
+      );
+    }
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Migration runner failed", { message: error.message });
+    return false;
+  }
+}
+
 async function ensureCartTables() {
   try {
     await runQuery(`
@@ -1722,6 +2048,9 @@ async function ensureSchemaPreflight({
   /* STEP 0: Run comprehensive init.sql FIRST */
   await runInitSql();
 
+  /* STEP 0b: Run pending tracked migrations (non-destructive only) */
+  await runPendingMigrations();
+
   /* STEP 1: Core tables & columns (backward compat fallback) */
   await ensureCoreTablesAndColumns();
   if (autoCreatePostsOptionalColumns) {
@@ -1738,6 +2067,7 @@ async function ensureSchemaPreflight({
   await ensureKycTables();
   await ensureSalesTables();
   await ensureCartTables();
+  await ensureMissingOperationalTables();
   await ensureFinancialOpsTables();
   await ensureSubscriptionTables();
   await ensurePaymentTables();
@@ -1781,6 +2111,8 @@ module.exports = {
   ensureOffersOptionalColumns,
   ensureTransactionsOffersTables,
   ensureCartTables,
+  ensureMissingOperationalTables,
+  runPendingMigrations,
   ensureUserSettingsTable,
   ensureUsersStatusColumns,
   ensureSubcategoriesOptionalColumns,

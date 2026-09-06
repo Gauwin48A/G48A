@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -175,6 +176,116 @@ fun AppErrorState(
             label = { Text(retryLabel) },
             leadingIcon = { Icon(Icons.Default.Refresh, contentDescription = null) },
         )
+    }
+}
+
+/**
+ * Illustration-style empty state: a layered gradient badge with floating accent
+ * chips, for primary surfaces (cart, wishlist) where a plain icon feels bare.
+ */
+@Composable
+fun AppEmptyIllustration(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    accentIcon: ImageVector? = null,
+    accentIcon2: ImageVector? = null,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 28.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            // Halo ring
+            Box(
+                modifier = Modifier
+                    .size(128.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+            )
+            // Soft mid ring
+            Box(
+                modifier = Modifier
+                    .size(104.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)),
+            )
+            // Gradient core badge
+            Box(
+                modifier = Modifier
+                    .size(76.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary,
+                                MaterialTheme.colorScheme.tertiary,
+                            ),
+                        ),
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(36.dp))
+            }
+            // Floating accent chip — top right
+            accentIcon?.let {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 6.dp, y = (-2).dp)
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(7.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(it, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
+                }
+            }
+            // Floating accent chip — bottom left
+            accentIcon2?.let {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .offset(x = (-4).dp, y = 4.dp)
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(it, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(15.dp))
+                }
+            }
+        }
+        Spacer(Modifier.height(18.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        if (actionLabel != null && onAction != null) {
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = onAction,
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Text(actionLabel, fontWeight = FontWeight.Bold)
+            }
+        }
     }
 }
 
