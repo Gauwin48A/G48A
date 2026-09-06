@@ -247,9 +247,9 @@ async function fetchCartItems(userId, { includeSaved = false } = {}) {
         COALESCE(u.rating, 0) AS seller_rating,
         COALESCE(u.rating_count, 0) AS seller_rating_count
       FROM cart_items ci
-      LEFT JOIN posts p ON ci.post_id = p.post_id
+      LEFT JOIN posts p ON ci.post_id::text = p.post_id::text
       LEFT JOIN users u ON p.user_id = u.user_id
-      LEFT JOIN profiles pr ON p.user_id = pr.user_id
+      LEFT JOIN profiles pr ON p.user_id::text = pr.user_id::text
       LEFT JOIN categories c ON p.category_id::text = c.category_id::text
       LEFT JOIN subcategories sc ON p.subcategory_id::text = sc.subcategory_id::text
       WHERE ${where}

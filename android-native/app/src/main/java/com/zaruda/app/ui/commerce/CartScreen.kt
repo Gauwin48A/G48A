@@ -978,25 +978,34 @@ private fun CartHeroBackdrop() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(260.dp)
-    ) {
-        AsyncImage(
-            model = "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?auto=format&fit=crop&w=1200&q=80",
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF0F172A).copy(alpha = 0.40f),
-                            Color(0xFF0F172A).copy(alpha = 0.85f),
-                        )
+            .height(200.dp)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        Color(0xFF064E3B),
+                        Color(0xFF0F172A),
                     )
                 )
+            )
+    ) {
+        // Decorative trolley watermark — a cart visual, not an unrelated stock photo
+        Icon(
+            imageVector = Icons.Filled.ShoppingCart,
+            contentDescription = null,
+            tint = Color.White.copy(alpha = 0.08f),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 12.dp)
+                .size(150.dp)
+        )
+        Icon(
+            imageVector = Icons.Filled.ShoppingBag,
+            contentDescription = null,
+            tint = Color.White.copy(alpha = 0.05f),
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 20.dp, top = 8.dp)
+                .size(72.dp)
         )
         Column(
             modifier = Modifier
@@ -1025,7 +1034,7 @@ private fun CartHeroBackdrop() {
                 }
             }
             Text(
-                text = "Shopping Cart 🛍️",
+                text = "Shopping Cart 🛒",
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,

@@ -388,6 +388,67 @@ async function ensureTransactionsOffersTables() {
   }
 }
 
+async function ensureCartTables() {
+  try {
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS cart_items (
+        cart_item_id BIGSERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        post_id TEXT NOT NULL,
+        quantity INT NOT NULL DEFAULT 1,
+        price_at_add DECIMAL(12,2),
+        currency VARCHAR(8) DEFAULT 'INR',
+        status VARCHAR(16) NOT NULL DEFAULT 'active',
+        metadata JSONB,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    // Required by the cart controller's ON CONFLICT (user_id, post_id, status) upsert.
+    await runQuery(
+      "CREATE UNIQUE INDEX IF NOT EXISTS uq_cart_items_user_post_status ON cart_items(user_id, post_id, status)"
+    );
+    await runQuery(
+      "CREATE INDEX IF NOT EXISTS idx_cart_items_user ON cart_items(user_id)"
+    );
+    await runQuery(
+      "CREATE INDEX IF NOT EXISTS idx_cart_items_post ON cart_items(post_id)"
+    );
+
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS cart_promotions (
+        promo_id BIGSERIAL PRIMARY KEY,
+        code TEXT NOT NULL,
+        description TEXT,
+        discount_type VARCHAR(16) DEFAULT 'percent',
+        discount_value DECIMAL(12,2) DEFAULT 0,
+        min_subtotal DECIMAL(12,2) DEFAULT 0,
+        max_uses INT,
+        used_count INT DEFAULT 0,
+        starts_at TIMESTAMPTZ,
+        ends_at TIMESTAMPTZ,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await runQuery(
+      "CREATE UNIQUE INDEX IF NOT EXISTS uq_cart_promotions_code ON cart_promotions(UPPER(code))"
+    );
+
+    // The cart seller-card join reads users.rating / users.rating_count.
+    // rating_count is missing on older DBs — add it (idempotent).
+    await runQuery(
+      "ALTER TABLE users ADD COLUMN IF NOT EXISTS rating_count INT NOT NULL DEFAULT 0"
+    );
+    return true;
+  } catch (error) {
+    logger.warn("[SchemaGuard] Unable to provision cart tables", {
+      message: error.message,
+    });
+    return false;
+  }
+}
+
 async function ensureSalesTables() {
   try {
     await runQuery(`
@@ -1676,6 +1737,7 @@ async function ensureSchemaPreflight({
   await ensureSubcategoriesOptionalColumns();
   await ensureKycTables();
   await ensureSalesTables();
+  await ensureCartTables();
   await ensureFinancialOpsTables();
   await ensureSubscriptionTables();
   await ensurePaymentTables();
@@ -1718,6 +1780,7 @@ module.exports = {
   ensureTransactionsOptionalColumns,
   ensureOffersOptionalColumns,
   ensureTransactionsOffersTables,
+  ensureCartTables,
   ensureUserSettingsTable,
   ensureUsersStatusColumns,
   ensureSubcategoriesOptionalColumns,

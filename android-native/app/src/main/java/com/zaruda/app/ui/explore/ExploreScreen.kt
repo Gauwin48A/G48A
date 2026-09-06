@@ -3125,9 +3125,9 @@ private fun AllPostsBrowse(
                                         ) {
                                             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                                                 Icon(
-                                                    imageVector = if (isWished) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                                                    contentDescription = null,
-                                                    tint = if (isWished) Color(0xFFEF4444) else Color.White,
+                                                    imageVector = if (isWished) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+                                                    contentDescription = "Save to wishlist",
+                                                    tint = if (isWished) Color(0xFFF59E0B) else Color.White,
                                                     modifier = Modifier.size(14.dp),
                                                 )
                                             }
@@ -3804,9 +3804,9 @@ fun AllPostCard(
                 ) {
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                         Icon(
-                            imageVector = if (isWishlisted) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Wishlist",
-                            tint = if (isWishlisted) Color(0xFFEF4444) else Color.White,
+                            imageVector = if (isWishlisted) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+                            contentDescription = "Save to wishlist",
+                            tint = if (isWishlisted) Color(0xFFF59E0B) else Color.White,
                             modifier = Modifier.size(18.dp),
                         )
                     }
