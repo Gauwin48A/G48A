@@ -349,13 +349,13 @@ class ProfileViewModel @Inject constructor(
             userId = "demo_user",
             name = "Demo User",
             fullName = "Demo User",
-            email = "demo@zaruda.app",
+            email = "demo@example.com",
             phone = "+91 98765 43210",
             role = "user",
             currentPlan = "Premium",
             rewardBadge = "VIP",
             coins = 1450,
-            bio = "Verified Zaruda Pro Trader. Electronics & Luxury Goods enthusiast.",
+            bio = "Verified Pro Trader. Electronics & Luxury Goods enthusiast.",
             isVerified = true,
             kycStatus = "verified",
         )
@@ -555,6 +555,9 @@ fun ProfileScreen(
     onOpenHelp: () -> Unit = {},
     onOpenKyc: () -> Unit = {},
     onOpenReferralTree: () -> Unit = {},
+    onOpenAbout: () -> Unit = {},
+    onOpenTerms: () -> Unit = {},
+    onOpenPrivacy: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -582,13 +585,16 @@ fun ProfileScreen(
                 }
             }
             state.user == null -> {
-                // ─── 10/10 GUEST PROFILE VIEW ───
+                // ─── GUEST PROFILE VIEW ───
                 GuestProfileView(
                     isDark = darkTheme,
                     onSignIn = onSignedOut,
                     onOpenLanguage = onOpenLanguage,
                     onOpenHelp = onOpenHelp,
                     onOpenNotifications = onOpenNotifications,
+                    onOpenAbout = onOpenAbout,
+                    onOpenTerms = onOpenTerms,
+                    onOpenPrivacy = onOpenPrivacy,
                 )
             }
             else -> {
@@ -630,6 +636,9 @@ private fun GuestProfileView(
     onOpenLanguage: () -> Unit,
     onOpenHelp: () -> Unit,
     onOpenNotifications: () -> Unit,
+    onOpenAbout: () -> Unit = {},
+    onOpenTerms: () -> Unit = {},
+    onOpenPrivacy: () -> Unit = {},
 ) {
     val heroGradient = Brush.verticalGradient(
         colors = if (isDark) {
@@ -683,8 +692,14 @@ private fun GuestProfileView(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    Icon(
+                        Icons.Outlined.AccountCircle,
+                        contentDescription = null,
+                        tint = if (isDark) Color.White else Color(0xFF0F172A),
+                        modifier = Modifier.size(22.dp)
+                    )
                     Text(
-                        "🛡️ Zaruda Account",
+                        "My Account",
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp,
                         color = if (isDark) Color.White else Color(0xFF0F172A)
@@ -755,7 +770,7 @@ private fun GuestProfileView(
                                 .border(2.dp, Color(0xFF3B82F6).copy(alpha = 0.5f), CircleShape)
                         ) {
                             Icon(
-                                Icons.Filled.Person,
+                                imageVector = Icons.Filled.Person,
                                 contentDescription = null,
                                 tint = Color(0xFF3B82F6),
                                 modifier = Modifier.size(40.dp)
@@ -763,14 +778,14 @@ private fun GuestProfileView(
                         }
 
                         Text(
-                            text = "Welcome to Zaruda",
+                            text = "Welcome! Sign in to get started",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Black,
                             color = if (isDark) Color.White else Color(0xFF0F172A)
                         )
 
                         Text(
-                            text = "India's Safe Direct & Category 1 Escrow Marketplace. Sign in to manage listings, track orders, and earn coins.",
+                            text = "Create an account to sell items, buy securely and track everything in one place.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
@@ -803,58 +818,45 @@ private fun GuestProfileView(
                     }
                 }
 
-                // ─── Trust Pillars (Why Zaruda is 10/10) ───
+                // ─── What you get (concrete, user-ease focused) ───
                 Text(
-                    text = "SAFE COMMERCE PLEDGE",
+                    text = "WITH AN ACCOUNT",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    GuestPillarCard(
-                        emoji = "🛡️",
-                        title = "Category 1 Escrow",
-                        desc = "Zero frauds. Payment is held in bank escrow until verified delivery.",
-                        modifier = Modifier.weight(1f),
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    GuestBenefitRow(
+                        emoji = "📦",
+                        title = "Sell your items",
+                        desc = "Post listings in minutes and reach buyers near you.",
                         isDark = isDark
                     )
-                    GuestPillarCard(
-                        emoji = "⚡",
-                        title = "Direct Deals",
-                        desc = "Meet local buyers nearby with 0% fee on verified handovers.",
-                        modifier = Modifier.weight(1f),
+                    GuestBenefitRow(
+                        emoji = "🛒",
+                        title = "Buy with confidence",
+                        desc = "Secure in-app payment on electronics — money is held safely until your item is delivered.",
                         isDark = isDark
                     )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    GuestPillarCard(
+                    GuestBenefitRow(
                         emoji = "🪙",
-                        title = "Coins & Perks",
-                        desc = "Check in daily, spin the wheel & unlock boost credits.",
-                        modifier = Modifier.weight(1f),
+                        title = "Earn coins daily",
+                        desc = "Check in daily and refer friends to unlock real discounts.",
                         isDark = isDark
                     )
-                    GuestPillarCard(
-                        emoji = "🔒",
-                        title = "Aadhaar Verified",
-                        desc = "Only real community members with authentic trust ratings.",
-                        modifier = Modifier.weight(1f),
+                    GuestBenefitRow(
+                        emoji = "✅",
+                        title = "Verified community",
+                        desc = "Aadhaar-verified members and public ratings keep deals genuine.",
                         isDark = isDark
                     )
                 }
 
                 // ─── Preferences & Quick Actions ───
                 Text(
-                    text = "APP PREFERENCES",
+                    text = "SETTINGS",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold,
@@ -871,25 +873,68 @@ private fun GuestProfileView(
                     Column {
                         ProfileMenuRow(
                             icon = Icons.Outlined.Translate,
-                            title = "Preferred Language",
-                            subtitle = "English / हिन्दी / தமிழ் / తెలుగు",
+                            title = "Language",
+                            subtitle = "Choose your preferred app language",
                             onClick = onOpenLanguage,
                             isDark = isDark
                         )
                         HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFF1F5F9))
                         ProfileMenuRow(
                             icon = Icons.Outlined.Notifications,
-                            title = "Notifications & Alerts",
-                            subtitle = "Price drops, deals & chat alerts",
+                            title = "Notifications",
+                            subtitle = "Alerts for deals, chats & orders",
                             onClick = onOpenNotifications,
                             isDark = isDark
                         )
                         HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFF1F5F9))
                         ProfileMenuRow(
                             icon = Icons.Outlined.HelpCenter,
-                            title = "24/7 Help & Support",
-                            subtitle = "Safety center, FAQs & live resolution",
+                            title = "Help & Support",
+                            subtitle = "FAQs, contact support & raise tickets",
                             onClick = onOpenHelp,
+                            isDark = isDark
+                        )
+                    }
+                }
+
+                // ─── About & Legal ───
+                Text(
+                    text = "ABOUT & LEGAL",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp
+                )
+
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isDark) Color(0xFF1E293B) else Color.White,
+                    ),
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)),
+                ) {
+                    Column {
+                        ProfileMenuRow(
+                            icon = Icons.Outlined.Info,
+                            title = "About Us",
+                            subtitle = "Who we are & what we stand for",
+                            onClick = onOpenAbout,
+                            isDark = isDark
+                        )
+                        HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFF1F5F9))
+                        ProfileMenuRow(
+                            icon = Icons.Outlined.Description,
+                            title = "Terms & Conditions",
+                            subtitle = "Rules for using the platform",
+                            onClick = onOpenTerms,
+                            isDark = isDark
+                        )
+                        HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFF1F5F9))
+                        ProfileMenuRow(
+                            icon = Icons.Outlined.PrivacyTip,
+                            title = "Privacy Policy",
+                            subtitle = "How your data is collected & protected",
+                            onClick = onOpenPrivacy,
                             isDark = isDark
                         )
                     }
@@ -904,7 +949,7 @@ private fun GuestProfileView(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "Zaruda v2.4.0 • 100% Protected Platform",
+                        "v2.4.0 • Verified Local Deals Platform",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
@@ -916,26 +961,36 @@ private fun GuestProfileView(
 }
 
 @Composable
-private fun GuestPillarCard(
+private fun GuestBenefitRow(
     emoji: String,
     title: String,
     desc: String,
-    modifier: Modifier = Modifier,
     isDark: Boolean,
 ) {
     Surface(
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = if (isDark) Color(0xFF1E293B) else Color.White,
         border = BorderStroke(1.dp, if (isDark) Color(0xFF334155) else Color(0xFFE2E8F0)),
-        modifier = modifier
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(emoji, fontSize = 22.sp)
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (isDark) Color.White else Color(0xFF0F172A))
-            Text(desc, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 15.sp)
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFEFF6FF))
+            ) {
+                Text(emoji, fontSize = 20.sp)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (isDark) Color.White else Color(0xFF0F172A))
+                Text(desc, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
+            }
         }
     }
 }
@@ -1324,7 +1379,7 @@ private fun AuthenticatedProfileView(
                         isDark = isDark
                     )
                     KpiCard(
-                        title = "Zaruda Coins",
+                        title = "My Coins",
                         value = "🪙 ${user.coins ?: 0}",
                         subtitle = "Redeem perks",
                         icon = Icons.Outlined.Toll,
@@ -1495,7 +1550,7 @@ private fun AuthenticatedProfileView(
         AlertDialog(
             onDismissRequest = { showSignOutConfirm = false },
             title = { Text("Sign Out", fontWeight = FontWeight.Bold) },
-            text = { Text("Are you sure you want to sign out from Zaruda on this device?") },
+            text = { Text("Are you sure you want to sign out on this device?") },
             confirmButton = {
                 TextButton(
                     onClick = {

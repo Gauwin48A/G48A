@@ -741,6 +741,9 @@ fun ZarudaApp(
                             onOpenHelp = { navController.navigate(Routes.HELP_SUPPORT) { launchSingleTop = true } },
                             onOpenKyc = { navController.navigate(Routes.KYC) { launchSingleTop = true } },
                             onOpenReferralTree = { navController.navigate(Routes.REFERRAL_TREE) { launchSingleTop = true } },
+                            onOpenAbout = { navController.navigate(Routes.ABOUT_US) { launchSingleTop = true } },
+                            onOpenTerms = { navController.navigate(Routes.TERMS) { launchSingleTop = true } },
+                            onOpenPrivacy = { navController.navigate(Routes.PRIVACY) { launchSingleTop = true } },
                         )
                     }
                 }
