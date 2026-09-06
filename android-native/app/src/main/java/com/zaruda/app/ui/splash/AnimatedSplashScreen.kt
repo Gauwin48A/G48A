@@ -74,8 +74,8 @@ fun AnimatedSplashScreen(
         badgeVisible = true
         delay(100)
         contentVisible = true
-        // Hard cap: splash never exceeds 1200ms total (quick, snappy launch).
-        delay(350)
+        // Smooth splash presentation
+        delay(1200)
         onSplashFinished()
     }
 
@@ -85,23 +85,24 @@ fun AnimatedSplashScreen(
             .background(Color(0xFF0B0F19)),
         contentAlignment = Alignment.Center,
     ) {
-        // ── Scenic Alpine Backdrop (Matching Home Screen) ──
+        // ── Authentic Tirumala Konda (Seven Hills) Backdrop (3A) ──
         coil.compose.AsyncImage(
-            model = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+            model = com.zaruda.app.R.drawable.tirumala_konda_bg,
             contentDescription = null,
             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            alignment = androidx.compose.ui.BiasAlignment(0f, 0.15f),
             modifier = Modifier.fillMaxSize()
         )
-        // Dark vignette overlay
+        // Balanced gradient scrim overlay allowing vibrant backdrop to shine through
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF0B0F19).copy(alpha = 0.45f),
-                            Color(0xFF0B0F19).copy(alpha = 0.88f),
-                            Color(0xFF0B0F19),
+                            Color.Black.copy(alpha = 0.15f),
+                            Color.Black.copy(alpha = 0.30f),
+                            Color.Black.copy(alpha = 0.65f),
                         )
                     )
                 )

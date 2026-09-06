@@ -132,6 +132,7 @@ async function computeTrustScore(userId) {
       { session_count: 0, device_count: 0, ip_count: 0 },
     ),
     safeQueryRow(
+      // reviewee_id is provisioned by schemaGuard; safeQueryRow degrades gracefully if absent
       "SELECT COUNT(*)::int AS review_count, COALESCE(AVG(rating), 0) AS avg_rating FROM reviews WHERE reviewee_id::text = $1 AND COALESCE(is_hidden, false) = false",
       [userId],
       { review_count: 0, avg_rating: 0 },

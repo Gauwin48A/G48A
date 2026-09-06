@@ -72,7 +72,7 @@ data class OnboardingPage(
     val badge: String,
     val title: String,
     val description: String,
-    val bgImageUrl: String,
+    val bgImageUrl: Any,
     val icon: ImageVector,
     val highlights: List<String>,
 )
@@ -82,7 +82,7 @@ val onboardingPages = listOf(
         badge = "HYPERLOCAL MARKETPLACE",
         title = "Buy & Sell Locally",
         description = "Connect directly with verified buyers and sellers in your city. Post ads in seconds and trade without middlemen.",
-        bgImageUrl = "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=1200&q=80",
+        bgImageUrl = com.zaruda.app.R.drawable.tirumala_konda_bg,
         icon = Icons.Default.Storefront,
         highlights = listOf("⚡ Instant 30s Ad Listing", "📍 Verified City Neighbors", "🛡️ In-App Escrow Protection"),
     ),
@@ -90,7 +90,7 @@ val onboardingPages = listOf(
         badge = "SMART DISCOVERY & PRICING",
         title = "Discover Real Deals",
         description = "Instant market valuation insights, trending electronics, and seamless search across 12+ verified categories.",
-        bgImageUrl = "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80",
+        bgImageUrl = com.zaruda.app.R.drawable.tirumala_konda_bg,
         icon = Icons.Default.Explore,
         highlights = listOf("📊 Fair Market Valuation", "🔍 Instant Lens Search", "🔔 Live Price Drop Alerts"),
     ),
@@ -98,7 +98,7 @@ val onboardingPages = listOf(
         badge = "100% VERIFIED & SECURE",
         title = "Zero-Scam Escrow Trading",
         description = "Every transaction backed by 100% Escrow Protection, physical inspection, and Aadhaar-verified sellers.",
-        bgImageUrl = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+        bgImageUrl = com.zaruda.app.R.drawable.tirumala_konda_bg,
         icon = Icons.Default.Security,
         highlights = listOf("🛡️ 100% Escrow Protection", "👤 Aadhaar Verified Sellers", "🤝 Delivery Handover OTP"),
     ),
@@ -140,18 +140,19 @@ fun OnboardingScreen(
                     model = page.bgImageUrl,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
+                    alignment = androidx.compose.ui.BiasAlignment(0f, 0.15f),
                     modifier = Modifier.fillMaxSize(),
                 )
-                // Cinematic Vignette Gradient Overlay
+                // Cinematic Gradient Overlay allowing 3A mountain to shine through
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(
                             Brush.verticalGradient(
                                 listOf(
-                                    Color(0xFF0B0F19).copy(alpha = 0.55f),
-                                    Color(0xFF0B0F19).copy(alpha = 0.35f),
-                                    Color(0xFF0B0F19).copy(alpha = 0.85f),
+                                    Color.Black.copy(alpha = 0.20f),
+                                    Color.Black.copy(alpha = 0.35f),
+                                    Color.Black.copy(alpha = 0.75f),
                                     Color(0xFF0B0F19),
                                 )
                             )

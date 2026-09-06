@@ -1351,44 +1351,44 @@ fun ZarudaApp(
                 RatingsScreen(userId = userId, onBack = { navController.popBackStack() })
             }
 
-            // â”€â”€ Account â”€â”€
+            // ── Account ──
             composable(Routes.DASHBOARD) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                     DashboardScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             composable(Routes.SECURITY) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                     SecurityScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             composable(Routes.PAYOUT) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                     PayoutScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             composable(Routes.ACCOUNT_DELETE) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                     AccountDeleteScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             composable(Routes.VERIFICATION) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                     VerificationScreen(onBack = { navController.popBackStack() })
                 }
             }
 
             composable(Routes.ANALYTICS) {
-                MainShell(navController = navController, selected = BottomTab.PROFILE, topBarBack = { navController.popBackStack() }) {
+                MainShell(navController = navController, selected = BottomTab.PROFILE, showTopBar = false) {
                     AnalyticsScreen(onBack = { navController.popBackStack() })
                 }
             }
 
-            // â”€â”€ Channels â”€â”€
+            // ── Channels ──
             composable(Routes.CHANNELS) {
                 MainShell(navController = navController, selected = BottomTab.ALL_POSTS, topBarBack = { navController.popBackStack() }) {
                     ChannelsListScreen(

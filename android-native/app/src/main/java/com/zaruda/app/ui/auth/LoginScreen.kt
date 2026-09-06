@@ -723,39 +723,41 @@ fun LoginScreen(
                 }
             }
 
-            // ── Demo Login ─────────────────────────────────────────────────
+            // ── Demo & quick login (debug builds only — demo sessions bypass the
+            //    server and would create fake accounts in production) ──
+            if (com.zaruda.app.BuildConfig.DEBUG) {
             Spacer(Modifier.height(12.dp))
-            androidx.compose.material3.OutlinedButton(
-                onClick = { viewModel.demoLogin() },
-                enabled = !state.loading,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 460.dp)
-                    .height(44.dp),
-            ) {
-                if (state.loading) {
-                    CircularProgressIndicator(
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(18.dp),
-                    )
-                } else {
-                    Text(
-                        text = "\uD83D\uDD11 Demo Login",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
+                androidx.compose.material3.OutlinedButton(
+                    onClick = { viewModel.demoLogin() },
+                    enabled = !state.loading,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 460.dp)
+                        .height(44.dp),
+                ) {
+                    if (state.loading) {
+                        CircularProgressIndicator(
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    } else {
+                        Text(
+                            text = "\uD83D\uDD11 Demo Login",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
                 }
-            }
-
-            // ── 1-Tap Biometric Instant Login ──────────────────────────────
-            Spacer(Modifier.height(8.dp))
-            Surface(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    viewModel.demoLogin()
-                },
-                shape = RoundedCornerShape(12.dp),
+    
+                // ── 1-Tap Instant Login ──────────────────────────────
+                Spacer(Modifier.height(8.dp))
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.demoLogin()
+                    },
+                    shape = RoundedCornerShape(12.dp),
                 color = if (darkTheme) Color(0xFF1E293B) else Color(0xFFEFF6FF),
                 border = BorderStroke(1.dp, if (darkTheme) Color(0xFF3B82F6).copy(alpha = 0.4f) else Color(0xFF3B82F6).copy(alpha = 0.25f)),
                 modifier = Modifier
@@ -776,13 +778,14 @@ fun LoginScreen(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "1-Tap Biometric Instant Login",
+                        "1-Tap Instant Login",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF2563EB),
                     )
                 }
             }
+            } // end BuildConfig.DEBUG gate
 
             // ── Live Deal Security Ticker (auto-scrolling marquee) ──────────
             SecurityTicker(

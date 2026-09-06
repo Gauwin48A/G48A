@@ -536,20 +536,10 @@ class ReferralTreeViewModel @Inject constructor(
                     )
                 }
                 is ApiResult.Failure -> {
-                    // Provide fallback referral tree data when API is unavailable
+                    // Never fabricate people — show the real error with a retry.
                     _state.value = ReferralState(
                         loading = false,
                         error = result.error.message,
-                        directNodes = listOf(
-                            ReferralNode(id = "demo_ref_a", name = "Priya", depth = 1, joinDate = "Today"),
-                            ReferralNode(id = "demo_ref_b", name = "Arjun", depth = 1, joinDate = "This week"),
-                        ),
-                        indirectNodes = listOf(
-                            ReferralNode(id = "demo_ref_c", name = "Meera", depth = 2, joinDate = "This month"),
-                        ),
-                        totalDirect = 2,
-                        totalIndirect = 1,
-                        totalReferrals = 3,
                     )
                 }
             }
@@ -596,7 +586,25 @@ fun ReferralTreeScreen(onBack: () -> Unit, viewModel: ReferralTreeViewModel = hi
                         state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 CircularProgressIndicator()
-                                Text("Mapping referral tree...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Loading your network...", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        state.error != null -> Box(
+                            Modifier.fillMaxSize().padding(32.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text("📡", fontSize = 40.sp)
+                                Text("Couldn't load your network", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    "Check your connection and try again.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                )
+                                Button(onClick = { viewModel.load() }, shape = RoundedCornerShape(12.dp)) {
+                                    Text("Retry", fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                         state.directNodes.isEmpty() && state.indirectNodes.isEmpty() -> Box(
@@ -606,7 +614,7 @@ fun ReferralTreeScreen(onBack: () -> Unit, viewModel: ReferralTreeViewModel = hi
                             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text("👥", fontSize = 44.sp)
                                 Text("No referrals yet.", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                Text("Share your referral code to grow your network and earn tier coins!", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                Text("Invite friends with your code — you earn cash + coins when they join and complete their first deal.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                             }
                         }
                         else -> Column(Modifier.fillMaxSize()) {
@@ -624,9 +632,9 @@ fun ReferralTreeScreen(onBack: () -> Unit, viewModel: ReferralTreeViewModel = hi
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                 ) {
                                     Column {
-                                        Text("Your Referral Network", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                                        Text("Your Network", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                                         Text("${state.totalReferrals} Members", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                        Text("${state.totalDirect} Direct (Tier 1) • ${state.totalIndirect} Indirect (Tier 2)", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
+                                        Text("${state.totalDirect} invited by you • ${state.totalIndirect} friends of friends", fontSize = 11.sp, color = Color.White.copy(alpha = 0.7f))
                                     }
                                     Surface(
                                         shape = CircleShape,
@@ -640,80 +648,40 @@ fun ReferralTreeScreen(onBack: () -> Unit, viewModel: ReferralTreeViewModel = hi
                                 }
                             }
 
-                            // Hierarchical Node Graph Container
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(if (isDark) Color(0xFF0F172A) else Color.White)
-                                    .verticalScroll(rememberScrollState())
-                                    .horizontalScroll(rememberScrollState()),
+                            // Member list — plain-language, scannable, no abstract graph
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
-                                val textMeasurer = androidx.compose.ui.text.rememberTextMeasurer()
-                                val primaryColor = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB)
-                                val secondaryColor = Color(0xFF10B981)
-                                val textColor = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A)
-
-                                Canvas(modifier = Modifier.size(600.dp, 560.dp).padding(32.dp)) {
-                                    val nodeRadius = 24.dp.toPx()
-                                    val levelHeight = 120.dp.toPx()
-
-                                    val rootCenter = Offset(size.width / 2, nodeRadius)
-                                    val directY = rootCenter.y + levelHeight
-                                    val indirectY = directY + levelHeight
-
-                                    val directs = state.directNodes
-                                    val indirects = state.indirectNodes
-
-                                    val directSpacing = if (directs.size > 1) size.width / directs.size else size.width
-                                    val directCenters = directs.mapIndexed { index, _ ->
-                                        Offset((index + 0.5f) * directSpacing, directY)
-                                    }
-
-                                    val indirectSpacing = if (indirects.size > 1) size.width / indirects.size else size.width
-                                    val indirectCenters = indirects.mapIndexed { index, _ ->
-                                        Offset((index + 0.5f) * indirectSpacing, indirectY)
-                                    }
-
-                                    // Lines: Root -> Directs
-                                    directCenters.forEach { center ->
-                                        drawLine(color = primaryColor.copy(alpha = 0.35f), start = rootCenter, end = center, strokeWidth = 4f)
-                                    }
-
-                                    // Lines: Directs -> Indirects
-                                    indirectCenters.forEach { indirectCenter ->
-                                        val closestDirect = directCenters.minByOrNull { kotlin.math.abs(it.x - indirectCenter.x) } ?: rootCenter
-                                        drawLine(color = secondaryColor.copy(alpha = 0.25f), start = closestDirect, end = indirectCenter, strokeWidth = 2.5f)
-                                    }
-
-                                    // Draw Nodes
-                                    fun drawNode(center: Offset, name: String, color: Color) {
-                                        drawCircle(color = color, radius = nodeRadius, center = center)
-                                        drawCircle(color = if (isDark) Color(0xFF1E293B) else Color.White, radius = nodeRadius * 0.88f, center = center)
-
-                                        val textLayoutResult = textMeasurer.measure(
-                                            name.take(1).uppercase(),
-                                            androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color),
+                                if (state.directNodes.isNotEmpty()) {
+                                    item {
+                                        Text(
+                                            "INVITED BY YOU",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.2.sp,
+                                            modifier = Modifier.padding(top = 4.dp),
                                         )
-                                        val textOffset = Offset(center.x - textLayoutResult.size.width / 2, center.y - textLayoutResult.size.height / 2)
-                                        drawText(textMeasurer, name.take(1).uppercase(), textOffset, androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = color))
-
-                                        val nameLayout = textMeasurer.measure(name, androidx.compose.ui.text.TextStyle(fontSize = 12.sp, color = textColor))
-                                        drawText(textMeasurer, name, Offset(center.x - nameLayout.size.width / 2, center.y + nodeRadius + 8.dp.toPx()), androidx.compose.ui.text.TextStyle(fontSize = 12.sp, color = textColor))
                                     }
-
-                                    // Root Node
-                                    drawNode(rootCenter, "You", primaryColor)
-
-                                    // Direct Nodes
-                                    directCenters.forEachIndexed { index, center ->
-                                        drawNode(center, directs[index].name, primaryColor)
+                                    items(state.directNodes, key = { it.id }) { node ->
+                                        NetworkMemberRow(name = node.name, joinDate = node.joinDate, invitedByYou = true, isDark = isDark)
                                     }
-
-                                    // Indirect Nodes
-                                    indirectCenters.forEachIndexed { index, center ->
-                                        drawNode(center, indirects[index].name, secondaryColor)
+                                }
+                                if (state.indirectNodes.isNotEmpty()) {
+                                    item {
+                                        Text(
+                                            "FRIENDS OF YOUR FRIENDS",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.2.sp,
+                                            modifier = Modifier.padding(top = 6.dp),
+                                        )
+                                    }
+                                    items(state.indirectNodes, key = { it.id }) { node ->
+                                        NetworkMemberRow(name = node.name, joinDate = node.joinDate, invitedByYou = false, isDark = isDark)
                                     }
                                 }
                             }
@@ -725,10 +693,58 @@ fun ReferralTreeScreen(onBack: () -> Unit, viewModel: ReferralTreeViewModel = hi
 
         // Layer 2: Pinned Floating Glass Top Bar
         RewardsGlassTopBar(
-            title = "Referral Network",
-            badgeText = "🌳 Network Tree",
+            title = "My Network",
+            badgeText = "👥 Invite & Earn",
             isDark = isDark,
             onBack = onBack,
         )
+    }
+}
+
+@Composable
+private fun NetworkMemberRow(
+    name: String,
+    joinDate: String?,
+    invitedByYou: Boolean,
+    isDark: Boolean,
+) {
+    val accent = if (invitedByYou) Color(0xFF2563EB) else Color(0xFF10B981)
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = if (isDark) Color(0xFF1E293B) else Color.White,
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.25f)),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(accent.copy(alpha = 0.15f)),
+            ) {
+                Text(
+                    name.firstOrNull()?.uppercase() ?: "?",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = accent,
+                )
+            }
+            Column(Modifier.weight(1f)) {
+                Text(name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = if (isDark) Color(0xFFF1F5F9) else Color(0xFF0F172A))
+                Text(
+                    listOfNotNull(
+                        if (invitedByYou) "Joined from your invite" else "Joined from a friend's invite",
+                        joinDate?.takeIf { it.isNotBlank() },
+                    ).joinToString(" • "),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }

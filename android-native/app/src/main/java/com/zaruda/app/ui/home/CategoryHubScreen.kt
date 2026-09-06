@@ -393,14 +393,15 @@ private fun MarketplaceHeroBackdrop() {
             .fillMaxWidth()
             .height(300.dp),
     ) {
-        // High-res alpine scenic backdrop
+        // High-res authentic Tirumala Konda scenic backdrop
         AsyncImage(
             model = ImageRequest.Builder(context)
-                .data("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&auto=format&fit=crop&q=85")
+                .data(com.zaruda.app.R.drawable.tirumala_konda_bg)
                 .crossfade(true)
                 .build(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
+            alignment = androidx.compose.ui.BiasAlignment(0f, 0.25f),
             modifier = Modifier.fillMaxSize(),
         )
 

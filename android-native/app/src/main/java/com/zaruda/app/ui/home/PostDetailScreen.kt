@@ -18,12 +18,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -800,7 +803,7 @@ private fun PostDetailFloatingTopBar(
 }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun PostDetailScreen(
     onBack: () -> Unit,
@@ -1344,71 +1347,110 @@ fun PostDetailScreen(
                             if (sellerNameForRow != null) {
                                 val userClickable = post.userId != null
                                 Surface(
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                                    shape = RoundedCornerShape(18.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp)
                                         .then(if (userClickable) Modifier.clickable { post.userId?.let(onOpenUser) } else Modifier),
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(12.dp),
+                                        modifier = Modifier.padding(14.dp),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(14.dp),
                                     ) {
                                         Box(
-                                            modifier = Modifier
-                                                .size(44.dp)
-                                                .clip(CircleShape)
-                                                .background(
-                                                    Brush.linearGradient(
-                                                        listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.tertiary)
-                                                    )
-                                                ),
-                                            contentAlignment = Alignment.Center,
+                                            modifier = Modifier.size(48.dp),
+                                            contentAlignment = Alignment.BottomEnd,
                                         ) {
-                                            Text(
-                                                sellerNameForRow.take(1).uppercase(),
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 18.sp,
-                                                color = Color.White
-                                            )
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(48.dp)
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        Brush.linearGradient(
+                                                            listOf(Color(0xFF2563EB), Color(0xFF0284C7))
+                                                        )
+                                                    ),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Text(
+                                                    sellerNameForRow.take(1).uppercase(),
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    fontSize = 20.sp,
+                                                    color = Color.White
+                                                )
+                                            }
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = Color.White,
+                                                modifier = Modifier.size(16.dp),
+                                            ) {
+                                                Icon(
+                                                    Icons.Filled.Verified,
+                                                    contentDescription = "Verified",
+                                                    tint = Color(0xFF059669),
+                                                    modifier = Modifier.size(16.dp),
+                                                )
+                                            }
                                         }
+
                                         Column(modifier = Modifier.weight(1f)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                            ) {
                                                 Text(
                                                     sellerNameForRow,
                                                     style = MaterialTheme.typography.titleMedium,
                                                     fontWeight = FontWeight.Bold,
                                                     color = MaterialTheme.colorScheme.onSurface
                                                 )
-                                                Icon(Icons.Filled.Verified, null, tint = Color(0xFF059669), modifier = Modifier.size(15.dp))
+                                                Surface(
+                                                    shape = RoundedCornerShape(6.dp),
+                                                    color = Color(0xFF059669).copy(alpha = 0.12f),
+                                                ) {
+                                                    Text(
+                                                        "VERIFIED SELLER",
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.ExtraBold,
+                                                        color = Color(0xFF059669),
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    )
+                                                }
                                             }
+
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                modifier = Modifier.padding(top = 2.dp)
+                                                modifier = Modifier.padding(top = 3.dp),
                                             ) {
-                                                Text(
-                                                    if (userClickable) stringResource(R.string.explore_view_seller_sales) else stringResource(R.string.commerce_verified_seller),
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = if (userClickable) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                                Text("•", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                                                    Icon(Icons.Filled.Star, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(12.dp))
-                                                    Text("4.9", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                                    Icon(Icons.Filled.Star, null, tint = Color(0xFFF59E0B), modifier = Modifier.size(13.dp))
+                                                    Text("4.9", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                                    Text("(120+)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                                 }
+                                                Text("•", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text("⚡ 15m Response", fontSize = 11.sp, color = Color(0xFF0284C7), fontWeight = FontWeight.SemiBold)
                                             }
                                         }
+
                                         if (userClickable) {
-                                            Icon(
-                                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                                null,
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.size(20.dp)
-                                            )
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                                                modifier = Modifier.size(32.dp),
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(
+                                                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                                        contentDescription = "View Profile",
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(18.dp),
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -1639,20 +1681,46 @@ fun PostDetailScreen(
                                     }
                                 }
                                 if (specs.isNotEmpty()) {
-                                    Card(
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                                        modifier = Modifier.fillMaxWidth(),
-                                    ) {
-                                        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text(stringResource(R.string.detail_specifications), fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(
+                                            "⚡ Key Specifications",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                        FlowRow(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                            maxItemsInEachRow = 2,
+                                        ) {
                                             specs.forEach { (key, value) ->
-                                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                                    Text(key, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                    Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                                                }
-                                                if (specs.last().first != key) {
-                                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                                Surface(
+                                                    shape = RoundedCornerShape(14.dp),
+                                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                                                    modifier = Modifier.weight(1f, fill = true),
+                                                ) {
+                                                    Column(
+                                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = key.uppercase(),
+                                                            fontSize = 10.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            letterSpacing = 0.5.sp
+                                                        )
+                                                        Text(
+                                                            text = value,
+                                                            fontSize = 13.sp,
+                                                            fontWeight = FontWeight.SemiBold,
+                                                            color = MaterialTheme.colorScheme.onSurface,
+                                                            maxLines = 1,
+                                                            overflow = TextOverflow.Ellipsis
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }

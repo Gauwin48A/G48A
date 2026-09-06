@@ -100,24 +100,25 @@ fun BrandLaunchScreen(
             .background(Color(0xFF0B0F19)),
         contentAlignment = Alignment.Center,
     ) {
-        // Scenic Alpine Backdrop
+        // Authentic Tirumala Konda (Seven Hills) Backdrop (3A)
         AsyncImage(
-            model = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+            model = com.zaruda.app.R.drawable.tirumala_konda_bg,
             contentDescription = null,
             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            alignment = androidx.compose.ui.BiasAlignment(0f, 0.15f),
             modifier = Modifier.fillMaxSize(),
         )
 
-        // Dark Vignette Gradient Overlay
+        // Balanced gradient scrim overlay
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF0B0F19).copy(alpha = 0.45f),
-                            Color(0xFF0B0F19).copy(alpha = 0.85f),
-                            Color(0xFF0B0F19),
+                            Color.Black.copy(alpha = 0.15f),
+                            Color.Black.copy(alpha = 0.30f),
+                            Color.Black.copy(alpha = 0.65f),
                         )
                     )
                 )
