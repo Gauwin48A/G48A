@@ -92,9 +92,9 @@ data class RewardsUiState(
 )
 
 private val fallbackEngagementStatus = EngagementStatusResponse(
-    dailyCheckIn = DailyCheckInStatus(canClaim = true, streak = 5, todayReward = 15, weekProgress = listOf(true, true, true, true, false, false, false)),
+    dailyCheckIn = DailyCheckInStatus(canClaim = true, streak = 0, todayReward = 15, weekProgress = listOf(false, false, false, false, false, false, false)),
     spin = SpinStatus(canSpin = true, lastSpinDate = null),
-    referralMilestones = ReferralMilestoneStatus(canClaim = false, currentReferrals = 3, target = 5, reward = 100),
+    referralMilestones = ReferralMilestoneStatus(canClaim = false, currentReferrals = 0, target = 5, reward = 100),
 )
 
 @HiltViewModel
@@ -344,7 +344,7 @@ fun RewardsScreen(
                         ) {
                             Icon(Icons.Filled.EmojiEvents, null, tint = Color(0xFFD97706), modifier = Modifier.size(36.dp))
                         }
-                        Text("Zaruda Rewards & VIP Perks", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
+                        Text("Rewards & VIP Perks", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
                         Text(
                             "Earn coins on every deal, unlock 5x listing boost discounts, spin the daily lucky wheel, and receive direct referral cashbacks.",
                             style = MaterialTheme.typography.bodyMedium,
@@ -428,7 +428,7 @@ fun RewardsScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        Text("🏆 Zaruda Rewards", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = if (isDark) Color.White else Color(0xFF0F172A))
+                                        Text("🏆 Rewards", fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, color = if (isDark) Color.White else Color(0xFF0F172A))
                                     }
 
                                     Row(
@@ -453,7 +453,7 @@ fun RewardsScreen(
                                             onClick = onOpenReferralTree,
                                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                                         ) {
-                                            Text("🌳 Tree Graph →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB))
+                                            Text("My Network →", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (isDark) Color(0xFF93C5FD) else Color(0xFF2563EB))
                                         }
                                     }
                                 }
@@ -526,7 +526,7 @@ fun RewardsScreen(
                                                         userCoins = userCoins,
                                                         isDark = isDark,
                                                         onCopyReferral = {
-                                                            clipboardManager.setText(AnnotatedString(user.referralCode ?: "ZARUDA"))
+                                                            clipboardManager.setText(AnnotatedString(user.referralCode ?: ""))
                                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                         }
                                                     )
@@ -606,7 +606,7 @@ fun RewardsScreen(
                                                         },
                                                         onShareWhatsApp = {
                                                             val intent = Intent(Intent.ACTION_VIEW).apply {
-                                                                data = Uri.parse("https://api.whatsapp.com/send?text=Join%20Zaruda%20Marketplace%20with%20my%20referral%20code%20${user.referralCode}%20and%20get%20500%20coins%20instantly!")
+                                                                data = Uri.parse("https://api.whatsapp.com/send?text=Join%20the%20marketplace%20with%20my%20referral%20code%20${user.referralCode}%20and%20get%20500%20coins%20instantly!")
                                                             }
                                                             context.startActivity(intent)
                                                         },
@@ -692,7 +692,7 @@ fun RewardsScreen(
                             title = { Text("Redeem $itemName", fontWeight = FontWeight.Bold) },
                             text = {
                                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Text("This perk costs $cost Zaruda Coins. Your current balance: $userCoins coins.")
+                                    Text("This perk costs $cost coins. Your current balance: $userCoins coins.")
                                     if (type == "boost" || type == "featured") {
                                         Text("Select Target Listing:", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                                         if (state.activePosts.isEmpty()) {
@@ -797,7 +797,7 @@ private fun HolographicPassportCard(
                         )
                     }
                     Column {
-                        Text(user.name ?: "Zaruda VIP", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                        Text(user.name ?: "VIP Member", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                         Text("Tier: ${user.membershipPlan ?: "Gold Member"}", color = Color(0xFFFCD34D), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
@@ -932,10 +932,10 @@ private fun CoinsStrategicValueCard(
             }
             HorizontalDivider(color = if (isDark) Color(0xFF334155) else Color(0xFFF1F5F9))
             Text(
-                "• 100 Zaruda Coins = ₹1.00 Direct platform utility\n" +
-                "• 🚀 Listing Boosts: 50 coins (5x off for VIP members)\n" +
-                "• 🛡️ Category 1 Escrow Protection: Zero payment dispute fees\n" +
-                "• ⭐ Featured Carousel Placement: 100 coins for 14 days",
+                "• 🚀 Listing Boost — 50 coins\n" +
+                "• ⭐ Featured Placement (14 days) — 100 coins\n" +
+                "• 🛡️ Zero dispute fees on secure payments\n" +
+                "• ₹ value: 100 coins = ₹1 at checkout",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 18.sp
@@ -958,7 +958,7 @@ private fun ImpactStatsGrid(
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ImpactCard("Active Referrals", "${user.directReferrals}", "👥", Color(0xFF10B981), Modifier.weight(1f), isDark)
-            ImpactCard("Deal Success", "100%", "📈", Color(0xFF8B5CF6), Modifier.weight(1f), isDark)
+            ImpactCard("Coins Earned", "${user.totalCoins}", "📈", Color(0xFF8B5CF6), Modifier.weight(1f), isDark)
         }
     }
 }
@@ -1219,7 +1219,7 @@ private fun DailySpinWheelCard(
         AlertDialog(
             onDismissRequest = onCompleteSpin,
             title = { Text("🎉 YOU WON $reward COINS!", fontWeight = FontWeight.Black) },
-            text = { Text("Your lucky daily spin reward of $reward Zaruda Coins has been credited to your balance.") },
+            text = { Text("Your lucky daily spin reward of $reward coins has been credited to your balance.") },
             confirmButton = {
                 TextButton(onClick = onCompleteSpin) {
                     Text("Collect Coins", fontWeight = FontWeight.Bold)
@@ -1239,7 +1239,7 @@ private fun ActiveQuestsList(
         QuestRow("🛡️ Complete Aadhaar KYC", "+100 Coins", "Unlocked on verified identity", isDark)
         QuestRow("📦 Post Your First Listing", "+50 Coins", "Get instant live boost", isDark)
         QuestRow("🤝 First Escrow Purchase", "+200 Coins", "Safe delivery verified reward", isDark)
-        QuestRow("💬 Share Zaruda on Social", "+25 Coins", "Invite local community", isDark)
+        QuestRow("💬 Share on Social", "+25 Coins", "Invite local community", isDark)
     }
 }
 
@@ -1295,7 +1295,7 @@ private fun ReferralHeroCard(
         ) {
             Text("INVITE FRIENDS & EARN LIFETIME CASH", style = MaterialTheme.typography.labelSmall, color = Color(0xFF2563EB), fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp)
             Text(
-                "Earn ₹100 Cash + 500 Coins for every friend who joins & completes their first verified transaction on Zaruda.",
+                "Earn ₹100 Cash + 500 Coins for every friend who joins & completes their first verified transaction.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 20.sp
@@ -1497,20 +1497,22 @@ private fun TransactionLedgerRow(
 }
 
 private fun fallbackRewardsOverview(): RewardsOverviewResponse {
+    // Empty-state fallback: zeros only — never fabricate a demo user with
+    // balances/referrals the real user does not have.
     return RewardsOverviewResponse(
         user = RewardsUserDto(
-            id = "demo_user",
-            name = "Demo User",
-            email = "demo@zaruda.app",
-            referralCode = "ZARUDA2026",
-            totalCoins = 1450,
-            directReferrals = 4,
-            successfulRefs = 4,
-            membershipPlan = "Premium VIP",
-            currentPlan = "premium",
-            xpCurrent = 380,
-            xpRequired = 500,
-            visitStreak = 5,
+            id = "",
+            name = null,
+            email = null,
+            referralCode = null,
+            totalCoins = 0,
+            directReferrals = 0,
+            successfulRefs = 0,
+            membershipPlan = null,
+            currentPlan = null,
+            xpCurrent = 0,
+            xpRequired = 100,
+            visitStreak = 0,
         ),
         referralChain = emptyList(),
         chainRules = emptyList()
